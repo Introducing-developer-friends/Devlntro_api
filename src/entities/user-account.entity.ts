@@ -3,7 +3,7 @@ import { BusinessProfile } from './business-profile.entity';
 import { BusinessContact } from './business-contact.entity';
 import { Post } from './post.entity';
 import { Comment } from './comment.entity';
-import { PostLike } from './post-like_entity';
+import { PostLike } from './post-like.entity';
 
 @Entity()
 export class UserAccount {

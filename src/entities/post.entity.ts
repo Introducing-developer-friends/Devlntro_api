@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn } from 'typeorm';
 import { UserAccount } from './user-account.entity';
 import { Comment } from './comment.entity';
-import { PostLike } from './post-like_entity';
+import { PostLike } from './post-like.entity';
 
 @Entity()
 export class Post {
@@ -11,9 +11,6 @@ export class Post {
   @ManyToOne(() => UserAccount, user => user.posts) // 작성자와의 다대일 관계
   @JoinColumn({ name: 'user_id' })
   user: UserAccount;
-
-  @Column()
-  title: string;
 
   @Column()
   image_url: string;
