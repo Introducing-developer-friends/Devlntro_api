@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { SampleController } from './controllers/sample.controller';  // SampleController 임포트
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { SampleController } from './controllers/sample.controller';  // SampleCo
         return dataSource;
       },
     }),
+    AuthModule,
   ],
   controllers: [AppController, SampleController],
   providers: [AppService],
