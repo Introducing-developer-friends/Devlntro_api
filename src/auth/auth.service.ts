@@ -19,9 +19,13 @@ export class AuthService {
   ) {}
 
   // 아이디 중복 확인
-  async checkIdAvailability(login_id: string): Promise<boolean> {
+  async checkIdAvailability(login_id: string): Promise<{ available: boolean, message: string }> {
     const user = await this.userRepository.findOne({ where: { login_id } });
-    return !user;
+    if (!user) {
+      return { available: true, message: '사용 가능한 아이디입니다.' };
+    } else {
+      return { available: false, message: '이미 사용 중인 아이디입니다.' };
+    }
   }
 
   // 회원가입 로직
@@ -35,7 +39,7 @@ export class AuthService {
     }
     try{
     const hashedPassword = await bcrypt.hash(password, 10); // 비밀번호 해싱
-    
+
     const user = this.userRepository.create({
       login_id,
       password: hashedPassword, // 해싱된 비밀번호 저장
@@ -48,7 +52,6 @@ export class AuthService {
       ...profileData, // 남은 프로필 정보 저장
       userAccount: user,
     });
-    
     await this.profileRepository.save(profile); // BusinessProfile 저장
     
     return { userId: user.user_id, message: '회원가입이 성공적으로 완료되었습니다.' };
@@ -58,15 +61,31 @@ export class AuthService {
 }
 
   // 로그인 로직
-  async login(loginDto: LoginDto) {
-    const user = await this.userRepository.findOne({ where: { login_id: loginDto.login_id } }); // 로그인 아이디로 사용자 조회
-    if (user && await bcrypt.compare(loginDto.password, user.password)) {
+async login(loginDto: LoginDto) {
+    // 사용자 조회
+    const user = await this.userRepository.findOne({ where: { login_id: loginDto.login_id } });
+  
+    // 사용자 존재 여부 확인
+    if (!user) {
+      return null;
+    }
+  
+    // 비밀번호 비교
+    const passwordMatches = await bcrypt.compare(loginDto.password, user.password);
+  
+    if (passwordMatches) {
       const payload = { username: user.login_id, sub: user.user_id }; // JWT 페이로드 생성
+  
+      const token = this.jwtService.sign(payload);
+  
       return {
-        token: this.jwtService.sign(payload), // JWT 토큰 생성 및 반환
+        token, // JWT 토큰 반환
         userId: user.user_id,
       };
+    } else {
+      return null; // 비밀번호 불일치
     }
-    return null; // 비밀번호가 틀리거나 사용자가 없을 경우 null 반환
   }
+  
+  
 }
