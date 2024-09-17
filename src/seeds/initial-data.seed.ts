@@ -4,18 +4,19 @@ import { UserAccount } from '../entities/user-account.entity';
 export const seedInitialData = async (dataSource: DataSource) => {
   const userRepository = dataSource.getRepository(UserAccount);
 
-  // 새로운 사용자 데이터
-  const newUser = {
-    login_id: 'teddddddddddd',
-    password: 'newpassword12322222222',
-    name: 'New Test Usersdas'
+  const newUser1 = {
+    login_id: 'john_doe',
+    password: 'password123',
+    name: 'John Doe'
   };
 
-  // 새 사용자 추가 시도
+  // 새로운 사용자 추가 시도
   try {
-    const testUser = userRepository.create(newUser);
-    await userRepository.save(testUser);
-    console.log('New seed data inserted successfully:', testUser);
+
+    const testUser1 = userRepository.create(newUser1); // 추가 사용자
+    await userRepository.save(testUser1);
+    console.log('Another seed data inserted successfully:', testUser1);
+
   } catch (error) {
     console.error('Error inserting new user:', error.message);
   }

@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
+import { SampleController } from './controllers/sample.controller';  // SampleController 임포트
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { DataSource } from 'typeorm';
       },
     }),
   ],
-  controllers: [AppController],
+  controllers: [AppController, SampleController],
   providers: [AppService],
 })
 export class AppModule {}
