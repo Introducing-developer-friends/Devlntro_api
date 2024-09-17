@@ -3,9 +3,13 @@ import { AppModule } from './app.module';
 import { seedInitialData } from './seeds/initial-data.seed';
 import { DataSource } from 'typeorm';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // 전역으로 JWT 인증 가드 설정
+  app.useGlobalGuards(new JwtAuthGuard());
 
   // Swagger 설정 추가
   const config = new DocumentBuilder()
