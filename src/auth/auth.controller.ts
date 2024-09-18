@@ -47,7 +47,7 @@ export class AuthController {
     try {
       const result = await this.authService.register(createUserDto);
       return {
-        statusCode: 200,
+        statusCode: 201,
         message: result.message,
         userId: result.userId
       };

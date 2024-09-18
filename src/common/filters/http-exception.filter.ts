@@ -10,15 +10,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>(); // 응답 객체 가져오기
     const request = ctx.getRequest<Request>(); // 요청 객체 가져오기
     const status = exception.getStatus(); // 예외 상태 코드 가져오기
+    const errorMessage = exception.message; // 예외 메시지
+    const errorName = exception.name; // 예외 이름 가져오기 (BadRequestException 등)
 
     // 예외에 대한 응답 전송
     response
       .status(status)
       .json({
         statusCode: status, // 상태 코드
-        timestamp: new Date().toISOString(), // 예외 발생 시간
-        path: request.url, // 요청 URL
-        message: exception.message, // 예외 메시지
+        message: errorMessage, // 예외 메시지
+        error: errorName || 'Bad Request', // 예외 이름 또는 기본 'Bad Request'
       });
   }
 }
