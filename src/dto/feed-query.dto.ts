@@ -1,5 +1,5 @@
-import { IsEnum, IsOptional } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum, IsOptional, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export enum SortOption {
   LATEST = 'latest',
@@ -7,9 +7,23 @@ export enum SortOption {
   COMMENTS = 'comments',
 }
 
+export enum FilterType {
+  ALL = 'all',
+  OWN = 'own',
+  SPECIFIC = 'specific',
+}
+
 export class FeedQueryDto {
-  @ApiProperty({ enum: SortOption, required: false, default: SortOption.LATEST })
   @IsEnum(SortOption)
   @IsOptional()
   sort?: SortOption = SortOption.LATEST;
+
+  @IsEnum(FilterType)
+  @IsOptional()
+  filter?: FilterType = FilterType.ALL;
+
+  @IsNumber()
+  @IsOptional()
+  @Type(() => Number)
+  specificUserId?: number;
 }
