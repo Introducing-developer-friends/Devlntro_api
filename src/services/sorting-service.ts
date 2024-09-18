@@ -3,15 +3,18 @@ import { SortOption } from '../dto/feed-query.dto';
 
 @Injectable()
 export class SortingService {
-  // 게시물 정렬 로직을 공통으로 처리하는 함수
   sortPosts(posts: any[], sortOption: SortOption) {
     switch (sortOption) {
       case SortOption.LIKES:
-        return posts.sort((a, b) => b.likesCount - a.likesCount);
+        return posts.sort((a, b) => (b.post_like_count || 0) - (a.post_like_count || 0));
       case SortOption.COMMENTS:
-        return posts.sort((a, b) => b.commentsCount - a.commentsCount);
-      default:
-        return posts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+        return posts.sort((a, b) => (b.comments_count || 0) - (a.comments_count || 0));
+      default: // LATEST
+        return posts.sort((a, b) => {
+          const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return dateB - dateA;
+        });
     }
   }
 }
