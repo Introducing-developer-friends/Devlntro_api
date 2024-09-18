@@ -37,7 +37,7 @@ export class FeedFilterService {
       query = query.where(new Brackets(qb => {
         qb.where('user.user_id = :userId', { userId }); 
         if (contactUserIdArray.length > 0) {
-          qb.orWhere('user.user_id .user_id IN (:...contactUserIdArray)', { contactUserIdArray });
+          qb.orWhere('user.user_id IN (:...contactUserIdArray)', { contactUserIdArray });
         }
       }));
     } else if (filterType === 'own') {
