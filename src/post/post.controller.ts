@@ -3,7 +3,9 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PostService } from './post.service';
 import { CreatePostDto, UpdatePostDto } from './dto/post.dto';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 
 @ApiTags('posts') // Swagger에서 그룹화
 @ApiBearerAuth() // JWT 토큰을 사용함을 명시
@@ -13,7 +15,38 @@ export class PostController {
   constructor(private readonly postService: PostService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('image')) // 이미지 파일 업로드 인터셉터
+
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+          cb(null, file.fieldname + '-' + uniqueSuffix + extname(file.originalname));
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+          cb(null, true);
+        } else {
+          cb(new Error('지원되지 않는 파일 형식입니다.'), false);
+        }
+      },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        content: { type: 'string' },
+        image: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
   @ApiOperation({ summary: '게시물 작성' })
   @ApiResponse({ status: 201, description: '게시물이 성공적으로 작성되었습니다.' })
   @ApiResponse({ status: 400, description: '게시물 작성에 실패했습니다. 필수 필드를 확인해주세요.' })
@@ -27,7 +60,34 @@ export class PostController {
   }
 
   @Put(':postId')
-  @UseInterceptors(FileInterceptor('image')) // 이미지 파일 업로드 인터셉터
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+          cb(null, file.fieldname + '-' + uniqueSuffix + extname(file.originalname));
+        },
+      }),
+      fileFilter: (req, file, cb) => {
+        if (file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
+          cb(null, true);
+        } else {
+          cb(new Error('지원되지 않는 파일 형식입니다.'), false);
+        }
+      },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        content: { type: 'string' },
+        image: { type: 'string', format: 'binary' },
+      },
+    },
+  })
   @ApiOperation({ summary: '게시물 수정' })
   @ApiResponse({ status: 200, description: '게시물이 성공적으로 수정되었습니다.' })
   @ApiResponse({ status: 400, description: '게시물 수정에 실패했습니다. 유효한 데이터를 입력해주세요.' })

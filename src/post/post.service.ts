@@ -21,14 +21,8 @@ export class PostService {
     let filepath = null;
 
     if (file) {
-
-      // 고유한 파일 이름 생성
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
-      filepath = path.join('uploads', filename);
-
-      fs.writeFileSync(filepath, file.buffer); // 파일 저장
-    }
+        filepath = file.path; // Multer가 저장한 파일 경로 사용
+      }
 
     const post = this.postRepository.create({
       ...createPostDto,
@@ -56,22 +50,24 @@ export class PostService {
     }
 
     if (file) {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const filename = file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
-      const filepath = path.join('uploads', filename);
-
-      fs.writeFileSync(filepath, file.buffer); // 새 파일 저장
-
-      if (post.image_url) {
-        fs.unlinkSync(post.image_url); // 기존 파일 삭제
+        // 새 파일이 업로드된 경우
+        const filepath = file.path; // Multer가 저장한 파일 경로 사용
+    
+        if (post.image_url) {
+          // 기존 파일이 있다면 삭제
+          fs.unlinkSync(post.image_url);
+        }
+    
+        post.image_url = filepath; // 새로운 이미지 경로 저장
+      }
+    
+      // 내용 업데이트
+      if (updatePostDto.content) {
+        post.content = updatePostDto.content;
       }
 
-      post.image_url = filepath; // 새로운 이미지 경로 저장
-    }
-
-    Object.assign(post, updatePostDto); // DTO로 받은 업데이트 정보 적용
-
-    await this.postRepository.save(post);
+      // 변경사항을 데이터베이스에 저장
+      await this.postRepository.save(post);
 
     return {
       statusCode: 200,
