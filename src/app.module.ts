@@ -7,7 +7,7 @@ import { DataSource } from 'typeorm';
 import { SampleController } from './controllers/sample.controller';  // SampleController 임포트
 import { AuthModule } from './auth/auth.module';
 import { FeedModule } from './feed/feed.module';
-
+import { PostModule } from './post/post.module'
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -31,6 +31,7 @@ import { FeedModule } from './feed/feed.module';
     }),
     AuthModule,
     FeedModule,
+    PostModule,
   ],
   controllers: [AppController, SampleController],
   providers: [AppService],
