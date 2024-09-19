@@ -8,6 +8,7 @@ import { SampleController } from './controllers/sample.controller';  // SampleCo
 import { AuthModule } from './auth/auth.module';
 import { FeedModule } from './feed/feed.module';
 import { PostModule } from './post/post.module'
+import { CommentModule } from './comment/comment.module'
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -32,6 +33,7 @@ import { PostModule } from './post/post.module'
     AuthModule,
     FeedModule,
     PostModule,
+    CommentModule,
   ],
   controllers: [AppController, SampleController],
   providers: [AppService],
