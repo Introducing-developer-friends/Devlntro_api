@@ -1,0 +1,63 @@
+import { Controller, Post, Put, Delete, Body, Param, UseGuards, Req, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { PostService } from './post.service';
+import { CreatePostDto, UpdatePostDto } from './dto/post.dto';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+
+@ApiTags('posts') // Swagger에서 그룹화
+@ApiBearerAuth() // JWT 토큰을 사용함을 명시
+@Controller('posts')
+@UseGuards(JwtAuthGuard) // JWT 인증 가드 적용
+export class PostController {
+  constructor(private readonly postService: PostService) {}
+
+  @Post()
+  @UseInterceptors(FileInterceptor('image')) // 이미지 파일 업로드 인터셉터
+  @ApiOperation({ summary: '게시물 작성' })
+  @ApiResponse({ status: 201, description: '게시물이 성공적으로 작성되었습니다.' })
+  @ApiResponse({ status: 400, description: '게시물 작성에 실패했습니다. 필수 필드를 확인해주세요.' })
+  async createPost(
+    @Req() req,
+    @Body() createPostDto: CreatePostDto,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    const userId = req.user.userId; // JWT에서 사용자 ID 추출
+    return this.postService.createPost(userId, createPostDto, file);
+  }
+
+  @Put(':postId')
+  @UseInterceptors(FileInterceptor('image')) // 이미지 파일 업로드 인터셉터
+  @ApiOperation({ summary: '게시물 수정' })
+  @ApiResponse({ status: 200, description: '게시물이 성공적으로 수정되었습니다.' })
+  @ApiResponse({ status: 400, description: '게시물 수정에 실패했습니다. 유효한 데이터를 입력해주세요.' })
+  @ApiResponse({ status: 404, description: '게시물을 찾을 수 없습니다.' })
+  async updatePost(
+    @Req() req,
+    @Param('postId') postId: number,
+    @Body() updatePostDto: UpdatePostDto,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+    const userId = req.user.userId; // JWT에서 사용자 ID 추출
+    return this.postService.updatePost(userId, postId, updatePostDto, file);
+  }
+
+  @Delete(':postId')
+  @ApiOperation({ summary: '게시물 삭제' })
+  @ApiResponse({ status: 200, description: '게시물이 성공적으로 삭제되었습니다.' })
+  @ApiResponse({ status: 404, description: '게시물을 찾을 수 없습니다.' })
+  async deletePost(@Req() req, @Param('postId') postId: number) {
+    const userId = req.user.userId; // JWT에서 사용자 ID 추출
+    return this.postService.deletePost(userId, postId);
+  }
+
+  @Post(':postId/like')
+  @ApiOperation({ summary: '게시물 좋아요/취소' })
+  @ApiResponse({ status: 200, description: '게시물에 좋아요를 눌렀습니다.' })
+  @ApiResponse({ status: 200, description: '게시물 좋아요를 취소했습니다.' })
+  @ApiResponse({ status: 404, description: '게시물을 찾을 수 없습니다.' })
+  async likePost(@Req() req, @Param('postId') postId: number) {
+    const userId = req.user.userId;
+    return this.postService.likePost(userId, postId);
+  }
+}
