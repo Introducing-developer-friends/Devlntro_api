@@ -23,7 +23,7 @@ export class Comment {
   created_at: Date;
 
   @Column({ default: 0 }) // 좋아요 수, 기본값은 0
-  comment_like_count: number;
+  like_count: number;
 
   @OneToMany(() => CommentLike, commentLike => commentLike.comment) // 댓글에 달린 좋아요와의 1:N 관계
   commentLike: CommentLike[];
