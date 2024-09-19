@@ -1,13 +1,38 @@
 import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreatePostDto {
+  @ApiProperty({
+    description: '게시물 내용',
+    example: '이것은 게시물의 내용입니다.',
+    type: String,
+  })
   @IsNotEmpty()
   @IsString()
   content: string; // 게시물 내용 필수 입력
+
+  @ApiPropertyOptional({
+    description: '업로드할 이미지 파일',
+    type: 'string',
+    format: 'binary',
+  })
+  image?: Express.Multer.File; // 이미지 파일 선택 입력
 }
 
 export class UpdatePostDto {
+  @ApiPropertyOptional({
+    description: '게시물 내용 (선택 입력)',
+    example: '이것은 수정된 게시물의 내용입니다.',
+    type: String,
+  })
   @IsOptional()
   @IsString()
   content?: string; // 게시물 내용 선택 입력
+
+  @ApiPropertyOptional({
+    description: '새로 업로드할 이미지 파일 (선택)',
+    type: 'string',
+    format: 'binary',
+  })
+  image?: Express.Multer.File; // 새 이미지 파일 선택 입력
 }
