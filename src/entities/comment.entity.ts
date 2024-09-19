@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, DeleteDateColumn  } from 'typeorm';
 import { UserAccount } from './user-account.entity';
 import { Post } from './post.entity';
 import { CommentLike } from './comment-like.entity';
@@ -27,4 +27,7 @@ export class Comment {
 
   @OneToMany(() => CommentLike, commentLike => commentLike.comment) // 댓글에 달린 좋아요와의 1:N 관계
   commentLike: CommentLike[];
+
+  @DeleteDateColumn()
+  deleted_at: Date;
 }
