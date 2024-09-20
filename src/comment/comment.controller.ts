@@ -3,6 +3,14 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CommentService } from './comment.service';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { Request } from 'express'; // Express Request 타입 임포트
+
+// JWT로부터 추출된 사용자 정보를 포함하는 요청 인터페이스
+interface CustomRequest extends Request {
+  user: {
+    userId: number;  // userId 타입을 명시적으로 정의
+  };
+}
 
 @ApiTags('Comments') // Swagger에서 이 컨트롤러를 'Comments' 태그로 그룹화
 @ApiBearerAuth()
@@ -18,7 +26,7 @@ export class CommentController {
   @ApiResponse({ status: 201, description: '댓글이 성공적으로 작성되었습니다.' })
   @ApiResponse({ status: 400, description: '댓글 작성에 실패했습니다. 내용을 입력해주세요.' })
   async createComment(
-    @Req() req,
+    @Req() req: CustomRequest,
     @Param('postId') postId: number,
     @Body() createCommentDto: CreateCommentDto
   ) {
@@ -35,7 +43,7 @@ export class CommentController {
   @ApiResponse({ status: 400, description: '댓글 수정에 실패했습니다. 유효한 내용을 입력해주세요.' })
   @ApiResponse({ status: 404, description: '댓글을 찾을 수 없습니다.' })
   async updateComment(
-    @Req() req,
+    @Req() req: CustomRequest,
     @Param('postId') postId: number,
     @Param('commentId') commentId: number,
     @Body() updateCommentDto: UpdateCommentDto
@@ -52,7 +60,7 @@ export class CommentController {
   @ApiResponse({ status: 200, description: '댓글이 성공적으로 삭제되었습니다.' })
   @ApiResponse({ status: 404, description: '댓글을 찾을 수 없습니다.' })
   async deleteComment(
-    @Req() req,
+    @Req() req: CustomRequest,
     @Param('postId') postId: number,
     @Param('commentId') commentId: number
   ) {
@@ -69,7 +77,7 @@ export class CommentController {
   @ApiResponse({ status: 200, description: '댓글 좋아요를 취소했습니다.' })
   @ApiResponse({ status: 404, description: '댓글을 찾을 수 없습니다.' })
   async likeComment(
-    @Req() req,
+    @Req() req: CustomRequest,
     @Param('postId') postId: number,
     @Param('commentId') commentId: number
   ) {
