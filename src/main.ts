@@ -11,6 +11,14 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter'; //
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+
+  // CORS 설정
+  app.enableCors({
+    origin: 'http://localhost:5173', // 클라이언트의 URL을 명시
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true, // 쿠키와 인증 헤더 사용 시 true로 설정
+  });
+  
   // 전역 유효성 검사 파이프 설정
   app.useGlobalPipes(new ValidationPipe());
 
