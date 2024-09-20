@@ -6,6 +6,16 @@ import { CreatePostDto, UpdatePostDto } from './dto/post.dto';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
+import { Request } from 'express'; // Express Request 타입 임포트
+
+// JWT로부터 추출된 사용자 정보를 포함하는 요청 인터페이스
+interface CustomRequest extends Request {
+  user: {
+    userId: number;  // userId 타입을 명시적으로 정의
+  };
+}
+
+
 
 @ApiTags('posts') // Swagger에서 그룹화
 @ApiBearerAuth() // JWT 토큰을 사용함을 명시
@@ -51,7 +61,7 @@ export class PostController {
   @ApiResponse({ status: 201, description: '게시물이 성공적으로 작성되었습니다.' })
   @ApiResponse({ status: 400, description: '게시물 작성에 실패했습니다. 필수 필드를 확인해주세요.' })
   async createPost(
-    @Req() req,
+    @Req() req: CustomRequest,
     @Body() createPostDto: CreatePostDto,
     @UploadedFile() file: Express.Multer.File
   ) {
@@ -93,7 +103,7 @@ export class PostController {
   @ApiResponse({ status: 400, description: '게시물 수정에 실패했습니다. 유효한 데이터를 입력해주세요.' })
   @ApiResponse({ status: 404, description: '게시물을 찾을 수 없습니다.' })
   async updatePost(
-    @Req() req,
+    @Req() req: CustomRequest,
     @Param('postId') postId: number,
     @Body() updatePostDto: UpdatePostDto,
     @UploadedFile() file: Express.Multer.File
@@ -106,7 +116,7 @@ export class PostController {
   @ApiOperation({ summary: '게시물 삭제' })
   @ApiResponse({ status: 200, description: '게시물이 성공적으로 삭제되었습니다.' })
   @ApiResponse({ status: 404, description: '게시물을 찾을 수 없습니다.' })
-  async deletePost(@Req() req, @Param('postId') postId: number) {
+  async deletePost(@Req() req: CustomRequest, @Param('postId') postId: number) {
     const userId = req.user.userId; // JWT에서 사용자 ID 추출
     return this.postService.deletePost(userId, postId);
   }
@@ -116,7 +126,7 @@ export class PostController {
   @ApiResponse({ status: 200, description: '게시물에 좋아요를 눌렀습니다.' })
   @ApiResponse({ status: 200, description: '게시물 좋아요를 취소했습니다.' })
   @ApiResponse({ status: 404, description: '게시물을 찾을 수 없습니다.' })
-  async likePost(@Req() req, @Param('postId') postId: number) {
+  async likePost(@Req() req: CustomRequest, @Param('postId') postId: number) {
     const userId = req.user.userId;
     return this.postService.likePost(userId, postId);
   }
