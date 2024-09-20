@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, DeleteDateColumn  } from 'typeorm';
 import { UserAccount } from './user-account.entity';
 import { Comment } from './comment.entity';
 import { PostLike } from './post-like.entity';
@@ -21,10 +21,13 @@ export class Post {
   @CreateDateColumn()
   created_at: Date;
 
+  @DeleteDateColumn() 
+  deleted_at?: Date;
+
   @Column({ default: 0 })
   post_like_count: number;
 
-  @Column({ default: 0 }) // 댓글 수, 기본값은 0 
+  @Column({ default: 0 })
   comments_count: number;
 
   @OneToMany(() => Comment, comment => comment.post) // 댓글과의 1:N 관계
