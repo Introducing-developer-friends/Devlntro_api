@@ -128,23 +128,28 @@ export class ContactsService {
     };
   }
 
-  // 인맥을 삭제하는 메서드
-  async deleteContact(userId: number, contactId: number) {
+  async deleteContact(userId: number, contactUserId: number) {
+    console.log(`Attempting to delete contact. userId: ${userId}, contactUserId: ${contactUserId}`);
+  
     const contact = await this.contactRepository.findOne({
-      where: { 
-        contact_id: contactId,
-        userAccount: { user_id: userId }
+      where: {
+        userAccount: { user_id: userId },
+        contact_user: { user_id: contactUserId }
       },
+      relations: ['userAccount', 'contact_user']
     });
-
+  
+    console.log('Found contact:', contact);
+  
     if (!contact) {
       throw new NotFoundException('해당 인맥을 찾을 수 없습니다.');
     }
-
+  
     await this.contactRepository.remove(contact);
-
-    // 성공 응답 반환
-    return {    
+  
+    console.log(`Contact successfully deleted. contactId: ${contact.contact_id}`);
+  
+    return {
       statusCode: 200,
       message: '인맥이 성공적으로 삭제되었습니다.',
     };
