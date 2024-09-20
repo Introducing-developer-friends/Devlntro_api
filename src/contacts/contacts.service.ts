@@ -128,8 +128,8 @@ export class ContactsService {
     };
   }
 
+  // 기존 인맥을 제거하는 메서드
   async deleteContact(userId: number, contactUserId: number) {
-    console.log(`Attempting to delete contact. userId: ${userId}, contactUserId: ${contactUserId}`);
   
     const contact = await this.contactRepository.findOne({
       where: {
@@ -139,15 +139,11 @@ export class ContactsService {
       relations: ['userAccount', 'contact_user']
     });
   
-    console.log('Found contact:', contact);
-  
     if (!contact) {
       throw new NotFoundException('해당 인맥을 찾을 수 없습니다.');
     }
   
     await this.contactRepository.remove(contact);
-  
-    console.log(`Contact successfully deleted. contactId: ${contact.contact_id}`);
   
     return {
       statusCode: 200,

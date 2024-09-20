@@ -72,14 +72,14 @@ export class ContactsController {
   @ApiResponse({ status: 200, description: '인맥이 성공적으로 삭제되었습니다.' })
   @ApiResponse({ status: 400, description: '유효하지 않은 인맥 ID입니다.' })
   @ApiResponse({ status: 404, description: '해당 인맥을 찾을 수 없습니다.' })
-  async deleteContact(@Request() req, @Param('contactId') contactId: number) {
+  async deleteContact(@Request() req, @Param('contactUserId') contactUserId: number) {
     try {
-      return await this.contactsService.deleteContact(req.user.userId, contactId);
+      return await this.contactsService.deleteContact(req.user.userId, contactUserId);
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw new NotFoundException(error.message);
       }
-      throw new BadRequestException('유효하지 않은 인맥 ID입니다.');
+      throw new BadRequestException('유효하지 않은 인맥 사용자 ID입니다.');
     }
   }
 }
