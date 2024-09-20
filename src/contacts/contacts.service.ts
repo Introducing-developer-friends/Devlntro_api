@@ -22,7 +22,10 @@ export class ContactsService {
     // userId에 해당하는 사용자의 모든 인맥을 조회
     // relations 옵션을 통해 연관된 contact_user와 그의 profile 정보도 함께 가져옴
     const contacts = await this.contactRepository.find({
-      where: { userAccount: { user_id: userId } },
+        where: { 
+            userAccount: { user_id: userId },
+            deleted_at: null // 삭제되지 않은 레코드만 조회
+          },
       relations: ['contact_user', 'contact_user.profile'],
     });
 
@@ -130,11 +133,11 @@ export class ContactsService {
 
   // 기존 인맥을 제거하는 메서드
   async deleteContact(userId: number, contactUserId: number) {
-  
     const contact = await this.contactRepository.findOne({
-      where: {
+      where: { 
         userAccount: { user_id: userId },
-        contact_user: { user_id: contactUserId }
+        contact_user: { user_id: contactUserId },
+        deleted_at: null // 이미 삭제되지 않은 레코드만 대상으로 함
       },
       relations: ['userAccount', 'contact_user']
     });
@@ -143,7 +146,7 @@ export class ContactsService {
       throw new NotFoundException('해당 인맥을 찾을 수 없습니다.');
     }
   
-    await this.contactRepository.remove(contact);
+    await this.contactRepository.softRemove(contact);
   
     return {
       statusCode: 200,
