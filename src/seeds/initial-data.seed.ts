@@ -4,6 +4,7 @@ import { Post } from '../entities/post.entity';
 import { Comment } from '../entities/comment.entity';
 import { PostLike } from '../entities/post-like.entity';
 import { BusinessContact } from '../entities/business-contact.entity';
+import { BusinessProfile } from '../entities/business-profile.entity';
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt'; // bcrypt 임포트
 import fetch from 'node-fetch';
@@ -16,7 +17,7 @@ export const seedInitialData = async (dataSource: DataSource) => {
   const commentRepository = dataSource.getRepository(Comment);
   const postLikeRepository = dataSource.getRepository(PostLike);
   const businessContactRepository = dataSource.getRepository(BusinessContact);
-
+  const businessProfileRepository = dataSource.getRepository(BusinessProfile);
 
   const hashedPassword = await bcrypt.hash('password123', 10); // 10은 salt rounds
   // 랜덤 사용자 생성
@@ -27,6 +28,18 @@ export const seedInitialData = async (dataSource: DataSource) => {
       name: faker.person.fullName(),
     });
     await userRepository.save(user);
+
+    // 비즈니스 프로필 생성
+    const profile = businessProfileRepository.create({
+      userAccount: user,
+      company: faker.company.name(),
+      department: faker.commerce.department(),
+      position: faker.person.jobTitle(),
+      email: faker.internet.email(),
+      phone: faker.phone.number(),
+    });
+    await businessProfileRepository.save(profile);
+
     return user;
   };
 
