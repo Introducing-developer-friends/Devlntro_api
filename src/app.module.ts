@@ -10,6 +10,7 @@ import { FeedModule } from './feed/feed.module';
 import { PostModule } from './post/post.module'
 import { CommentModule } from './comment/comment.module'
 import { ContactsModule } from './contacts/contacts.module'
+import { UserModule } from './user/user.module'
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 @Module({
@@ -42,6 +43,7 @@ import { join } from 'path';
     PostModule,
     CommentModule,
     ContactsModule,
+    UserModule,
   ],
   controllers: [AppController, SampleController],
   providers: [AppService],
