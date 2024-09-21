@@ -30,12 +30,25 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
-    // 사용자의 프로필이 없으면 새로운 프로필을 생성, 있으면 업데이트
-    if (!user.profile) {
-      user.profile = this.businessProfileRepository.create(updateProfileDto);
-    } else {
-      Object.assign(user.profile, updateProfileDto);
-    }
+    // UserAccount 업데이트 (이름 필드만)
+    if (updateProfileDto.name) {
+        user.name = updateProfileDto.name;
+        await this.userAccountRepository.save(user);
+      }
+  
+      // BusinessProfile 업데이트
+      if (!user.profile) {
+        const newProfile = this.businessProfileRepository.create({
+          ...updateProfileDto,
+          userAccount: user
+        });
+        await this.businessProfileRepository.save(newProfile);
+      } else {
+        // 이름 필드를 제외한 나머지 필드만 업데이트
+        const { name, ...profileUpdateData } = updateProfileDto;
+        Object.assign(user.profile, profileUpdateData);
+        await this.businessProfileRepository.save(user.profile);
+      }
 
     // 변경된 사용자 정보를 저장
     await this.userAccountRepository.save(user);
