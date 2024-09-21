@@ -10,6 +10,8 @@ import { FeedModule } from './feed/feed.module';
 import { PostModule } from './post/post.module'
 import { CommentModule } from './comment/comment.module'
 import { ContactsModule } from './contacts/contacts.module'
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 @Module({
   imports: [
     ConfigModule.forRoot(),
@@ -30,6 +32,10 @@ import { ContactsModule } from './contacts/contacts.module'
         const dataSource = await new DataSource(options).initialize();
         return dataSource;
       },
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', '..', 'uploads'),
+      serveRoot: '/posts/images/',
     }),
     AuthModule,
     FeedModule,
