@@ -6,6 +6,7 @@ import { UserAccount } from '../entities/user-account.entity';
 import { BusinessProfile } from '../entities/business-profile.entity';
 import { UpdateBusinessProfileDto } from './dto/update-business-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { DeleteAccountDto } from './dto/delete-account.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -87,4 +88,27 @@ export class UserService {
       message: "비밀번호가 성공적으로 변경되었습니다." // 성공 메시지 반환
     };
   }
+
+  async deleteAccount(userId: number, deleteAccountDto: DeleteAccountDto) {
+    const user = await this.userAccountRepository.findOne({ where: { user_id: userId } });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(deleteAccountDto.password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('비밀번호가 올바르지 않습니다.');
+    }
+
+    // 소프트 삭제 실행
+    await this.userAccountRepository.softDelete(userId);
+
+    return {
+      statusCode: 200,
+      message: "회원 탈퇴가 성공적으로 처리되었습니다."
+    };
+  }
+
+
 }

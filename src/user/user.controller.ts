@@ -1,9 +1,10 @@
 // user.controller.ts
-import { Controller, Put, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Put, Delete, Body, UseGuards, Request } from '@nestjs/common';
 import { UserService } from './user.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UpdateBusinessProfileDto } from './dto/update-business-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { DeleteAccountDto } from './dto/delete-account.dto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('users')
@@ -31,4 +32,14 @@ export class UserController {
     // JWT 가드를 통해 인증된 사용자 정보(req.user.userId)를 사용하여 비밀번호 변경
     return this.userService.changePassword(req.user.userId, changePasswordDto);
   }
+
+  @Delete('password')
+  @ApiOperation({ summary: '회원 탈퇴' })
+  @ApiResponse({ status: 200, description: '회원 탈퇴가 성공적으로 처리되었습니다.' })
+  @ApiResponse({ status: 400, description: '회원 탈퇴 처리 중 오류가 발생했습니다.' })
+  @ApiResponse({ status: 401, description: '비밀번호가 올바르지 않습니다.' })
+  async deleteAccount(@Request() req, @Body() deleteAccountDto: DeleteAccountDto) {
+    return this.userService.deleteAccount(req.user.userId, deleteAccountDto);
+  }
+
 }
