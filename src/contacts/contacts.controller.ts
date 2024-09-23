@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, UseGuards, Request, BadRequestException, NotFoundException, ConflictException  } from '@nestjs/common';
 import { ContactsService } from './contacts.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateContactDto } from './dto/create-contact.dto';
@@ -52,18 +52,74 @@ export class ContactsController {
   }
 
   @Post()
-  @ApiOperation({ summary: '인맥 추가 (명함 추가)' })
+  @ApiOperation({ summary: '인맥 추가 요청' })
   @ApiResponse({ status: 201, description: '인맥이 성공적으로 추가되었습니다.' })
   @ApiResponse({ status: 400, description: '유효하지 않은 사용자 ID입니다.' })
   @ApiResponse({ status: 409, description: '이미 인맥으로 등록된 사용자입니다.' })
-  async addContact(@Request() req, @Body() createContactDto: CreateContactDto) {
+  async addContactRequest(@Request() req, @Body() createContactDto: CreateContactDto) {
     try {
-      return await this.contactsService.addContact(req.user.userId, createContactDto.login_id);
+      return await this.contactsService.addContactRequest(req.user.userId, createContactDto.login_id);
     } catch (error) {
-      if (error instanceof BadRequestException) {
-        throw new BadRequestException(error.message);
+      if (error instanceof BadRequestException || error instanceof ConflictException) {
+        throw error;
       }
-      throw error;
+      throw new BadRequestException('요청 처리 중 오류가 발생했습니다.');
+    }
+  }
+
+  @Post('accept/:requestId')
+  @ApiOperation({ summary: '인맥 요청 수락' })
+  @ApiResponse({ status: 200, description: '인맥 요청이 수락되었습니다.' })
+  @ApiResponse({ status: 400, description: '유효하지 않은 요청입니다.' })
+  @ApiResponse({ status: 404, description: '해당 인맥 요청을 찾을 수 없습니다.' })
+  async acceptContactRequest(@Request() req, @Param('requestId') requestId: number) {
+    try {
+      return await this.contactsService.acceptContactRequest(req.user.userId, requestId);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException('유효하지 않은 요청입니다.');
+    }
+  }
+
+  @Post('reject/:requestId')
+  @ApiOperation({ summary: '인맥 요청 거절' })
+  @ApiResponse({ status: 200, description: '인맥 요청이 거절되었습니다.' })
+  @ApiResponse({ status: 400, description: '유효하지 않은 요청입니다.' })
+  @ApiResponse({ status: 404, description: '해당 인맥 요청을 찾을 수 없습니다.' })
+  async rejectContactRequest(@Request() req, @Param('requestId') requestId: number) {
+    try {
+      return await this.contactsService.rejectContactRequest(req.user.userId, requestId);
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException('유효하지 않은 요청입니다.');
+    }
+  }
+
+  @Get('requests/received')
+  @ApiOperation({ summary: '받은 인맥 요청 목록 조회' })
+  @ApiResponse({ status: 200, description: '받은 인맥 요청 목록을 성공적으로 조회했습니다.' })
+  @ApiResponse({ status: 400, description: '요청 처리 중 오류가 발생했습니다.' })
+  async getReceivedRequests(@Request() req) {
+    try {
+      return await this.contactsService.getReceivedRequests(req.user.userId);
+    } catch (error) {
+      throw new BadRequestException('요청 처리 중 오류가 발생했습니다.');
+    }
+  }
+
+  @Get('requests/sent')
+  @ApiOperation({ summary: '보낸 인맥 요청 목록 조회' })
+  @ApiResponse({ status: 200, description: '보낸 인맥 요청 목록을 성공적으로 조회했습니다.' })
+  @ApiResponse({ status: 400, description: '요청 처리 중 오류가 발생했습니다.' })
+  async getSentRequests(@Request() req) {
+    try {
+      return await this.contactsService.getSentRequests(req.user.userId);
+    } catch (error) {
+      throw new BadRequestException('요청 처리 중 오류가 발생했습니다.');
     }
   }
 
