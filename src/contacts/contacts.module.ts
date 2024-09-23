@@ -5,9 +5,10 @@ import { ContactsService } from './contacts.service';
 import { BusinessContact } from '../entities/business-contact.entity';
 import { UserAccount } from '../entities/user-account.entity';
 import { BusinessProfile } from '../entities/business-profile.entity';
+import { FriendRequest } from '../entities/friend-request.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([BusinessContact, UserAccount, BusinessProfile])],
+  imports: [TypeOrmModule.forFeature([BusinessContact, UserAccount, BusinessProfile, FriendRequest])],
   controllers: [ContactsController],
   providers: [ContactsService],
 })

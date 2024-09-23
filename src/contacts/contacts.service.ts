@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { BusinessContact } from '../entities/business-contact.entity';
 import { UserAccount } from '../entities/user-account.entity';
 import { BusinessProfile } from '../entities/business-profile.entity';
+import { FriendRequest } from '../entities/friend-request.entity';
 
 @Injectable()
 export class ContactsService {
@@ -14,6 +15,8 @@ export class ContactsService {
     private userRepository: Repository<UserAccount>,
     @InjectRepository(BusinessProfile)
     private profileRepository: Repository<BusinessProfile>,
+    @InjectRepository(FriendRequest)
+    private friendRequestRepository: Repository<FriendRequest>,
   ) {}
 
   // 사용자의 인맥 목록을 조회하는 메서드
@@ -80,28 +83,39 @@ export class ContactsService {
     };
   }
 
-  // 새로운 인맥을 추가하는 메서드
-  async addContact(userId: number, contactLoginId: string) {
 
-    // 현재 사용자와 추가하려는 인맥의 사용자 정보를 조회
+  
+
+  // 새로운 인맥을 추가하는 메서드
+  async addContactRequest(userId: number, contactLoginId: string) {
+    // 요청을 보낸 사용자와 요청을 받는 사용자를 데이터베이스에서 조회.
     const user = await this.userRepository.findOne({ where: { user_id: userId } });
     const contactUser = await this.userRepository.findOne({ where: { login_id: contactLoginId } });
 
-    // 현재 사용자가 존재하지 않는 경우 예외 처리
-    if (!user) {
-      throw new BadRequestException('인증된 사용자를 찾을 수 없습니다.');
+    // 사용자 또는 요청 대상 사용자가 존재하지 않을 경우 예외를 발생.
+    if (!user || !contactUser) {
+      throw new BadRequestException('대상 사용자를 찾을 수 없습니다.');
     }
 
-    // 추가하려는 인맥이 존재하지 않는 경우 예외 처리
-    if (!contactUser) {
-      throw new BadRequestException('추가하려는 사용자를 찾을 수 없습니다.');
-    }
-
+    // 사용자가 자기 자신에게 인맥 요청을 보낼 수 없도록 예외를 발생.
     if (user.user_id === contactUser.user_id) {
-      throw new BadRequestException('자기 자신을 인맥으로 추가할 수 없습니다.');
+      throw new BadRequestException('자기 자신에게 요청을 보낼 수 없습니다.');
     }
 
-    // 이미 인맥으로 등록된 사용자인지 확인
+    // 이미 동일한 인맥 요청이 존재하는지 확인.
+    const existingRequest = await this.friendRequestRepository.findOne({
+      where: [
+        { sender: { user_id: userId }, receiver: { user_id: contactUser.user_id }, status: 'pending' },
+        { sender: { user_id: contactUser.user_id }, receiver: { user_id: userId }, status: 'pending' }
+      ]
+    });
+
+    // 이미 요청이 존재할 경우 예외를 발생시킵니다.
+    if (existingRequest) {
+      throw new ConflictException('이미 인맥 요청을 보냈거나 받았습니다.');
+    }
+
+    // 이미 인맥 관계가 존재하는지 확인.
     const existingContact = await this.contactRepository.findOne({
       where: { 
         userAccount: { user_id: userId },
@@ -109,25 +123,126 @@ export class ContactsService {
       },
     });
 
-    // 이미 인맥으로 등록된 경우 예외 처리
+    // 이미 인맥 관계가 존재할 경우 예외를 발생.
     if (existingContact) {
-      throw new ConflictException('이미 인맥으로 등록된 사용자입니다.');
+      throw new ConflictException('이미 인맥 관계가 존재합니다.');
     }
 
-    // 새로운 인맥 관계 생성
-    const newContact = this.contactRepository.create({
-      userAccount: user,
-      contact_user: contactUser,
+    // 새로운 인맥 요청을 생성하고 저장.
+    const newRequest = this.friendRequestRepository.create({
+      sender: user,
+      receiver: contactUser,
+      status: 'pending'
     });
 
-    // 데이터베이스에 새로운 인맥 관계 저장
-    await this.contactRepository.save(newContact);
+    await this.friendRequestRepository.save(newRequest);
 
-    // 성공 응답 반환
+    // 성공적으로 요청이 추가되었음을 반환.
     return {
       statusCode: 201,
-      message: '인맥이 성공적으로 추가되었습니다.',
-      contactId: newContact.contact_id,
+      message: '인맥 요청이 성공적으로 추가되었습니다.',
+      requestId: newRequest.request_id,
+    };
+  }
+
+  // 인맥 요청을 수락하는 메서드
+  async acceptContactRequest(userId: number, requestId: number) {
+    // 해당 요청이 존재하는지 확인.
+    const request = await this.friendRequestRepository.findOne({
+      where: { request_id: requestId, receiver: { user_id: userId }, status: 'pending' },
+      relations: ['sender', 'receiver']
+    });
+
+    // 요청을 찾지 못했을 경우 예외를 발생.
+    if (!request) {
+      throw new NotFoundException('해당 인맥 요청을 찾을 수 없습니다.');
+    }
+
+    // 요청 상태를 수락으로 변경하고 저장.
+    request.status = 'accepted';
+    await this.friendRequestRepository.save(request);
+
+    // 수락된 요청을 기반으로 새로운 인맥 관계를 생성
+    const newContact = this.contactRepository.create({
+      userAccount: request.receiver,
+      contact_user: request.sender
+    });
+
+    await this.contactRepository.save(newContact);
+
+    // 성공적으로 요청이 수락되었음을 반환
+    return {
+      statusCode: 200,
+      message: '인맥 요청이 수락되었습니다.',
+      contactId: newContact.contact_id
+    };
+  }
+
+  // 인맥 요청을 거절하는 메서드
+  async rejectContactRequest(userId: number, requestId: number) {
+
+    // 해당 요청이 존재하는지 확인
+    const request = await this.friendRequestRepository.findOne({
+      where: { request_id: requestId, receiver: { user_id: userId }, status: 'pending' }
+    });
+
+    // 요청을 찾지 못했을 경우 예외를 발생
+    if (!request) {
+      throw new NotFoundException('해당 인맥 요청을 찾을 수 없습니다.');
+    }
+
+    // 요청 상태를 거절로 변경하고 저장
+    request.status = 'rejected';
+    await this.friendRequestRepository.save(request);
+
+    // 성공적으로 요청이 거절되었음을 반환
+    return {
+      statusCode: 200,
+      message: '인맥 요청이 거절되었습니다.'
+    };
+  }
+
+  // 받은 인맥 요청 목록을 조회하는 메서드
+  async getReceivedRequests(userId: number) {
+    
+    // 사용자가 받은 대기 중인 인맥 요청들을 조회
+    const requests = await this.friendRequestRepository.find({
+      where: { receiver: { user_id: userId }, status: 'pending' },
+      relations: ['sender']
+    });
+
+    // 조회된 요청 목록을 반환
+    return {
+      statusCode: 200,
+      message: '받은 인맥 요청 목록을 성공적으로 조회했습니다.',
+      requests: requests.map(req => ({
+        requestId: req.request_id,
+        senderLoginId: req.sender.login_id,
+        senderName: req.sender.name,
+        requestedAt: req.created_at
+      }))
+    };
+  }
+
+  // 보낸 인맥 요청 목록을 조회하는 메서드
+  async getSentRequests(userId: number) {
+
+    // 사용자가 보낸 대기 중인 인맥 요청들을 조회합니다.
+    const requests = await this.friendRequestRepository.find({
+      where: { sender: { user_id: userId }, status: 'pending' },
+      relations: ['receiver']
+    });
+
+    // 조회된 요청 목록을 반환
+    return {
+      statusCode: 200,
+      message: '보낸 인맥 요청 목록을 성공적으로 조회했습니다.',
+      requests: requests.map(req => ({
+        requestId: req.request_id,
+        receiverLoginId: req.receiver.login_id,
+        receiverName: req.receiver.name,
+        requestedAt: req.created_at
+      }))
     };
   }
 
