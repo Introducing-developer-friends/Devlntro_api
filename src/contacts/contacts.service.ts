@@ -27,6 +27,7 @@ export class ContactsService {
     const contacts = await this.contactRepository.find({
         where: { 
             userAccount: { user_id: userId },
+            contact_user: { deletedAt: null },
             deleted_at: null // 삭제되지 않은 레코드만 조회
           },
       relations: ['contact_user', 'contact_user.profile'],
@@ -57,7 +58,7 @@ export class ContactsService {
     const contact = await this.contactRepository.findOne({
       where: { 
         userAccount: { user_id: userId },
-        contact_user: { user_id: contactUserId }
+        contact_user: { user_id: contactUserId, deletedAt: null }
       },
       relations: ['contact_user', 'contact_user.profile'],
     });
@@ -89,8 +90,8 @@ export class ContactsService {
   // 새로운 인맥을 추가하는 메서드
   async addContactRequest(userId: number, contactLoginId: string) {
     // 요청을 보낸 사용자와 요청을 받는 사용자를 데이터베이스에서 조회.
-    const user = await this.userRepository.findOne({ where: { user_id: userId } });
-    const contactUser = await this.userRepository.findOne({ where: { login_id: contactLoginId } });
+    const user = await this.userRepository.findOne({ where: { user_id: userId, deletedAt: null } });
+    const contactUser = await this.userRepository.findOne({ where: { login_id: contactLoginId, deletedAt: null } });
 
     // 사용자 또는 요청 대상 사용자가 존재하지 않을 경우 예외를 발생.
     if (!user || !contactUser) {
@@ -149,7 +150,12 @@ export class ContactsService {
   async acceptContactRequest(userId: number, requestId: number) {
     // 해당 요청이 존재하는지 확인.
     const request = await this.friendRequestRepository.findOne({
-      where: { request_id: requestId, receiver: { user_id: userId }, status: 'pending' },
+      where: { 
+        request_id: requestId, 
+        receiver: { user_id: userId, deletedAt: null },
+        sender: { deletedAt: null },
+        status: 'pending' 
+      },
       relations: ['sender', 'receiver']
     });
 
@@ -183,7 +189,12 @@ export class ContactsService {
 
     // 해당 요청이 존재하는지 확인
     const request = await this.friendRequestRepository.findOne({
-      where: { request_id: requestId, receiver: { user_id: userId }, status: 'pending' }
+      where: { 
+        request_id: requestId, 
+        receiver: { user_id: userId, deletedAt: null },
+        sender: { deletedAt: null },
+        status: 'pending' 
+      }
     });
 
     // 요청을 찾지 못했을 경우 예외를 발생
@@ -207,7 +218,11 @@ export class ContactsService {
     
     // 사용자가 받은 대기 중인 인맥 요청들을 조회
     const requests = await this.friendRequestRepository.find({
-      where: { receiver: { user_id: userId }, status: 'pending' },
+      where: { 
+        receiver: { user_id: userId, deletedAt: null },
+        sender: { deletedAt: null },
+        status: 'pending' 
+      },
       relations: ['sender']
     });
 
@@ -229,7 +244,11 @@ export class ContactsService {
 
     // 사용자가 보낸 대기 중인 인맥 요청들을 조회합니다.
     const requests = await this.friendRequestRepository.find({
-      where: { sender: { user_id: userId }, status: 'pending' },
+      where: { 
+        sender: { user_id: userId, deletedAt: null },
+        receiver: { deletedAt: null },
+        status: 'pending' 
+      },
       relations: ['receiver']
     });
 
