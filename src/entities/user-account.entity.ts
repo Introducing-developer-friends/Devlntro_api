@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany, DeleteDateColumn  } from 'typeorm';
 import { BusinessProfile } from './business-profile.entity';
 import { BusinessContact } from './business-contact.entity';
 import { Post } from './post.entity';
@@ -22,6 +22,9 @@ export class UserAccount {
 
   @Column()
   name: string;
+
+  @DeleteDateColumn()
+  deletedAt: Date;
 
   @OneToOne(() => BusinessProfile, businessContact => businessContact.userAccount) // 비즈니스 프로필과의 1:1 관계
   profile: BusinessProfile;
