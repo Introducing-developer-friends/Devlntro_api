@@ -30,19 +30,26 @@ export class AuthService {
 
   // 회원가입 로직
   async register(createUserDto: CreateUserDto) {
-    const { login_id, password, name, ...profileData } = createUserDto; // DTO로 받은 데이터에서 필요한 부분만 추출
+    const { login_id, password, confirm_password, name, ...profileData } = createUserDto; // DTO로 받은 데이터에서 필요한 부분만 추출
     
+    // 비밀번호와 확인 비밀번호 일치 여부 확인
+  if (password !== confirm_password) {
+    throw new BadRequestException('비밀번호와 확인 비밀번호가 일치하지 않습니다.');
+  }
+
     // 이미 존재하는 아이디 체크
     const existingUser = await this.userRepository.findOne({ where: { login_id } });
     if (existingUser) {
       throw new BadRequestException('이미 존재하는 아이디입니다.');
     }
+
     try{
     const hashedPassword = await bcrypt.hash(password, 10); // 비밀번호 해싱
 
     const user = this.userRepository.create({
       login_id,
       password: hashedPassword, // 해싱된 비밀번호 저장
+      confirm_password: hashedPassword,
       name,
     });
     

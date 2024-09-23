@@ -17,6 +17,9 @@ export class UserAccount {
   password: string;
 
   @Column()
+  confirm_password: string;
+
+  @Column()
   name: string;
 
   @OneToOne(() => BusinessProfile, businessContact => businessContact.userAccount) // 비즈니스 프로필과의 1:1 관계

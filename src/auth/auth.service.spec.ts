@@ -64,6 +64,7 @@ describe('AuthService', () => {
     const result = await service.register({
       login_id: 'test',
       password: 'password',
+      confirm_password: 'password123',
       name: 'Test User',
       company: 'Test Company',
       department: 'Test Dept',

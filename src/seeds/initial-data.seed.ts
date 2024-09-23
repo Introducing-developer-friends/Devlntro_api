@@ -25,6 +25,7 @@ export const seedInitialData = async (dataSource: DataSource) => {
     const user = userRepository.create({
       login_id: faker.internet.userName(),
       password: hashedPassword, // 실제 사용 시 해시 적용 필요
+      confirm_password: hashedPassword,
       name: faker.person.fullName(),
     });
     await userRepository.save(user);
