@@ -4,7 +4,7 @@ import { BusinessContact } from './business-contact.entity';
 import { Post } from './post.entity';
 import { Comment } from './comment.entity';
 import { PostLike } from './post-like.entity';
-import { FriendRequest } from './firend-Request.entity';
+import { FriendRequest } from './friend-request.entity';
 
 @Entity()
 export class UserAccount {
@@ -41,7 +41,7 @@ export class UserAccount {
   @OneToMany(() => PostLike, postLike => postLike.userAccount)
   postLikes: PostLike[];
 
-  
+
   @OneToMany(() => FriendRequest, request => request.sender)
   sentFriendRequests: FriendRequest[];
 
