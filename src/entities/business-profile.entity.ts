@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
 import { UserAccount } from './user-account.entity';
 
+// BusinessProfile 엔티티는 사용자의 비즈니스 프로필 정보를 나타냅니다.
 @Entity()
 export class BusinessProfile {
   @PrimaryGeneratedColumn() // 프로필 고유 ID
