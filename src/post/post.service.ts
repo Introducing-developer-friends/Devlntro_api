@@ -5,18 +5,18 @@ import { Post } from '../entities/post.entity';
 import { PostLike } from '../entities/post-like.entity';
 import { CreatePostDto, UpdatePostDto } from './dto/post.dto';
 import * as fs from 'fs';
-import * as path from 'path';
 
 
 @Injectable()
 export class PostService {
   constructor(
     @InjectRepository(Post)
-    private postRepository: Repository<Post>,
+    private postRepository: Repository<Post>, // Post 엔티티에 대한 TypeORM 리포지토리 주입
     @InjectRepository(PostLike)
-    private postLikeRepository: Repository<PostLike>,
+    private postLikeRepository: Repository<PostLike>, // PostLike 엔티티에 대한 TypeORM 리포지토리 주입
   ) {}
 
+  // 새 게시물 생성
   async createPost(userId: number, createPostDto: CreatePostDto, file?: Express.Multer.File) {
     let filepath = null;
 

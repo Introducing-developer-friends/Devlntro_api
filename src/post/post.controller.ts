@@ -37,9 +37,9 @@ export class PostController {
       }),
       fileFilter: (req, file, cb) => {
         if (file.mimetype.match(/\/(jpg|jpeg|png|gif)$/)) {
-          cb(null, true);
+          cb(null, true); // 이미지 파일 형식만 허용
         } else {
-          cb(new Error('지원되지 않는 파일 형식입니다.'), false);
+          cb(new Error('지원되지 않는 파일 형식입니다.'), false); // 허용되지 않는 파일 형식인 경우 에러 반환
         }
       },
     }),
