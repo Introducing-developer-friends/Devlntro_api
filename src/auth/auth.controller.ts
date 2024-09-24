@@ -3,7 +3,24 @@ import { AuthService } from './auth.service'; // AuthService 사용
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger'; // Swagger 데코레이터 추가
+// 응답 타입 정의
+type CheckIdResponse = {
+  statusCode: number;
+  message: string;
+};
 
+type RegisterResponse = {
+  statusCode: number;
+  message: string;
+  userId: number;
+};
+
+type LoginResponse = {
+  statusCode: number;
+  message: string;
+  token: string;
+  userId: number;
+};
 @ApiTags('auth') // Swagger 태그 추가
 @Controller('auth') // /auth 경로로 라우팅
 export class AuthController {
@@ -20,7 +37,7 @@ export class AuthController {
   }) // 500 응답 설명
   // 아이디 중복 확인 API (가드 적용 안 함)
   @Get('check-id/:login_id')
-  async checkId(@Param('login_id') login_id: string) {
+  async checkId(@Param('login_id') login_id: string) : Promise<CheckIdResponse> {
     const result = await this.authService.checkIdAvailability(login_id);
     return {
       statusCode: 200,
@@ -43,7 +60,7 @@ export class AuthController {
   }) // 500 응답 설명
   // 회원가입 API (가드 적용 안 함)
   @Post('register')
-  async register(@Body() createUserDto: CreateUserDto) {
+  async register(@Body() createUserDto: CreateUserDto): Promise<RegisterResponse> {
     try {
       const result = await this.authService.register(createUserDto);
       return {
@@ -71,7 +88,7 @@ export class AuthController {
   }) // 500 응답 설명
   // 로그인 API (가드 적용 안 함)
   @Post('login') // /auth/login 경로로 POST 요청을 받음
-  async login(@Body() loginDto: LoginDto) {
+  async login(@Body() loginDto: LoginDto): Promise<LoginResponse> {
     const result = await this.authService.login(loginDto);
     if (!result) {
       throw new UnauthorizedException('아이디 또는 비밀번호가 잘못되었습니다.');
