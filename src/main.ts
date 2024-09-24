@@ -3,7 +3,6 @@ import { AppModule } from './app.module';
 import { seedInitialData } from './seeds/initial-data.seed';
 import { DataSource } from 'typeorm';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-// import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { ValidationPipe } from '@nestjs/common'; // 유효성 검사 파이프 추가
 import { HttpExceptionFilter } from './common/filters/http-exception.filter'; // 전역 에러 필터 추가
 
@@ -22,8 +21,6 @@ async function bootstrap() {
   // 전역 유효성 검사 파이프 설정
   app.useGlobalPipes(new ValidationPipe());
 
-  // 전역으로 JWT 인증 가드 설정
-  // app.useGlobalGuards(new JwtAuthGuard());
 
   // 전역 에러 필터 설정
   app.useGlobalFilters(new HttpExceptionFilter());
