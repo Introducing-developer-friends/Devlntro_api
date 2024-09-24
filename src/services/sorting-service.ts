@@ -3,6 +3,14 @@ import { SortOption } from '../dto/feed-query.dto';
 
 @Injectable()
 export class SortingService {
+  /**
+   * 게시물 리스트를 정렬하는 메서드
+   * 
+   * @param posts - 정렬할 게시물 리스트
+   * @param sortOption - 정렬 옵션 (LIKES, COMMENTS, LATEST)
+   * @returns 정렬된 게시물 리스트
+   */
+  
   sortPosts(posts: any[], sortOption: SortOption) {
     switch (sortOption) {
       case SortOption.LIKES:
