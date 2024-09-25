@@ -29,7 +29,7 @@ import { join } from 'path';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'], // 엔티티 경로 설정
-        synchronize: false, // 애플리케이션 시작 시 데이터베이스 스키마를 자동으로 동기화할지 여부 (운영 환경에서는 false 권장)
+        synchronize: true, // 애플리케이션 시작 시 데이터베이스 스키마를 자동으로 동기화할지 여부 (운영 환경에서는 false 권장)
       }),
       inject: [ConfigService], // ConfigService를 의존성 주입하여 설정값을 사용
 
