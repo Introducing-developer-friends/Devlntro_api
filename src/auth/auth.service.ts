@@ -29,7 +29,7 @@ export class AuthService {
   }
 
   // 회원가입 로직
-  async register(createUserDto: CreateUserDto) {
+  async register(createUserDto: CreateUserDto): Promise<{ userId: number; message: string }> {
     const { login_id, password, confirm_password, name, ...profileData } = createUserDto; // DTO로 받은 데이터에서 필요한 부분만 추출
     
     // 비밀번호와 확인 비밀번호 일치 여부 확인
@@ -68,7 +68,7 @@ export class AuthService {
 }
 
   // 로그인 로직
-async login(loginDto: LoginDto) {
+async login(loginDto: LoginDto): Promise<{ token: string; userId: number } | null> {
     // 사용자 조회
     const user = await this.userRepository.findOne({ where: { login_id: loginDto.login_id } });
   
