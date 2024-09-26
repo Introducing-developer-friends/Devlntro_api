@@ -1,0 +1,48 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ devlop ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v2
+      with:
+        context: .
+        push: true
+        tags: kimdoyeon3/dev_intro:${{ github.sha }}
+
+    - name: Deploy to EC2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          docker pull kimdoyeon3/dev_intro:${{ github.sha }}
+          docker stop dev_intro_container || true
+          docker rm dev_intro_container || true
+          docker run -d -p 3000:3000 \
+          -e DB_HOST=${{ secrets.DB_HOST }} \
+          -e DB_PORT=${{ secrets.DB_PORT }} \
+          -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
+          -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+          -e DB_DATABASE=${{ secrets.DB_DATABASE }} \
+          -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+          -e JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }} \
+          -e NODE_ENV=production \
+          --name dev_intro_container kimdoyeon3/dev_intro:${{ github.sha }}
