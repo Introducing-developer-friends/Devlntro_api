@@ -13,8 +13,6 @@ RUN npm install
 # 소스 코드 복사
 COPY . .
 
-# 환경 변수 파일 복사
-COPY .env .env
 
 # TypeScript 컴파일 (빌드 과정 로그 출력)
 RUN npm run build && ls -la /app/dist
