@@ -40,10 +40,9 @@ import { join } from 'path';
       },
     }),
 
-    // 정적 파일을 제공하는 ServeStaticModule 설정
     ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', 'uploads'),
-      serveRoot: '/posts/images/',
+      rootPath: join(__dirname, '..', 'uploads'),
+      serveRoot: '/uploads/',
     }),
 
     // 애플리케이션에 필요한 다양한 모듈을 임포트하여 의존성을 관리

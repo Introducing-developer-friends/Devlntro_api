@@ -66,23 +66,21 @@ export const seedInitialData = async (dataSource: DataSource) => {
     }
   }
   // 이미지 다운로드 및 저장 함수
-  const downloadImage = async (url: string, filename: string) => {
-    const response = await fetch(url);
+  const downloadImage = async () => {
+    const response = await fetch('https://loremflickr.com/320/240');
     const buffer = await response.buffer();
-    const filePath = path.join('uploads', filename); // path.join을 사용해 파일 경로 생성
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const filename = `image-${uniqueSuffix}.png`;
+    const filePath = path.join('uploads', filename);
     fs.writeFileSync(filePath, buffer);
-    return filePath;
+    return `uploads\\${filename}`; // Windows 스타일 경로 반환
   };
 
   // 사용자당 랜덤 게시물 1개 생성
   for (const user of users) {
     const postCount = 1;
     for (let j = 0; j < postCount; j++) {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const filename = `post-${uniqueSuffix}.jpg`;
-      const imageUrl = 'https://loremflickr.com/320/240'; // 더미 이미지 URL
-      const savedImagePath = await downloadImage(imageUrl, filename);
-      
+      const savedImagePath = await downloadImage();
 
       const post = postRepository.create({
         user,
@@ -93,7 +91,7 @@ export const seedInitialData = async (dataSource: DataSource) => {
         comments_count: faker.number.int({ min: 0, max: 5 }),
       });
       await postRepository.save(post);
-      console.log(`Post for user ${user.login_id} created`);
+      console.log(`Post for user ${user.login_id} created with image: ${savedImagePath}`);
 
       // 랜덤 댓글 생성
       const commentCount = faker.number.int({ min: 0, max: 5 });
