@@ -51,42 +51,40 @@ export class ContactsService {
     };
   }
 
-  // 특정 인맥의 상세 정보를 조회하는 메서드
-  async getContactDetail(userId: number, contactUserId: number) {
-
-    // userId에 해당하는 사용자의 특정 인맥(contactUserId)을 조회
-    const contact = await this.contactRepository.findOne({
-      where: { 
-        userAccount: { user_id: userId },
-        contact_user: { user_id: contactUserId, deletedAt: null }
-      },
-      relations: ['contact_user', 'contact_user.profile'],
-    });
-
-    // 해당 인맥이 없는 경우 예외 처리
-    if (!contact) {
-      throw new NotFoundException('해당 사용자의 명함을 찾을 수 없습니다.');
-    }
-
-    // 조회된 인맥의 상세 정보를 반환
-    return {
-      statusCode: 200,
-      message: '명함 상세 정보를 성공적으로 조회했습니다.',
-      contact: {
-        userId: contact.contact_user.user_id,
-        name: contact.contact_user.name,
-        company: contact.contact_user.profile.company,
-        department: contact.contact_user.profile.department,
-        position: contact.contact_user.profile.position,
-        email: contact.contact_user.profile.email,
-        phone: contact.contact_user.profile.phone,
-      },
-    };
-  }
-
-
+  // 특정 사용자의 명함 상세 정보를 조회하는 메서드
+  async getContactDetail(requesterId: number, targetUserId: number) {
+    try {
+      // targetUserId에 해당하는 사용자의 정보를 조회
+      const user = await this.userRepository.findOne({
+        where: { user_id: targetUserId },
+        relations: ['profile'], // 사용자와 연결된 profile 정보도 함께 조회
+      });
   
-
+      if (!user) {
+        console.log(`User not found for user_id: ${targetUserId}`);
+        throw new NotFoundException('사용자를 찾을 수 없습니다.'); // 사용자가 없으면 예외 발생
+      }
+      
+      // 명함 상세 정보를 반환 (profile이 없을 경우 기본값으로 N/A 사용)
+      return {
+        statusCode: 200,
+        message: '명함 상세 정보를 성공적으로 조회했습니다.',
+        contact: {
+          userId: user.user_id,
+          name: user.name,
+          company: user.profile?.company || 'N/A',
+          department: user.profile?.department || 'N/A',
+          position: user.profile?.position || 'N/A',
+          email: user.profile?.email || 'N/A',
+          phone: user.profile?.phone || 'N/A',
+        },
+      };
+    } catch (error) {
+      console.error('Error in getContactDetail:', error);
+      throw error;
+    }
+  }
+  
   // 새로운 인맥을 추가하는 메서드
   async addContactRequest(userId: number, contactLoginId: string) {
     // 요청을 보낸 사용자와 요청을 받는 사용자를 데이터베이스에서 조회.

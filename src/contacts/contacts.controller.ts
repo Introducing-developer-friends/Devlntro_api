@@ -41,21 +41,23 @@ export class ContactsController {
     }
   }
 
-  @Get(':userId')
-  @ApiOperation({ summary: '명함 상세 정보 조회' })
-  @ApiResponse({ status: 200, description: '명함 상세 정보를 성공적으로 조회했습니다.' })
-  @ApiResponse({ status: 400, description: '유효하지 않은 사용자 ID입니다.' })
+  @Get(':userId?')
+  @ApiOperation({ summary: '명함 상세 정보 조회' })  
+  @ApiResponse({ status: 200, description: '명함 상세 정보를 성공적으로 조회했습니다.' })  
+  @ApiResponse({ status: 400, description: '유효하지 않은 사용자 ID입니다.' })  
   @ApiResponse({ status: 404, description: '해당 사용자의 명함을 찾을 수 없습니다.' })
-  async getContactDetail(@Request() req: CustomRequest, @Param('userId') userId: number) {
-    try {
-      return await this.contactsService.getContactDetail(req.user.userId, userId);
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new NotFoundException(error.message);
-      }
-      throw new BadRequestException('유효하지 않은 사용자 ID입니다.');
+  async getContactDetail(@Request() req: CustomRequest, @Param('userId') userId?: number) {
+  try {
+    const targetUserId = userId || req.user.userId;
+    return await this.contactsService.getContactDetail(req.user.userId, targetUserId);
+  } catch (error) {
+    console.error('Error in getContactDetail:', error);
+    if (error instanceof NotFoundException) {
+      throw new NotFoundException(error.message);
     }
+    throw new BadRequestException('유효하지 않은 사용자 ID입니다.');
   }
+}
 
   @Post()
   @ApiOperation({ summary: '인맥 추가 요청' })
