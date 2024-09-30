@@ -45,4 +45,8 @@ jobs:
           -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
           -e JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }} \
           -e NODE_ENV=production \
+          -e AWS_REGION=${{ secrets.AWS_REGION }} \
+          -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
+          -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
+          -e AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }} \
           --name dev_intro_container kimdoyeon3/dev_intro:${{ github.sha }}
