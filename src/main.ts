@@ -13,7 +13,7 @@ async function bootstrap() {
 
   // CORS 설정
   app.enableCors({
-    origin: 'http://localhost:5173', // 클라이언트의 URL을 명시
+    origin: ['http://localhost:5173', 'http://devintro.s3-website.ap-northeast-2.amazonaws.com'], // 클라이언트의 URL을 명시
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true, // 쿠키와 인증 헤더 사용 시 true로 설정
   });
