@@ -11,8 +11,7 @@ import { PostModule } from './post/post.module'
 import { CommentModule } from './comment/comment.module'
 import { ContactsModule } from './contacts/contacts.module'
 import { UserModule } from './user/user.module'
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
+import { S3Module } from './s3/s3.module';
 @Module({
   imports: [
     // 환경 변수 설정을 로드하는 모듈. 기본적으로 .env 파일을 읽어들임.
@@ -40,11 +39,6 @@ import { join } from 'path';
       },
     }),
 
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', 'uploads'),
-      serveRoot: '/uploads/',
-    }),
-
     // 애플리케이션에 필요한 다양한 모듈을 임포트하여 의존성을 관리
     AuthModule,
     FeedModule,
@@ -52,6 +46,7 @@ import { join } from 'path';
     CommentModule,
     ContactsModule,
     UserModule,
+    S3Module,
   ],
 
   // 이 모듈에서 사용할 컨트롤러를 정의
