@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
 import { CommentLike } from '../entities/comment-like.entity';
+import { Post } from '../entities/post.entity';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
 
 @Injectable()
@@ -11,27 +12,34 @@ export class CommentService {
     @InjectRepository(Comment)
     private commentRepository: Repository<Comment>, // Comment 엔티티를 위한 TypeORM 리포지토리 주입
     @InjectRepository(CommentLike)
-    private commentLikeRepository: Repository<CommentLike> // CommentLike 엔티티를 위한 TypeORM 리포지토리 주입
+    private commentLikeRepository: Repository<CommentLike>, // CommentLike 엔티티를 위한 TypeORM 리포지토리 주입
+    @InjectRepository(Post)
+    private postRepository: Repository<Post>
   ) {}
 
   // 댓글 생성 메서드
   async createComment(userId: number, postId: number, createCommentDto: CreateCommentDto) {
-    
-    // 새로운 댓글 엔티티 생성 및 데이터 설정
+    const post = await this.postRepository.findOne({ where: { post_id: postId } });
+    if (!post) {
+      throw new NotFoundException('게시물을 찾을 수 없습니다.');
+    }
+
     const comment = this.commentRepository.create({
       ...createCommentDto,
-      userAccount: { user_id: userId }, // 댓글 작성자 설정
-      post: { post_id: postId }, // 댓글이 속한 게시물 설정
+      userAccount: { user_id: userId },
+      post: { post_id: postId },
     });
 
-    // 생성된 댓글을 데이터베이스에 저장
     await this.commentRepository.save(comment);
 
-    // 성공 응답 반환
+    // 게시물의 댓글 수 업데이트
+    post.comments_count += 1;
+    await this.postRepository.save(post);
+
     return {
       statusCode: 201,
       message: '댓글이 성공적으로 작성되었습니다.',
-      commentId: comment.comment_id, // 생성된 댓글의 ID 반환
+      commentId: comment.comment_id,
     };
   }
 
@@ -59,19 +67,21 @@ export class CommentService {
   }
 
   async deleteComment(userId: number, postId: number, commentId: number) {
-    // 댓글 ID, 게시물 ID, 사용자 ID를 기반으로 댓글 조회
     const comment = await this.commentRepository.findOne({
       where: { comment_id: commentId, post: { post_id: postId }, userAccount: { user_id: userId } },
+      relations: ['post'],
     });
 
-    // 댓글이 존재하지 않을 경우 예외 처리
     if (!comment) {
       throw new NotFoundException('댓글을 찾을 수 없습니다.');
     }
 
     await this.commentRepository.softRemove(comment);
 
-    // 성공 응답 반환
+    // 게시물의 댓글 수 감소
+    comment.post.comments_count -= 1;
+    await this.postRepository.save(comment.post);
+
     return {
       statusCode: 200,
       message: '댓글이 성공적으로 삭제되었습니다.',
