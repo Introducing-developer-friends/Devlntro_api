@@ -24,8 +24,9 @@ export const seedInitialData = async (dataSource: DataSource) => {
 
   const hashedPassword = await bcrypt.hash('password123', 10);
 
-  // 랜덤 사용자 생성 함수
-  const createRandomUser = async () => {
+  // 3명의 사용자 생성
+  const users: UserAccount[] = [];
+  for (let i = 0; i < 3; i++) {
     const user = userRepository.create({
       login_id: faker.internet.userName(),
       password: hashedPassword,
@@ -44,28 +45,26 @@ export const seedInitialData = async (dataSource: DataSource) => {
     });
     await businessProfileRepository.save(profile);
 
-    return user;
-  };
-
-  // 4명의 사용자 생성
-  const users: UserAccount[] = [];
-  for (let i = 0; i < 4; i++) {
-    const user = await createRandomUser();
     users.push(user);
     console.log(`User ${user.login_id} created`);
   }
 
-  // 인맥 관계 생성 (각 사용자에게 2명의 인맥)
+  // 모든 사용자 간에 인맥 관계 생성
   for (let i = 0; i < users.length; i++) {
-    const contacts = users.filter((_, index) => index !== i);
-    for (let j = 0; j < 2; j++) {
-      const contactIndex = (i + j + 1) % users.length;
-      const businessContact = businessContactRepository.create({
+    for (let j = i + 1; j < users.length; j++) {
+      const businessContact1 = businessContactRepository.create({
         userAccount: users[i],
-        contact_user: contacts[j],
+        contact_user: users[j],
       });
-      await businessContactRepository.save(businessContact);
-      console.log(`Business contact relationship created: ${users[i].name} -> ${contacts[j].name}`);
+      await businessContactRepository.save(businessContact1);
+      console.log(`Business contact created: ${users[i].name} -> ${users[j].name}`);
+
+      const businessContact2 = businessContactRepository.create({
+        userAccount: users[j],
+        contact_user: users[i],
+      });
+      await businessContactRepository.save(businessContact2);
+      console.log(`Business contact created: ${users[j].name} -> ${users[i].name}`);
     }
   }
 
@@ -100,37 +99,39 @@ export const seedInitialData = async (dataSource: DataSource) => {
       image_url: imageUrl,
       content: faker.lorem.sentence(),
       created_at: faker.date.past(),
-      post_like_count: faker.number.int({ min: 0, max: 10 }),
-      comments_count: faker.number.int({ min: 0, max: 5 }),
+      post_like_count: 0,
+      comments_count: 0,
     });
     await postRepository.save(post);
     console.log(`Post for user ${user.login_id} created with image: ${imageUrl}`);
 
-    // 랜덤 댓글 생성
-    const commentCount = faker.number.int({ min: 0, max: 5 });
-    for (let k = 0; k < commentCount; k++) {
+    // 다른 사용자들이 이 게시물에 댓글과 좋아요 추가
+    for (const otherUser of users.filter(u => u.user_id !== user.user_id)) {
+      // 댓글 추가
       const comment = commentRepository.create({
         post,
-        userAccount: faker.helpers.arrayElement(users),
+        userAccount: otherUser,
         content: faker.lorem.sentence(),
         created_at: faker.date.past(),
-        like_count: faker.number.int({ min: 0, max: 5 }),
+        like_count: 0,
       });
       await commentRepository.save(comment);
-      console.log(`Comment for post ${post.post_id} created`);
-    }
+      post.comments_count += 1;
+      console.log(`Comment added by ${otherUser.login_id} to post ${post.post_id}`);
 
-    // 랜덤 좋아요 생성
-    const likeCount = faker.number.int({ min: 0, max: 5 });
-    for (let l = 0; l < likeCount; l++) {
+      // 좋아요 추가
       const postLike = postLikeRepository.create({
         post,
-        userAccount: faker.helpers.arrayElement(users),
+        userAccount: otherUser,
         created_at: faker.date.past(),
       });
       await postLikeRepository.save(postLike);
-      console.log(`Like for post ${post.post_id} created`);
+      post.post_like_count += 1;
+      console.log(`Like added by ${otherUser.login_id} to post ${post.post_id}`);
     }
+
+    // 게시물의 댓글 수와 좋아요 수 업데이트
+    await postRepository.save(post);
   }
 
   console.log('All seed data inserted successfully');
