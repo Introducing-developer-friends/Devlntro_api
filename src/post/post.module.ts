@@ -25,5 +25,6 @@ import { PostLike } from '../entities/post-like.entity';
   ],
   controllers: [PostController],
   providers: [PostService],
+  exports: [TypeOrmModule],
 })
 export class PostModule {}
