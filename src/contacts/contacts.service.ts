@@ -21,35 +21,65 @@ export class ContactsService {
 
   // 사용자의 인맥 목록을 조회하는 메서드
   async getContactList(userId: number) {
-
-    // userId에 해당하는 사용자의 모든 인맥을 조회
-    // relations 옵션을 통해 연관된 contact_user와 그의 profile 정보도 함께 가져옴
+    // userId가 userAccount or contact_user인 모든 관계를 조회
     const contacts = await this.contactRepository.find({
-        where: { 
-            userAccount: { user_id: userId },
-            contact_user: { deletedAt: null },
-            deleted_at: null // 삭제되지 않은 레코드만 조회
-          },
-      relations: ['contact_user', 'contact_user.profile'],
+      // userAccount and contact_user 동시에 일치하는 관계
+      where: [
+        {
+          userAccount: { user_id: userId },
+          contact_user: { deletedAt: null },
+          deleted_at: null
+        },
+        {
+          contact_user: { user_id: userId },
+          userAccount: { deletedAt: null },
+          deleted_at: null
+        }
+      ],
+      relations: ['userAccount', 'userAccount.profile', 'contact_user', 'contact_user.profile'],
     });
-
+  
     // 인맥이 없는 경우 예외 처리
     if (contacts.length === 0) {
       throw new NotFoundException('명함 리스트를 찾을 수 없습니다.');
     }
 
-    // 조회된 인맥 정보를 가공하여 반환
+    // 중복된 관계를 필터링하여 한 번만 반환
+    const uniqueContacts = contacts.reduce((acc, contact) => {
+      const isDuplicate = acc.some(
+        (existingContact) =>
+          (existingContact.userAccount.user_id === contact.userAccount.user_id &&
+            existingContact.contact_user.user_id === contact.contact_user.user_id) ||
+          (existingContact.userAccount.user_id === contact.contact_user.user_id &&
+            existingContact.contact_user.user_id === contact.userAccount.user_id)
+      );
+
+      if (!isDuplicate) {
+        acc.push(contact);
+      }
+
+      return acc;
+    }, []);
+  
+    // 인맥 정보를 가공하여 반환
     return {
       statusCode: 200,
       message: '명함 리스트를 성공적으로 조회했습니다.',
-      contacts: contacts.map(contact => ({
-        userId: contact.contact_user.user_id,
-        name: contact.contact_user.name,
-        company: contact.contact_user.profile.company,
-        department: contact.contact_user.profile.department,
-      })),
-    };
-  }
+      contacts: uniqueContacts.map((contact) => {
+        // userId가 userAccount인 경우 contact_user의 정보를, 그렇지 않으면 userAccount의 정보를 반환
+        const contactUser =
+          contact.userAccount.user_id === userId
+            ? contact.contact_user
+            : contact.userAccount;
+        return {
+          userId: contactUser.user_id,
+          name: contactUser.name,
+          company: contactUser.profile?.company,
+          department: contactUser.profile?.department,
+          };
+        }),
+      };
+    }
 
   // 특정 사용자의 명함 상세 정보를 조회하는 메서드
   async getContactDetail(requesterId: number, targetUserId: number) {
@@ -146,39 +176,41 @@ export class ContactsService {
 
   // 인맥 요청을 수락하는 메서드
   async acceptContactRequest(userId: number, requestId: number) {
-    // 해당 요청이 존재하는지 확인.
     const request = await this.friendRequestRepository.findOne({
       where: { 
         request_id: requestId, 
-        receiver: { user_id: userId, deletedAt: null },
-        sender: { deletedAt: null },
+        receiver: { user_id: userId },
         status: 'pending' 
       },
       relations: ['sender', 'receiver']
     });
 
-    // 요청을 찾지 못했을 경우 예외를 발생.
     if (!request) {
       throw new NotFoundException('해당 인맥 요청을 찾을 수 없습니다.');
     }
 
-    // 요청 상태를 수락으로 변경하고 저장.
+    // 요청 상태를 수락으로 변경
     request.status = 'accepted';
     await this.friendRequestRepository.save(request);
 
-    // 수락된 요청을 기반으로 새로운 인맥 관계를 생성
-    const newContact = this.contactRepository.create({
+    // 양방향 인맥 관계 생성
+    const contact1 = this.contactRepository.create({
       userAccount: request.receiver,
       contact_user: request.sender
     });
+    await this.contactRepository.save(contact1);
 
-    await this.contactRepository.save(newContact);
+    const contact2 = this.contactRepository.create({
+      userAccount: request.sender,
+      contact_user: request.receiver
+    });
+    await this.contactRepository.save(contact2);
 
-    // 성공적으로 요청이 수락되었음을 반환
     return {
       statusCode: 200,
       message: '인맥 요청이 수락되었습니다.',
-      contactId: newContact.contact_id
+      contactId1: contact1.contact_id,
+      contactId2: contact2.contact_id
     };
   }
 

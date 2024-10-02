@@ -50,21 +50,14 @@ export const seedInitialData = async (dataSource: DataSource) => {
   }
 
   // 모든 사용자 간에 인맥 관계 생성
-  for (let i = 0; i < users.length; i++) {
+  for (let i = 0; i < users.length - 1; i++) {
     for (let j = i + 1; j < users.length; j++) {
-      const businessContact1 = businessContactRepository.create({
+      const businessContact = businessContactRepository.create({
         userAccount: users[i],
         contact_user: users[j],
       });
-      await businessContactRepository.save(businessContact1);
-      console.log(`Business contact created: ${users[i].name} -> ${users[j].name}`);
-
-      const businessContact2 = businessContactRepository.create({
-        userAccount: users[j],
-        contact_user: users[i],
-      });
-      await businessContactRepository.save(businessContact2);
-      console.log(`Business contact created: ${users[j].name} -> ${users[i].name}`);
+      await businessContactRepository.save(businessContact);
+      console.log(`Business contact created: ${users[i].name} <-> ${users[j].name}`);
     }
   }
 
