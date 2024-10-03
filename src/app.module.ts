@@ -12,6 +12,7 @@ import { CommentModule } from './comment/comment.module'
 import { ContactsModule } from './contacts/contacts.module'
 import { UserModule } from './user/user.module'
 import { S3Module } from './s3/s3.module';
+import { NotificationsModule } from './notification/notifications.module';
 @Module({
   imports: [
     // 환경 변수 설정을 로드하는 모듈. 기본적으로 .env 파일을 읽어들임.
@@ -47,6 +48,7 @@ import { S3Module } from './s3/s3.module';
     ContactsModule,
     UserModule,
     S3Module,
+    NotificationsModule,
   ],
 
   // 이 모듈에서 사용할 컨트롤러를 정의
