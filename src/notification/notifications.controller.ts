@@ -40,6 +40,7 @@ export class NotificationsController {
   @ApiResponse({ status: 400, description: '친구 요청 알림 생성 중 오류가 발생했습니다.' })
   async createFriendRequestNotification(@Body() createNotificationDto: CreateFriendRequestNotificationDto, @Req() req: CustomRequest) {
     return this.notificationsService.createNotification(
+      req.user.userId,
       createNotificationDto.receiverId,
       'friend_request',
       createNotificationDto.message
@@ -52,6 +53,7 @@ export class NotificationsController {
   @ApiResponse({ status: 400, description: '게시물 좋아요 알림 생성 중 오류가 발생했습니다.' })
   async createLikePostNotification(@Body() createNotificationDto: CreateLikePostNotificationDto, @Req() req: CustomRequest) {
     return this.notificationsService.createNotification(
+      req.user.userId,
       createNotificationDto.receiverId,
       'like_post',
       createNotificationDto.message,
@@ -65,6 +67,7 @@ export class NotificationsController {
   @ApiResponse({ status: 400, description: '댓글 알림 생성 중 오류가 발생했습니다.' })
   async createCommentNotification(@Body() createNotificationDto: CreateCommentNotificationDto, @Req() req: CustomRequest) {
     return this.notificationsService.createNotification(
+      req.user.userId,
       createNotificationDto.receiverId,
       'comment',
       createNotificationDto.message,
@@ -78,6 +81,7 @@ export class NotificationsController {
   @ApiResponse({ status: 400, description: '댓글 좋아요 알림 생성 중 오류가 발생했습니다.' })
   async createLikeCommentNotification(@Body() createNotificationDto: CreateLikeCommentNotificationDto, @Req() req: CustomRequest) {
     return this.notificationsService.createNotification(
+      req.user.userId,
       createNotificationDto.receiverId,
       'like_comment',
       createNotificationDto.message,

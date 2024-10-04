@@ -25,7 +25,8 @@ export class NotificationsService {
       // 사용자 ID에 해당하는 알림을 최신순으로 조회
       const notifications = await this.notificationRepository.find({
         where: { user: { user_id: userId } },
-        order: { createdAt: 'DESC' }
+        order: { createdAt: 'DESC' },
+        relations: ['user', 'post', 'comment']
       });
 
       // 조회된 알림을 클라이언트에 전송할 형식으로 변환
@@ -39,7 +40,8 @@ export class NotificationsService {
           postId: notification.post?.post_id,
           commentId: notification.comment?.comment_id,
           isRead: notification.isRead,
-          createdAt: notification.createdAt
+          createdAt: notification.createdAt,
+          senderId: notification.senderId
         }))
       };
     } catch (error) {
@@ -72,28 +74,26 @@ export class NotificationsService {
   }
 
   // 새로운 알림을 생성하는 메서드
-  async createNotification(userId: number, type: string, message: string, postId?: number, commentId?: number) {
+  async createNotification(senderId: number, receiverId: number, type: string, message: string, postId?: number, commentId?: number) {
     try {
-      // 사용자 확인
-      const user = await this.userRepository.findOne({ where: { user_id: userId } });
-      if (!user) {
-        throw new NotFoundException('해당 사용자를 찾을 수 없습니다.');
+      // 알림을 받을 사용자 확인
+      const receiver = await this.userRepository.findOne({ where: { user_id: receiverId } });
+      if (!receiver) {
+        throw new NotFoundException('알림을 받을 사용자를 찾을 수 없습니다.');
       }
 
       let post = null;
       let comment = null;
 
-      // 게시물 확인 (있는 경우)
       if (postId) {
-        post = await this.postRepository.findOne({ where: { post_id: postId } });
+        post = await this.postRepository.findOne({ where: { post_id: postId }, relations: ['user'] });
         if (!post) {
           throw new NotFoundException('해당 게시물을 찾을 수 없습니다.');
         }
       }
 
-      // 댓글 확인 (있는 경우)
       if (commentId) {
-        comment = await this.commentRepository.findOne({ where: { comment_id: commentId } });
+        comment = await this.commentRepository.findOne({ where: { comment_id: commentId }, relations: ['userAccount'] });
         if (!comment) {
           throw new NotFoundException('해당 댓글을 찾을 수 없습니다.');
         }
@@ -101,7 +101,8 @@ export class NotificationsService {
 
       // 알림 생성 및 저장
       const notification = this.notificationRepository.create({
-        user,
+        user: receiver, 
+        senderId: senderId,
         type,
         message,
         post,
