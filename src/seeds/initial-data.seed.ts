@@ -31,9 +31,10 @@ export const seedInitialData = async (dataSource: DataSource) => {
   const hashedPassword = await bcrypt.hash('password123', 10);
 
   // 알림 생성 함수
-  const createNotification = async (user: UserAccount, type: string, message: string, post?: Post, comment?: Comment) => {
+  const createNotification = async (user: UserAccount, senderId: number, type: string, message: string, post?: Post, comment?: Comment) => {
     const notification = notificationRepository.create({
       user,
+      senderId,
       type,
       message,
       post,
@@ -90,35 +91,39 @@ export const seedInitialData = async (dataSource: DataSource) => {
     console.log(`User ${user.login_id} created`);
   }
 
-  // 인맥 관계 및 친구 요청 생성
-  for (let i = 0; i < users.length - 1; i++) {
-    // 첫 번째 사용자와 두 번째 사용자 사이에 인맥 관계 생성
-    const businessContact = businessContactRepository.create({
-      userAccount: users[i],
-      contact_user: users[i + 1],
-    });
-    await businessContactRepository.save(businessContact);
-    console.log(`Business contact created: ${users[i].name} <-> ${users[i + 1].name}`);
+  // A와 B 사이의 인맥 관계 생성
+  const businessContactAB = businessContactRepository.create({
+    userAccount: users[0],
+    contact_user: users[1],
+  });
+  await businessContactRepository.save(businessContactAB);
+  console.log(`Business contact created: ${users[0].name} <-> ${users[1].name}`);
 
-    // 첫 번째 사용자가 세 번째 사용자에게 친구 요청 보내기
-    if (i === 0) {
-      const friendRequest = friendRequestRepository.create({
-        sender: users[i],
-        receiver: users[2],
-        status: 'pending',
-        created_at: faker.date.past(),
-      });
-      await friendRequestRepository.save(friendRequest);
-      console.log(`Friend request sent from ${users[i].login_id} to ${users[2].login_id}`);
+  // B와 C 사이의 인맥 관계 생성
+  const businessContactBC = businessContactRepository.create({
+    userAccount: users[1],
+    contact_user: users[2],
+  });
+  await businessContactRepository.save(businessContactBC);
+  console.log(`Business contact created: ${users[1].name} <-> ${users[2].name}`);
 
-      // 친구 요청 알림 생성
-      await createNotification(
-        users[2],
-        'friend_request',
-        `${users[i].name}님이 친구 요청을 보냈습니다.`
-      );
-    }
-  }
+  // A가 C에게 친구 요청 보내기
+  const friendRequest = friendRequestRepository.create({
+    sender: users[0],
+    receiver: users[2],
+    status: 'pending',
+    created_at: faker.date.past(),
+  });
+  await friendRequestRepository.save(friendRequest);
+  console.log(`Friend request sent from ${users[0].login_id} to ${users[2].login_id}`);
+
+  // 친구 요청 알림 생성
+  await createNotification(
+    users[2],
+    users[0].user_id,
+    'friend_request',
+    `${users[0].name}님이 친구 요청을 보냈습니다.`
+  );
 
   // 각 사용자에 대해 1개의 게시물 생성
   for (const user of users) {
@@ -135,44 +140,28 @@ export const seedInitialData = async (dataSource: DataSource) => {
     await postRepository.save(post);
     console.log(`Post for user ${user.login_id} created with image: ${imageUrl}`);
 
-    // 다른 사용자들이 이 게시물에 댓글과 좋아요 추가 및 알림 생성
-    for (const otherUser of users.filter(u => u.user_id !== user.user_id)) {
+    // B가 C의 게시물에 상호작용
+    if (user.user_id === users[2].user_id) { // C의 게시물인 경우
+      const bUser = users[1]; // B 사용자
+
       // 댓글 추가
       const comment = commentRepository.create({
         post,
-        userAccount: otherUser,
+        userAccount: bUser,
         content: faker.lorem.sentence(),
         created_at: faker.date.past(),
         like_count: 0,
       });
       await commentRepository.save(comment);
       post.comments_count += 1;
-      console.log(`Comment added by ${otherUser.login_id} to post ${post.post_id}`);
+      console.log(`Comment added by ${bUser.login_id} to post ${post.post_id}`);
 
       // 댓글 알림 생성
       await createNotification(
         user,
+        bUser.user_id,
         'comment',
-        `${otherUser.name}님이 당신의 게시물에 댓글을 남겼습니다.`,
-        post,
-        comment
-      );
-
-      // 댓글 좋아요 추가
-      const commentLike = commentLikeRepository.create({
-        comment: comment,
-        user: otherUser,
-      });
-      await commentLikeRepository.save(commentLike);
-      comment.like_count += 1;
-      await commentRepository.save(comment);
-      console.log(`Comment like added by ${otherUser.login_id} to comment ${comment.comment_id}`);
-
-       // 댓글 좋아요 알림 생성
-       await createNotification(
-        comment.userAccount, // 댓글 작성자에게 알림
-        'like_comment',
-        `${otherUser.name}님이 당신의 댓글에 좋아요를 눌렀습니다.`,
+        `${bUser.name}님이 당신의 게시물에 댓글을 남겼습니다.`,
         post,
         comment
       );
@@ -180,19 +169,40 @@ export const seedInitialData = async (dataSource: DataSource) => {
       // 게시물 좋아요 추가
       const postLike = postLikeRepository.create({
         post,
-        userAccount: otherUser,
+        userAccount: bUser,
         created_at: faker.date.past(),
       });
       await postLikeRepository.save(postLike);
       post.post_like_count += 1;
-      console.log(`Like added by ${otherUser.login_id} to post ${post.post_id}`);
+      console.log(`Like added by ${bUser.login_id} to post ${post.post_id}`);
 
       // 게시물 좋아요 알림 생성
       await createNotification(
         user,
+        bUser.user_id,
         'like_post',
-        `${otherUser.name}님이 당신의 게시물에 좋아요를 눌렀습니다.`,
+        `${bUser.name}님이 당신의 게시물에 좋아요를 눌렀습니다.`,
         post
+      );
+
+      // 댓글 좋아요 추가
+      const commentLike = commentLikeRepository.create({
+        comment: comment,
+        user: bUser,
+      });
+      await commentLikeRepository.save(commentLike);
+      comment.like_count += 1;
+      await commentRepository.save(comment);
+      console.log(`Comment like added by ${bUser.login_id} to comment ${comment.comment_id}`);
+
+      // 댓글 좋아요 알림 생성
+      await createNotification(
+        user,
+        bUser.user_id,
+        'like_comment',
+        `${bUser.name}님이 당신의 댓글에 좋아요를 눌렀습니다.`,
+        post,
+        comment
       );
     }
 
