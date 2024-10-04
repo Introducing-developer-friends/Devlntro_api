@@ -12,6 +12,9 @@ export class Notification {
   @JoinColumn({ name: 'user_id' })
   user: UserAccount;
 
+  @Column({ name: 'sender_id', nullable: false })
+  senderId: number;
+
   @Column()
   type: string;
 
