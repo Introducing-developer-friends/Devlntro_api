@@ -50,4 +50,3 @@ jobs:
           -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
           -e AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }} \
           --name dev_intro_container kimdoyeon3/dev_intro:${{ github.sha }}
-          docker exec dev_intro_container npm run migration:run:prod
