@@ -84,7 +84,7 @@ export class NotificationsService {
         message: '본인의 활동에 대한 알림은 생성되지 않습니다.',
       };
     }
-    
+
       // 알림을 받을 사용자 확인
       const receiver = await this.userRepository.findOne({ where: { user_id: receiverId } });
       if (!receiver) {
@@ -175,4 +175,23 @@ export class NotificationsService {
       throw new BadRequestException('알림 삭제 중 오류가 발생했습니다.');
     }
   }
+
+  // 로그인 ID로 사용자 ID를 조회하는 로직
+  async findUserIdByLoginId(loginId: string) {
+    try {
+      const user = await this.userRepository.findOne({ where: { login_id: loginId } });
+      if (!user) {
+        throw new NotFoundException('해당 로그인 ID에 해당하는 사용자를 찾을 수 없습니다.');
+      }
+      return {
+        statusCode: 200,
+        message: '사용자 ID를 성공적으로 조회했습니다.',
+        userId: user.user_id,
+      };
+    } catch (error) {
+      console.error('Error in findUserIdByLoginId:', error);
+      throw new BadRequestException('사용자 ID 조회 중 오류가 발생했습니다.');
+    }
+  }
+
 }

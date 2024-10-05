@@ -105,4 +105,13 @@ export class NotificationsController {
   async deleteMultipleNotifications(@Body() deleteDto: DeleteMultipleNotificationsDto, @Req() req: CustomRequest) {
     return this.notificationsService.deleteMultipleNotifications(deleteDto.notificationIds, req.user.userId);
   }
+
+  // 로그인 ID로 userId 조회
+  @Post('find-user-id')
+  @ApiOperation({ summary: '로그인 ID로 사용자 ID 조회' })
+  @ApiResponse({ status: 200, description: '로그인 ID로 사용자 ID를 성공적으로 조회했습니다.' })
+  @ApiResponse({ status: 404, description: '해당 로그인 ID에 해당하는 사용자를 찾을 수 없습니다.' })
+  async findUserIdByLoginId(@Body('login_id') loginId: string) {
+    return this.notificationsService.findUserIdByLoginId(loginId);
+  }
 }
