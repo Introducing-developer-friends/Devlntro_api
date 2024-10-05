@@ -76,6 +76,15 @@ export class NotificationsService {
   // 새로운 알림을 생성하는 메서드
   async createNotification(senderId: number, receiverId: number, type: string, message: string, postId?: number, commentId?: number) {
     try {
+
+      // 발신자와 수신자가 같으면 알림을 생성하지 않음
+    if (senderId === receiverId) {
+      return {
+        statusCode: 200,
+        message: '본인의 활동에 대한 알림은 생성되지 않습니다.',
+      };
+    }
+    
       // 알림을 받을 사용자 확인
       const receiver = await this.userRepository.findOne({ where: { user_id: receiverId } });
       if (!receiver) {
