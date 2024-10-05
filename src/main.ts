@@ -41,8 +41,8 @@ async function bootstrap() {
   });
 
   // // 데이터 시드 삽입
-  // const dataSource = app.get(DataSource);
-  // await seedInitialData(dataSource);
+  const dataSource = app.get(DataSource);
+  await seedInitialData(dataSource);
 
   await app.listen(3000);
 }
