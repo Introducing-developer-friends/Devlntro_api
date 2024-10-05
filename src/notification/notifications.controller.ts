@@ -39,6 +39,7 @@ export class NotificationsController {
   @ApiResponse({ status: 201, description: '친구 요청 알림이 성공적으로 생성되었습니다.' })
   @ApiResponse({ status: 400, description: '친구 요청 알림 생성 중 오류가 발생했습니다.' })
   async createFriendRequestNotification(@Body() createNotificationDto: CreateFriendRequestNotificationDto, @Req() req: CustomRequest) {
+    console.log(req.user);
     return this.notificationsService.createNotification(
       req.user.userId,
       createNotificationDto.receiverId,
