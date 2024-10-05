@@ -30,21 +30,19 @@ export class FeedFilterService {
       .select(['post.post_id', 'post.created_at', 'post.image_url', 'user.user_id', 'user.name']);
 
       // 'all' 필터 타입: 사용자의 모든 게시물과 비즈니스 연락처의 게시물을 조회
-    if (filterType === 'all') {
-      const contactUserIds = await this.businessContactRepository
-        .createQueryBuilder('contact')
-        .select('contact.contact_user_id')
-        .where('contact.user_id = :userId', { userId })
-        .getRawMany();
-
-      const contactUserIdArray = contactUserIds.map(contact => contact.contact_user_id);
-      
-      query = query.where(new Brackets(qb => {
-        qb.where('user.user_id = :userId', { userId }); // 자신의 게시물 포함
-        if (contactUserIdArray.length > 0) {
-          qb.orWhere('user.user_id IN (:...contactUserIdArray)', { contactUserIdArray }); // 연락처 사용자의 게시물 포함
-        }
-      }));
+      if (filterType === 'all') {
+        query = query
+          .where(new Brackets(qb => {
+            qb.where('user.user_id = :userId', { userId })
+              .orWhere(`user.user_id IN (
+                SELECT CASE
+                  WHEN bc.user_id = :userId THEN bc.contact_user_id
+                  WHEN bc.contact_user_id = :userId THEN bc.user_id
+                END
+                FROM business_contact bc
+                WHERE bc.user_id = :userId OR bc.contact_user_id = :userId
+              )`, { userId });
+          }));
       // 'own' 필터 타입: 사용자의 자신의 게시물만 조회
     } else if (filterType === 'own') {
         query = query.where('user.user_id = :userId', { userId });
