@@ -27,5 +27,5 @@ EXPOSE 3000
 COPY start.sh ./
 RUN chmod +x start.sh
 
-# 시작 스크립트 실행
-CMD ["./start.sh"]
+# 마이그레이션 실행 후 애플리케이션 시작
+CMD sh -c "NODE_ENV=production npm run migration:run:prod && node dist/main.js"
