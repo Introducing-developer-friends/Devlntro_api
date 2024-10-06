@@ -5,6 +5,7 @@ import { Post } from './post.entity';
 import { Comment } from './comment.entity';
 import { PostLike } from './post-like.entity';
 import { FriendRequest } from './friend-request.entity';
+import { Notification } from './notification.entity';
 
 // UserAccount 엔티티는 사용자의 계정 정보
 @Entity()
@@ -60,4 +61,6 @@ export class UserAccount {
   @OneToMany(() => FriendRequest, request => request.receiver)
   receivedFriendRequests: FriendRequest[];
 
+  @OneToMany(() => Notification, notification => notification.user)
+  notifications: Notification[];
 }

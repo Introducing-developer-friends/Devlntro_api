@@ -125,6 +125,7 @@ export class FeedService {
         isOwnPost: post.user.user_id === userId,
         comments: comments.map((comment) => ({
           commentId: comment.comment_id,
+          authorId: comment.userAccount.user_id,
           authorName: comment.userAccount.name,
           content: comment.content,
           createdAt: comment.created_at,
