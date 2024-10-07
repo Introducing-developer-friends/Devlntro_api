@@ -54,6 +54,9 @@ export class FeedFilterService {
         query = query.where('user.user_id = :specificUserId', { specificUserId });
     }
 
+    query = query
+      .orderBy('post.created_at', 'DESC')
+
     // 최종적으로 필터링된 게시물들을 조회하여 반환
     return await query.getMany();
   }
