@@ -27,7 +27,9 @@ export class FeedFilterService {
     // 게시물을 조회하는 쿼리 빌더 생성
     let query = this.postRepository.createQueryBuilder('post')
       .leftJoinAndSelect('post.user', 'user') // post와 연관된 user를 조인
-      .select(['post.post_id', 'post.created_at', 'post.image_url', 'user.user_id', 'user.name']);
+      .select(['post.post_id', 'post.created_at', 'post.image_url', 'user.user_id', 'user.name'])
+      .addSelect('post.post_like_count') 
+      .addSelect('post.comments_count'); 
 
       // 'all' 필터 타입: 사용자의 모든 게시물과 비즈니스 연락처의 게시물을 조회
       if (filterType === 'all') {
@@ -51,11 +53,6 @@ export class FeedFilterService {
       } else if (filterType === 'specific' && specificUserId) {
         query = query.where('user.user_id = :specificUserId', { specificUserId });
     }
-
-    // 쿼리 로깅 추가 (디버깅 용도)
-    const rawQuery = query.getQueryAndParameters();
-    this.logger.debug(`Generated SQL: ${rawQuery[0]}`); // 생성된 SQL 쿼리 출력
-    this.logger.debug(`Query parameters: ${JSON.stringify(rawQuery[1])}`); // 쿼리 파라미터 출력
 
     // 최종적으로 필터링된 게시물들을 조회하여 반환
     return await query.getMany();
