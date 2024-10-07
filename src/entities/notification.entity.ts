@@ -1,9 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, DeleteDateColumn, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, DeleteDateColumn, JoinColumn, Index } from 'typeorm';
 import { UserAccount } from './user-account.entity';
 import { Post } from './post.entity';
 import { Comment } from './comment.entity';
 
 @Entity()
+@Index(['user', 'createdAt'])
 export class Notification {
   @PrimaryGeneratedColumn()
   id: number;
@@ -24,6 +25,7 @@ export class Notification {
   @Column({ name: 'is_read', default: false })
   isRead: boolean; // 알림 읽음 여부
 
+  @Index()
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date; // 알림 생성 시간
 
