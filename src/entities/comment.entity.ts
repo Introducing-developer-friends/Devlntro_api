@@ -1,8 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, DeleteDateColumn  } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, DeleteDateColumn, Index  } from 'typeorm';
 import { UserAccount } from './user-account.entity';
 import { Post } from './post.entity';
 import { CommentLike } from './comment-like.entity';
 
+@Index(['post', 'created_at'])
 @Entity()
 export class Comment {
   @PrimaryGeneratedColumn()
@@ -10,10 +11,12 @@ export class Comment {
 
   @ManyToOne(() => Post, post => post.comments)
   @JoinColumn({ name: 'post_id' })
+  @Index()
   post: Post;
 
   @ManyToOne(() => UserAccount, userAccount => userAccount.comments) // 댓글 작성자와의 다대일 관계
   @JoinColumn({ name: 'user_id' })
+  @Index()
   userAccount: UserAccount;
 
   @Column('text')
