@@ -40,13 +40,6 @@ export class FeedService {
         // 필터링된 게시물 조회
         let posts = await this.feedFilterService.filterPostsByUser(userId, filterType, specificUserId);
         
-        // 각 게시물의 좋아요 수와 댓글 수 로드
-        posts = await Promise.all(posts.map(async (post) => {
-          const likesCount = await this.likeRepository.count({ where: { post: { post_id: post.post_id } } });
-          const commentsCount = await this.commentRepository.count({ where: { post: { post_id: post.post_id } } });
-          return { ...post, post_like_count: likesCount, comments_count: commentsCount };
-        }));
-        
         // 게시물 정렬
         const sortedPosts = this.sortingService.sortPosts(posts, sortOption);
         
@@ -82,34 +75,24 @@ export class FeedService {
     try {
 
       // 게시물 조회
-      const post = await this.postRepository.findOne({
-        where: { post_id: postId },
-        relations: ['user'],
-      });
+      const post = await this.postRepository.createQueryBuilder('post')
+      .leftJoinAndSelect('post.user', 'user')
+      .leftJoinAndSelect('post.comments', 'comments')
+      .leftJoinAndSelect('comments.userAccount', 'commentUser')
+      .leftJoinAndSelect('post.postLikes', 'likes')
+      .leftJoinAndSelect('likes.userAccount', 'likeUser')
+      .where('post.post_id = :postId', { postId })
+      .select([
+        'post',
+        'user.user_id', 'user.name',
+        'comments', 'commentUser.user_id', 'commentUser.name',
+        'likes', 'likeUser.user_id', 'likeUser.name'
+      ])
+      .getOne();
 
       if (!post) {
         throw new NotFoundException('해당 게시물을 찾을 수 없습니다.');
       }
-
-      // 댓글 조회
-      const comments = await this.commentRepository.find({
-        where: { post: { post_id: postId } },
-        relations: ['userAccount'],
-        order: { created_at: 'DESC' },
-      });
-
-      // 각 댓글의 좋아요 수를 조회
-      for (const comment of comments) {
-        const commentLikes = await this.commentLikeRepository.find({
-          where: { comment: { comment_id: comment.comment_id } },
-        });
-        comment.like_count = commentLikes.length; // 댓글에 달린 좋아요 수 추가
-      }
-
-      const likes = await this.likeRepository.find({
-        where: { post: { post_id: postId } },
-        relations: ['userAccount'],
-      });
 
       return {
         statusCode: 200,
@@ -120,10 +103,10 @@ export class FeedService {
         createdAt: post.created_at,
         imageUrl: post.image_url,
         content: post.content,
-        likesCount: likes.length,
-        commentsCount: comments.length,
+        likesCount: post.postLikes.length,
+        commentsCount: post.comments.length,
         isOwnPost: post.user.user_id === userId,
-        comments: comments.map((comment) => ({
+        comments: post.comments.map((comment) => ({
           commentId: comment.comment_id,
           authorId: comment.userAccount.user_id,
           authorName: comment.userAccount.name,
@@ -131,7 +114,7 @@ export class FeedService {
           createdAt: comment.created_at,
           likeCount: comment.like_count, // 좋아요 수 포함
         })),
-        likes: likes.map((like) => ({
+        likes: post.postLikes.map((like) => ({
           userId: like.userAccount.user_id,
           userName: like.userAccount.name,
         })),

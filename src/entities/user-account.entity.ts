@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany, DeleteDateColumn  } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany, DeleteDateColumn, Index  } from 'typeorm';
 import { BusinessProfile } from './business-profile.entity';
 import { BusinessContact } from './business-contact.entity';
 import { Post } from './post.entity';
@@ -9,12 +9,14 @@ import { Notification } from './notification.entity';
 
 // UserAccount 엔티티는 사용자의 계정 정보
 @Entity()
+@Index("idx_login_id", ["login_id"])
 export class UserAccount {
   // user_id는 기본 키로 자동 생성
   @PrimaryGeneratedColumn()
   user_id: number;
 
   @Column({ unique: true }) // 로그인 ID, 중복 불가
+  @Index()
   login_id: string;
 
   // 사용자의 비밀번호를 저장

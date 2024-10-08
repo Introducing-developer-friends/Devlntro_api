@@ -23,11 +23,20 @@ export class NotificationsService {
   async getNotifications(userId: number) {
     try {
       // 사용자 ID에 해당하는 알림을 최신순으로 조회
-      const notifications = await this.notificationRepository.find({
-        where: { user: { user_id: userId } },
-        order: { createdAt: 'DESC' },
-        relations: ['user', 'post', 'comment']
-      });
+      const notifications = await this.notificationRepository
+      .createQueryBuilder('notification')
+      .leftJoinAndSelect('notification.user', 'user')
+      .leftJoinAndSelect('notification.post', 'post')
+      .leftJoinAndSelect('notification.comment', 'comment')
+      .where('notification.user.user_id = :userId', { userId })
+      .orderBy('notification.createdAt', 'DESC')
+      .select([
+        'notification',
+        'user.user_id',
+        'post.post_id',
+        'comment.comment_id'
+      ])
+      .getMany();
 
       // 조회된 알림을 클라이언트에 전송할 형식으로 변환
       return {
@@ -156,19 +165,27 @@ export class NotificationsService {
   // 여러 알림을 한 번에 삭제하는 메서드
   async deleteMultipleNotifications(notificationIds: number[], userId: number) {
     try {
-      // 여러 알림 소프트 삭제 수행
-      const result = await this.notificationRepository.softDelete({
-        id: In(notificationIds),
-        user: { user_id: userId }
-      });
-      if (result.affected === 0) {
+      // 먼저 삭제할 알림들을 조회
+      const notifications  = await this.notificationRepository
+      .createQueryBuilder('notification')
+      .innerJoin('notification.user', 'user')
+      .where('notification.id IN (:...ids)', { ids: notificationIds })
+      .andWhere('user.user_id = :userId', { userId })
+      .getMany();
+  
+      if (notifications.length === 0) {
         throw new NotFoundException('삭제할 알림을 찾을 수 없습니다.');
       }
+
+      // 조회된 알림들을 소프트 삭제
+      const result = await this.notificationRepository.softRemove(notifications);
+
       return {
         statusCode: 200,
-        message: '알림들이 성공적으로 삭제되었습니다.'
+        message: `${result.length}개의 알림이 성공적으로 삭제되었습니다.`
       };
     } catch (error) {
+      console.error('Error in deleteMultipleNotifications:', error);
       if (error instanceof NotFoundException) {
         throw error;
       }

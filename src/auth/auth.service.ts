@@ -20,7 +20,10 @@ export class AuthService {
 
   // 아이디 중복 확인
   async checkIdAvailability(login_id: string): Promise<{ available: boolean, message: string }> {
-    const user = await this.userRepository.findOne({ where: { login_id } });
+    const user = await this.userRepository
+    .createQueryBuilder("user")
+    .where("user.login_id = :login_id", { login_id })
+    .getCount();
     if (!user) {
       return { available: true, message: '사용 가능한 아이디입니다.' };
     } else {
@@ -30,47 +33,63 @@ export class AuthService {
 
   // 회원가입 로직
   async register(createUserDto: CreateUserDto): Promise<{ userId: number; message: string }> {
-    const { login_id, password, confirm_password, name, ...profileData } = createUserDto; // DTO로 받은 데이터에서 필요한 부분만 추출
-    
-    // 비밀번호와 확인 비밀번호 일치 여부 확인
-  if (password !== confirm_password) {
-    throw new BadRequestException('비밀번호와 확인 비밀번호가 일치하지 않습니다.');
-  }
-
-    // 이미 존재하는 아이디 체크
-    const existingUser = await this.userRepository.findOne({ where: { login_id } });
-    if (existingUser) {
-      throw new BadRequestException('이미 존재하는 아이디입니다.');
-    }
-
-    try{
-    const hashedPassword = await bcrypt.hash(password, 10); // 비밀번호 해싱
-
-    const user = this.userRepository.create({
-      login_id,
-      password: hashedPassword, // 해싱된 비밀번호 저장
-      confirm_password: hashedPassword,
-      name,
-    });
-    
-    await this.userRepository.save(user); // UserAccount 저장
-    
-    const profile = this.profileRepository.create({
-      ...profileData, // 남은 프로필 정보 저장
-      userAccount: user,
-    });
-    await this.profileRepository.save(profile); // BusinessProfile 저장
-    
-    return { userId: user.user_id, message: '회원가입이 성공적으로 완료되었습니다.' };
-    } catch {
+    const queryRunner = this.userRepository.manager.connection.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+  
+    try {
+      const { login_id, password, confirm_password, name, ...profileData } = createUserDto;
+  
+      if (password !== confirm_password) {
+        throw new BadRequestException('비밀번호와 확인 비밀번호가 일치하지 않습니다.');
+      }
+  
+      const existingUser = await queryRunner.manager
+        .createQueryBuilder(UserAccount, "user")
+        .where("user.login_id = :login_id", { login_id })
+        .getOne();
+  
+      if (existingUser) {
+        throw new BadRequestException('이미 존재하는 아이디입니다.');
+      }
+  
+      const hashedPassword = await bcrypt.hash(password, 10);
+  
+      const user = queryRunner.manager.create(UserAccount, {
+        login_id,
+        password: hashedPassword, // 해싱된 비밀번호 저장
+        confirm_password: hashedPassword,
+        name,
+      });
+  
+      await queryRunner.manager.save(user);
+  
+      const profile = queryRunner.manager.create(BusinessProfile, {
+        ...profileData, // 남은 프로필 정보 저장
+        userAccount: user,
+      });
+  
+      await queryRunner.manager.save(profile); // BusinessProfile 저장
+  
+      await queryRunner.commitTransaction();
+  
+      return { userId: user.user_id, message: '회원가입이 성공적으로 완료되었습니다.' };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
       throw new BadRequestException('회원가입에 실패했습니다.');
+    } finally {
+      await queryRunner.release();
     }
-}
+  }
 
   // 로그인 로직
 async login(loginDto: LoginDto): Promise<{ token: string; userId: number } | null> {
     // 사용자 조회
-    const user = await this.userRepository.findOne({ where: { login_id: loginDto.login_id } });
+    const user = await this.userRepository
+    .createQueryBuilder("user")
+    .select(["user.user_id", "user.login_id", "user.password"])
+    .where("user.login_id = :login_id", { login_id: loginDto.login_id })
+    .getOne();
   
     // 사용자 존재 여부 확인
     if (!user) {
