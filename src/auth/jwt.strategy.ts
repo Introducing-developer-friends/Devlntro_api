@@ -22,14 +22,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const cachedUser = await this.cacheManager.get(cacheKey);
     
     if (cachedUser) {
-      console.log('캐시에서 사용자 정보 가져옴:', cachedUser);
+      
       return cachedUser;
     }
 
     const user = { userId: payload.sub, username: payload.username };
     await this.cacheManager.set(cacheKey, user, { ttl: 3600 }); // 1시간 캐시
-    console.log('데이터베이스 조회 후 사용자 정보 캐싱:', user);
-
+    
     return Promise.resolve(user);
   }
 }
