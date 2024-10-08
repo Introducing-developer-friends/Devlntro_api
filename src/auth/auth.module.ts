@@ -7,7 +7,8 @@ import { AuthController } from './auth.controller';
 import { UserAccount } from '../entities/user-account.entity';
 import { BusinessProfile } from '../entities/business-profile.entity';
 import { JwtStrategy } from './jwt.strategy';
-import { ConfigModule, ConfigService } from '@nestjs/config'; 
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CacheModule } from '@nestjs/cache-manager'; 
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
       }),
     }),
     TypeOrmModule.forFeature([UserAccount, BusinessProfile]),
+    CacheModule.register(),
   ],
   providers: [AuthService, JwtStrategy], // AuthService와 JwtStrategy를 주입
   controllers: [AuthController], // AuthController를 모듈에 연결
