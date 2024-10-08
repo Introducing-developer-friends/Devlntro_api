@@ -38,7 +38,7 @@ export class UserController {
     return this.userService.changePassword(req.user.userId, changePasswordDto);
   }
 
-  @Delete('password')
+  @Delete()
   @ApiOperation({ summary: '회원 탈퇴' })
   @ApiResponse({ status: 200, description: '회원 탈퇴가 성공적으로 처리되었습니다.' })
   @ApiResponse({ status: 400, description: '회원 탈퇴 처리 중 오류가 발생했습니다.' })

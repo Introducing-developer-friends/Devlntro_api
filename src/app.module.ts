@@ -13,6 +13,7 @@ import { ContactsModule } from './contacts/contacts.module'
 import { UserModule } from './user/user.module'
 import { S3Module } from './s3/s3.module';
 import { NotificationsModule } from './notification/notifications.module';
+import { CacheModule } from '@nestjs/cache-manager';
 @Module({
   imports: [
     // 환경 변수 설정을 로드하는 모듈. 기본적으로 .env 파일을 읽어들임.
@@ -39,6 +40,9 @@ import { NotificationsModule } from './notification/notifications.module';
         return dataSource;
       },
     }),
+
+    // CacheModule을 추가하여 캐시 기능 활성화
+    CacheModule.register(),
 
     // 애플리케이션에 필요한 다양한 모듈을 임포트하여 의존성을 관리
     AuthModule,
