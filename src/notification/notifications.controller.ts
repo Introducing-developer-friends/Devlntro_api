@@ -51,6 +51,8 @@ export class NotificationsController {
   @Post('like-post')
   @ApiOperation({ summary: '게시물 좋아요 알림 생성' })
   @ApiResponse({ status: 201, description: '게시물 좋아요 알림이 성공적으로 생성되었습니다.' })
+  @ApiResponse({ status: 404, description: '알림을 받을 사용자를 찾을 수 없습니다.' })
+  @ApiResponse({ status: 404, description: '해당 게시물을 찾을 수 없습니다.' }) 
   @ApiResponse({ status: 400, description: '게시물 좋아요 알림 생성 중 오류가 발생했습니다.' })
   async createLikePostNotification(@Body() createNotificationDto: CreateLikePostNotificationDto, @Req() req: CustomRequest) {
     return this.notificationsService.createNotification(
@@ -65,6 +67,8 @@ export class NotificationsController {
   @Post('comment')
   @ApiOperation({ summary: '댓글 알림 생성' })
   @ApiResponse({ status: 201, description: '댓글 알림이 성공적으로 생성되었습니다.' })
+  @ApiResponse({ status: 404, description: '알림을 받을 사용자를 찾을 수 없습니다.' })
+  @ApiResponse({ status: 404, description: '해당 댓글을 찾을 수 없습니다.' }) 
   @ApiResponse({ status: 400, description: '댓글 알림 생성 중 오류가 발생했습니다.' })
   async createCommentNotification(@Body() createNotificationDto: CreateCommentNotificationDto, @Req() req: CustomRequest) {
     return this.notificationsService.createNotification(
@@ -79,6 +83,8 @@ export class NotificationsController {
   @Post('like-comment')
   @ApiOperation({ summary: '댓글 좋아요 알림 생성' })
   @ApiResponse({ status: 201, description: '댓글 좋아요 알림이 성공적으로 생성되었습니다.' })
+  @ApiResponse({ status: 404, description: '알림을 받을 사용자를 찾을 수 없습니다.' })
+  @ApiResponse({ status: 404, description: '해당 댓글을 찾을 수 없습니다.' }) 
   @ApiResponse({ status: 400, description: '댓글 좋아요 알림 생성 중 오류가 발생했습니다.' })
   async createLikeCommentNotification(@Body() createNotificationDto: CreateLikeCommentNotificationDto, @Req() req: CustomRequest) {
     return this.notificationsService.createNotification(
@@ -95,6 +101,7 @@ export class NotificationsController {
   @ApiOperation({ summary: '알림 삭제' })
   @ApiResponse({ status: 200, description: '알림이 성공적으로 삭제되었습니다.' })
   @ApiResponse({ status: 404, description: '해당 알림을 찾을 수 없습니다.' })
+  @ApiResponse({ status: 400, description: '알림 삭제 중 오류가 발생했습니다.' })
   async deleteNotification(@Param('id') id: number, @Req() req: CustomRequest) {
     return this.notificationsService.deleteNotification(id, req.user.userId);
   }
@@ -102,6 +109,7 @@ export class NotificationsController {
   @Delete()
   @ApiOperation({ summary: '여러 알림 삭제' })
   @ApiResponse({ status: 200, description: '선택한 알림들이 성공적으로 삭제되었습니다.' })
+  @ApiResponse({ status: 404, description: '삭제할 알림을 찾을 수 없습니다.' })
   @ApiResponse({ status: 400, description: '알림 삭제 중 오류가 발생했습니다.' })
   async deleteMultipleNotifications(@Body() deleteDto: DeleteMultipleNotificationsDto, @Req() req: CustomRequest) {
     return this.notificationsService.deleteMultipleNotifications(deleteDto.notificationIds, req.user.userId);
