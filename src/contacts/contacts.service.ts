@@ -5,23 +5,30 @@ import { BusinessContact } from '../entities/business-contact.entity';
 import { UserAccount } from '../entities/user-account.entity';
 import { BusinessProfile } from '../entities/business-profile.entity';
 import { FriendRequest } from '../entities/friend-request.entity';
+import {
+  ContactListResult,
+  ContactDetailResult,
+  ContactRequestResult,
+  ReceivedRequestResult,
+  SentRequestResult
+} from '../types/contacts.types';
 
 @Injectable()
 export class ContactsService {
   constructor(
     @InjectRepository(BusinessContact)
-    private contactRepository: Repository<BusinessContact>,
+    private readonly  contactRepository: Repository<BusinessContact>,
     @InjectRepository(UserAccount)
-    private userRepository: Repository<UserAccount>,
+    private readonly  userRepository: Repository<UserAccount>,
     @InjectRepository(BusinessProfile)
-    private profileRepository: Repository<BusinessProfile>,
+    private readonly  profileRepository: Repository<BusinessProfile>,
     @InjectRepository(FriendRequest)
-    private friendRequestRepository: Repository<FriendRequest>,
-    private dataSource: DataSource
+    private readonly  friendRequestRepository: Repository<FriendRequest>,
+    private readonly  dataSource: DataSource
   ) {}
 
   // 사용자의 인맥 목록을 조회하는 메서드
-  async getContactList(userId: number) {
+  async getContactList(userId: number): Promise<ContactListResult[]> {
     // userId가 userAccount or contact_user인 모든 관계를 조회
     const contacts = await this.contactRepository
     .createQueryBuilder('contact')
@@ -36,33 +43,23 @@ export class ContactsService {
     .setParameter('userId', userId)
     .getMany();
   
-    // 인맥이 없는 경우 예외 처리
-    if (contacts.length === 0) {
-      throw new NotFoundException('명함 리스트를 찾을 수 없습니다.');
-    }
-  
-    // 인맥 정보를 가공하여 반환
+    // 빈 배열 반환이 아닌 정상적인 처리
+  return contacts.map((contact) => {
+    const contactUser = contact.userAccount.user_id === userId
+      ? contact.contact_user
+      : contact.userAccount;
+
     return {
-      statusCode: 200,
-      message: '명함 리스트를 성공적으로 조회했습니다.',
-      contacts: contacts.map((contact) => {
-        const contactUser =
-          contact.userAccount.user_id === userId
-            ? contact.contact_user
-            : contact.userAccount;
-        return {
-          userId: contactUser.user_id,
-          name: contactUser.name,
-          company: contactUser.profile?.company,
-          department: contactUser.profile?.department,
-        };
-        }),
-      };
-    }
+      userId: contactUser.user_id,
+      name: contactUser.name,
+      company: contactUser.profile?.company || 'N/A',
+      department: contactUser.profile?.department || 'N/A'
+    };
+  });
+}
 
   // 특정 사용자의 명함 상세 정보를 조회하는 메서드
-  async getContactDetail(requesterId: number, targetUserId: number) {
-    try {
+  async getContactDetail(requesterId: number, targetUserId: number): Promise<ContactDetailResult> {
       // targetUserId에 해당하는 사용자의 정보를 조회
       const user = await this.userRepository.findOne({
         where: { user_id: targetUserId },
@@ -76,26 +73,18 @@ export class ContactsService {
       
       // 명함 상세 정보를 반환 (profile이 없을 경우 기본값으로 N/A 사용)
       return {
-        statusCode: 200,
-        message: '명함 상세 정보를 성공적으로 조회했습니다.',
-        contact: {
-          userId: user.user_id,
-          name: user.name,
-          company: user.profile?.company || 'N/A',
-          department: user.profile?.department || 'N/A',
-          position: user.profile?.position || 'N/A',
-          email: user.profile?.email || 'N/A',
-          phone: user.profile?.phone || 'N/A',
-        },
+        userId: user.user_id,
+        name: user.name,
+        company: user.profile?.company || 'N/A',
+        department: user.profile?.department || 'N/A',
+        position: user.profile?.position || 'N/A',
+        email: user.profile?.email || 'N/A',
+        phone: user.profile?.phone || 'N/A',
       };
-    } catch (error) {
-      console.error('Error in getContactDetail:', error);
-      throw error;
     }
-  }
   
   // 새로운 인맥을 추가하는 메서드
-  async addContactRequest(userId: number, contactLoginId: string) {
+  async addContactRequest(userId: number, contactLoginId: string): Promise<ContactRequestResult> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
     // 요청을 보낸 사용자와 요청을 받는 사용자를 데이터베이스에서 조회.
     const user = await transactionalEntityManager.findOne(UserAccount, { where: { user_id: userId, deletedAt: null } });
@@ -144,19 +133,13 @@ export class ContactsService {
       status: 'pending'
     });
 
-    await transactionalEntityManager.save(newRequest);
-
-    // 성공적으로 요청이 추가되었음을 반환.
-    return {
-      statusCode: 201,
-      message: '인맥 요청이 성공적으로 추가되었습니다.',
-      requestId: newRequest.request_id,
-    };
+    const savedRequest = await transactionalEntityManager.save(newRequest);
+    return { requestId: savedRequest.request_id };
   });
   }
 
   // 인맥 요청을 수락하는 메서드
-  async acceptContactRequest(userId: number, requestId: number) {
+  async acceptContactRequest(userId: number, requestId: number): Promise<void> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       const request = await transactionalEntityManager.findOne(FriendRequest, {
         where: { 
@@ -197,16 +180,11 @@ export class ContactsService {
         });
         await transactionalEntityManager.save(contact);
       }
-  
-      return {
-        statusCode: 200,
-        message: '인맥 요청이 수락되었습니다.',
-      };
     });
   }
 
   // 인맥 요청을 거절하는 메서드
-  async rejectContactRequest(userId: number, requestId: number) {
+  async rejectContactRequest(userId: number, requestId: number): Promise<void> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
 
     // 해당 요청이 존재하는지 확인
@@ -228,16 +206,11 @@ export class ContactsService {
     request.status = 'rejected';
     await transactionalEntityManager.save(request);
 
-    // 성공적으로 요청이 거절되었음을 반환
-    return {
-      statusCode: 200,
-      message: '인맥 요청이 거절되었습니다.'
-    };
   });
   }
 
   // 받은 인맥 요청 목록을 조회하는 메서드
-  async getReceivedRequests(userId: number) {
+  async getReceivedRequests(userId: number): Promise<ReceivedRequestResult[]> {
     
     // 사용자가 받은 대기 중인 인맥 요청들을 조회
     const requests = await this.friendRequestRepository.find({
@@ -250,21 +223,16 @@ export class ContactsService {
       order: { created_at: 'DESC' }
     });
 
-    // 조회된 요청 목록을 반환
-    return {
-      statusCode: 200,
-      message: '받은 인맥 요청 목록을 성공적으로 조회했습니다.',
-      requests: requests.map(req => ({
-        requestId: req.request_id,
-        senderLoginId: req.sender.login_id,
-        senderName: req.sender.name,
-        requestedAt: req.created_at
-      }))
-    };
+    return requests.map(req => ({
+      requestId: req.request_id,
+      senderLoginId: req.sender.login_id,
+      senderName: req.sender.name,
+      requestedAt: req.created_at
+    }));
   }
 
   // 보낸 인맥 요청 목록을 조회하는 메서드
-  async getSentRequests(userId: number) {
+  async getSentRequests(userId: number): Promise<SentRequestResult[]> {
 
     // 사용자가 보낸 대기 중인 인맥 요청들을 조회합니다.
     const requests = await this.friendRequestRepository.find({
@@ -277,41 +245,41 @@ export class ContactsService {
       order: { created_at: 'DESC' }
     });
 
-    // 조회된 요청 목록을 반환
-    return {
-      statusCode: 200,
-      message: '보낸 인맥 요청 목록을 성공적으로 조회했습니다.',
-      requests: requests.map(req => ({
-        requestId: req.request_id,
-        receiverLoginId: req.receiver.login_id,
-        receiverName: req.receiver.name,
-        requestedAt: req.created_at
-      }))
-    };
+    return requests.map(req => ({
+      requestId: req.request_id,
+      receiverLoginId: req.receiver.login_id,
+      receiverName: req.receiver.name,
+      requestedAt: req.created_at
+    }));
   }
 
   // 기존 인맥을 제거하는 메서드
-  async deleteContact(userId: number, contactUserId: number) {
+  async deleteContact(userId: number, contactUserId: number): Promise<void> {
     return this.dataSource.transaction(async (transactionalEntityManager) => {
-      const contact = await transactionalEntityManager.findOne(BusinessContact, {
-      where: { 
-        userAccount: { user_id: userId },
-        contact_user: { user_id: contactUserId },
-        deleted_at: null // 이미 삭제되지 않은 레코드만 대상으로 함
-      },
+     // 양방향 관계 모두 체크 (userAccount <-> contact_user)
+    const contact = await transactionalEntityManager.findOne(BusinessContact, {
+      where: [
+        {  // 내가 userAccount인 경우
+          userAccount: { user_id: userId },
+          contact_user: { user_id: contactUserId },
+          deleted_at: null
+        },
+        {  // 내가 contact_user인 경우
+          userAccount: { user_id: contactUserId },
+          contact_user: { user_id: userId },
+          deleted_at: null
+        }
+      ],
       relations: ['userAccount', 'contact_user']
     });
   
-    if (!contact) {
-      throw new NotFoundException('해당 인맥을 찾을 수 없습니다.');
-    }
+      if (!contact) {
+        throw new NotFoundException('해당 인맥을 찾을 수 없습니다.');
+      }
   
+    // 특정 관계만 삭제
     await this.contactRepository.softRemove(contact);
   
-    return {
-      statusCode: 200,
-      message: '인맥이 성공적으로 삭제되었습니다.',
-    };
   });
   }
 }

@@ -1,9 +1,15 @@
-import { Controller, Get, Query, UseGuards, Req, Param, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards, Req, Param, HttpStatus } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { FeedService } from './feed.service';
 import { FeedQueryDto } from '../dto/feed-query.dto';
 import { Request } from 'express';  // Express Request 타입 임포트
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery, ApiParam } from '@nestjs/swagger';
+import { 
+  FeedResponse,
+  SortOption,
+  FilterType,
+  PostDetailResponse 
+} from '../types/feed.types';
 
 // JWT로부터 추출된 사용자 정보를 포함하는 요청 인터페이스
 interface CustomRequest extends Request {
@@ -19,19 +25,13 @@ interface CustomRequest extends Request {
 export class FeedController {
   constructor(private readonly feedService: FeedService) {}
 
-  /**
-   * 피드 조회
-   * @param req - 요청 객체, JWT로부터 유저 정보 추출
-   * @param query - 쿼리 파라미터 (정렬 옵션, 필터 옵션 등)
-   * @returns 필터링 및 정렬된 피드 목록
-   */
   @ApiOperation({ summary: '피드 조회', description: '메인 페이지 피드, 내 게시물, 특정 유저 게시물 조회' })
   @ApiQuery({ name: 'sort', enum: ['latest', 'likes', 'comments'], description: '정렬 기준 선택', required: false })
   @ApiQuery({ name: 'filter', enum: ['all', 'own', 'specific'], description: '게시물 필터링 옵션' })
   @ApiQuery({ name: 'specificUserId', type: Number, description: '특정 유저 게시물 조회 시 필요한 유저 ID', required: false })
-  @ApiResponse({ status: 200, description: '피드를 성공적으로 조회했습니다.', schema: {
+  @ApiResponse({ status: HttpStatus.OK, description: '피드를 성공적으로 조회했습니다.', schema: {
     example: {
-      statusCode: 200,
+      statusCode: HttpStatus.OK,
       message: "피드를 성공적으로 조회했습니다.",
       posts: [
         {
@@ -53,44 +53,44 @@ export class FeedController {
       ]
     }
   }})
-  @ApiResponse({ status: 400, description: '잘못된 요청입니다. specificUserId가 필요합니다.', schema: {
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: '잘못된 요청입니다. specificUserId가 필요합니다.', schema: {
     example: {
-      statusCode: 400,
+      statusCode: HttpStatus.BAD_REQUEST,
       message: "잘못된 요청입니다. specificUserId가 필요합니다.",
       error: "Bad Request"
     }
   }})
-  @ApiResponse({ status: 404, description: '해당 게시물을 찾을 수 없습니다.', schema: {
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: '해당 게시물을 찾을 수 없습니다.', schema: {
     example: {
-      statusCode: 404,
+      statusCode: HttpStatus.NOT_FOUND,
       message: "해당 게시물을 찾을 수 없습니다.",
       error: "Not Found"
     }
   }})
-  @Get()
-  async getFeed(@Req() req: CustomRequest, @Query() query: FeedQueryDto) {
-    const userId = req.user.userId;
-
-    // 특정 유저의 게시물을 조회하려면 specificUserId가 필수
-    if (query.filter === 'specific' && !query.specificUserId) {
-      throw new BadRequestException('잘못된 요청입니다. specificUserId가 필요합니다.');
-    }
-
-    // FeedService를 사용하여 피드 조회
-    return this.feedService.getFeed(userId, query.sort, query.filter, query.specificUserId);
+  @Get() // 피드 조회 핸들러 메서드
+  async getFeed(
+    @Req() req: CustomRequest, 
+    @Query() query: FeedQueryDto
+  ): Promise<FeedResponse> { 
+    const { userId } = req.user; // JWT에서 추출된 사용자 ID 가져오기
+    const { sort = SortOption.LATEST, filter = FilterType.ALL, specificUserId } = query;
+    
+    // FeedService를 통해 피드 조회
+    const posts = await this.feedService.getFeed(userId, sort, filter, specificUserId);
+    
+    // 응답 데이터 반환
+    return {
+      statusCode: HttpStatus.OK,
+      message: '피드를 성공적으로 조회했습니다.',
+      posts
+    };
   }
 
-  /**
-   * 게시물 상세 조회
-   * @param req - 요청 객체, JWT로부터 유저 정보 추출
-   * @param postId - 조회할 게시물 ID
-   * @returns 게시물 상세 정보
-   */
   @ApiOperation({ summary: '게시물 상세 조회', description: '게시물 ID를 통해 게시물의 상세 정보를 조회' })
   @ApiParam({ name: 'postId', type: Number, description: '조회할 게시물의 ID' })
-  @ApiResponse({ status: 200, description: '게시물을 성공적으로 조회했습니다.', schema: {
+  @ApiResponse({ status: HttpStatus.OK, description: '게시물을 성공적으로 조회했습니다.', schema: {
     example: {
-      statusCode: 200,
+      statusCode: HttpStatus.OK,
       message: "게시물을 성공적으로 조회했습니다.",
       postId: 123,
       createrId: 456,
@@ -129,34 +129,33 @@ export class FeedController {
       ]
     }
   }})
-  @ApiResponse({ status: 400, description: '유효하지 않은 게시물 ID입니다.', schema: {
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: '유효하지 않은 게시물 ID입니다.', schema: {
     example: {
-      statusCode: 400,
+      statusCode: HttpStatus.BAD_REQUEST,
       message: "유효하지 않은 게시물 ID입니다.",
       error: "Bad Request"
     }
   }})
-  @ApiResponse({ status: 404, description: '해당 게시물을 찾을 수 없습니다.', schema: {
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: '해당 게시물을 찾을 수 없습니다.', schema: {
     example: {
-      statusCode: 404,
+      statusCode: HttpStatus.NOT_FOUND,
       message: "해당 게시물을 찾을 수 없습니다.",
       error: "Not Found"
     }
   }})
-  @Get(':postId')
-  async getPostDetail(@Req() req: CustomRequest, @Param('postId') postId: number) {
-    const userId = req.user.userId;
-
-    // postId가 유효하지 않은 경우 처리
-    if (!postId) {
-      throw new BadRequestException('유효하지 않은 게시물 ID입니다.');
-    }
-
-    // FeedService를 사용하여 게시물 상세 정보 조회
+  @Get(':postId') // 게시물 상세 조회 핸들러 메서드
+  async getPostDetail(
+    @Req() req: CustomRequest,
+    @Param('postId') postId: number
+  ): Promise<PostDetailResponse> {
+    const { userId } = req.user;
     const post = await this.feedService.getPostDetail(userId, postId);
-    if (!post) {
-      throw new NotFoundException('해당 게시물을 찾을 수 없습니다.');
-    }
-    return post;
+    
+    // 응답 데이터 반환
+    return {
+      statusCode: HttpStatus.OK,
+      message: '게시물을 성공적으로 조회했습니다.',
+      ...post // 게시물 상세 정보 반환
+    };
   }
 }
