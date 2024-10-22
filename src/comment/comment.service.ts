@@ -5,21 +5,30 @@ import { Comment } from '../entities/comment.entity';
 import { CommentLike } from '../entities/comment-like.entity';
 import { Post } from '../entities/post.entity';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
-
+import { 
+  CommentCreateResult,
+  CommentUpdateResult,
+  CommentDeleteResult,
+  CommentLikeResult 
+} from '../types/comment.types';
 @Injectable()
 export class CommentService {
   constructor(
     @InjectRepository(Comment)
-    private commentRepository: Repository<Comment>, // Comment 엔티티를 위한 TypeORM 리포지토리 주입
+    private readonly  commentRepository: Repository<Comment>, // Comment 엔티티를 위한 TypeORM 리포지토리 주입
     @InjectRepository(CommentLike)
-    private commentLikeRepository: Repository<CommentLike>, // CommentLike 엔티티를 위한 TypeORM 리포지토리 주입
+    private readonly  commentLikeRepository: Repository<CommentLike>, // CommentLike 엔티티를 위한 TypeORM 리포지토리 주입
     @InjectRepository(Post)
-    private postRepository: Repository<Post>,
-    private dataSource: DataSource
+    private readonly  postRepository: Repository<Post>,
+    private readonly  dataSource: DataSource
   ) {}
 
   // 댓글 생성 메서드
-  async createComment(userId: number, postId: number, createCommentDto: CreateCommentDto) {
+  async createComment(
+    userId: number, 
+    postId: number, 
+    createCommentDto: CreateCommentDto
+  ): Promise<CommentCreateResult> {
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -43,21 +52,24 @@ export class CommentService {
     post.comments_count += 1;
     await queryRunner.manager.save(post);
 
-    return {
-      statusCode: 201,
-      message: '댓글이 성공적으로 작성되었습니다.',
-      commentId: comment.comment_id,
-    };
-  } catch (error) {
-    await queryRunner.rollbackTransaction();
-    throw error;
-  } finally {
-    await queryRunner.release();
+    await queryRunner.commitTransaction();
+
+      return { commentId: comment.comment_id };
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
-}
 
   // 댓글 수정 메서드
-  async updateComment(userId: number, postId: number, commentId: number, updateCommentDto: UpdateCommentDto) {
+  async updateComment(
+    userId: number, 
+    postId: number, 
+    commentId: number, 
+    updateCommentDto: UpdateCommentDto
+  ): Promise<CommentUpdateResult> {
     
     // 댓글 ID, 게시물 ID, 사용자 ID를 기반으로 댓글 조회
     const comment = await this.commentRepository.findOne({
@@ -74,12 +86,16 @@ export class CommentService {
     await this.commentRepository.save(comment); // 업데이트된 댓글을 데이터베이스에 저장
 
     return {
-      statusCode: 200,
-      message: '댓글이 성공적으로 수정되었습니다.',
+      commentId: comment.comment_id,
+      content: comment.content
     };
   }
 
-  async deleteComment(userId: number, postId: number, commentId: number) {
+  async deleteComment(
+    userId: number, 
+    postId: number, 
+    commentId: number
+  ): Promise<CommentDeleteResult> {
     const comment = await this.commentRepository.findOne({
       where: { comment_id: commentId, post: { post_id: postId }, userAccount: { user_id: userId } },
       relations: ['post'],
@@ -96,13 +112,17 @@ export class CommentService {
     await this.postRepository.save(comment.post);
 
     return {
-      statusCode: 200,
-      message: '댓글이 성공적으로 삭제되었습니다.',
+      commentId,
+      isDeleted: true
     };
   }
 
   // 댓글 좋아요/취소 메서드
-  async likeComment(userId: number, postId: number, commentId: number) {
+  async likeComment(
+    userId: number, 
+    postId: number, 
+    commentId: number
+  ): Promise<CommentLikeResult> {
     return this.dataSource.manager.transaction(async transactionalEntityManager => {
       // SELECT ... FOR UPDATE를 사용하여 행 잠금
       const comment = await transactionalEntityManager
@@ -119,10 +139,13 @@ export class CommentService {
       const existingLike = await transactionalEntityManager.findOne(CommentLike, {
         where: { comment: { comment_id: commentId }, user: { user_id: userId } }
       });
-  
+
+      let isLiked = false;
+
       if (existingLike) {
         await transactionalEntityManager.remove(existingLike);
         comment.like_count -= 1;
+        isLiked = false;
       } else {
         const newLike = transactionalEntityManager.create(CommentLike, {
           comment: { comment_id: commentId },
@@ -130,13 +153,13 @@ export class CommentService {
         });
         await transactionalEntityManager.save(newLike);
         comment.like_count += 1;
+        isLiked = true;
       }
   
       await transactionalEntityManager.save(comment);
   
       return {
-        statusCode: 200,
-        message: existingLike ? '댓글 좋아요를 취소했습니다.' : '댓글에 좋아요를 눌렀습니다.',
+        isLiked,
         likeCount: comment.like_count
       };
     });
