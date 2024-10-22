@@ -1,6 +1,7 @@
 import { IsString, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-export class ChangePasswordDto {
+import { UserPasswordInfo } from '../../types/user.types';
+export class ChangePasswordDto implements UserPasswordInfo {
   @ApiProperty({ description: '현재 비밀번호' })
   @IsString()
   currentPassword: string;
