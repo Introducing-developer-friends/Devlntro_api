@@ -92,129 +92,148 @@ describe('CommentService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should create a comment', async () => {
-    // `queryRunner.manager.findOne`이 게시물을 반환하도록 mock 설정
-    transactionalEntityManager.findOne.mockImplementation(async (entity, options) => {
-      if (entity === Post) {
-        return {
-          post_id: 1,
-          comments_count: 0,
-        } as Post;
-      }
-      return null;
-    });
-
-    transactionalEntityManager.create.mockReturnValue({
-      comment_id: 1,
-      content: 'Test comment',
-    } as Comment);
-
-    transactionalEntityManager.save.mockResolvedValue({
-      comment_id: 1,
-      content: 'Test comment',
-    } as Comment);
-
-    const result = await service.createComment(1, 1, { content: 'Test comment' });
-
-    expect(result).toEqual({
-      statusCode: 201,
-      message: '댓글이 성공적으로 작성되었습니다.',
-      commentId: 1,
-    });
-    expect(transactionalEntityManager.findOne).toHaveBeenCalledWith(Post, { where: { post_id: 1 } });
-  });
-
-  it('should throw NotFoundException when post not found', async () => {
-    // 게시물을 찾지 못하도록 mock 설정
-    transactionalEntityManager.findOne.mockResolvedValue(null);
-
-    await expect(service.createComment(1, 1, { content: 'Test comment' }))
-      .rejects
-      .toThrow(NotFoundException);
-  });
-
-  it('should update a comment', async () => {
-    mockCommentRepository.findOne.mockResolvedValue({
-      comment_id: 1,
-      content: 'Old content',
-      userAccount: { user_id: 1 } as UserAccount,
-    } as Comment);
-
-    const result = await service.updateComment(1, 1, 1, { content: 'Updated comment' });
-
-    expect(result).toEqual({
-      statusCode: 200,
-      message: '댓글이 성공적으로 수정되었습니다.',
-    });
-    expect(mockCommentRepository.save).toHaveBeenCalled();
-  });
-
-  it('should delete a comment', async () => {
-    mockCommentRepository.findOne.mockResolvedValue({
-      comment_id: 1,
-      content: 'Comment content',
-      post: {
+  describe('createComment', () => {
+    it('should create a comment', async () => {
+      transactionalEntityManager.findOne.mockResolvedValue({
         post_id: 1,
-        comments_count: 2,
-      } as Post,
-      userAccount: { user_id: 1 } as UserAccount,
-    } as Comment);
+        comments_count: 0,
+      } as Post);
 
-    const result = await service.deleteComment(1, 1, 1);
+      transactionalEntityManager.create.mockReturnValue({
+        comment_id: 1,
+        content: 'Test comment',
+      } as Comment);
 
-    expect(result).toEqual({
-      statusCode: 200,
-      message: '댓글이 성공적으로 삭제되었습니다.',
+      transactionalEntityManager.save.mockResolvedValue({
+        comment_id: 1,
+        content: 'Test comment',
+      } as Comment);
+
+      const result = await service.createComment(1, 1, { content: 'Test comment' });
+
+      expect(result).toEqual({
+        commentId: 1
+      });
+      expect(queryRunner.commitTransaction).toHaveBeenCalled();
     });
-    expect(mockCommentRepository.softRemove).toHaveBeenCalled();
-    expect(mockPostRepository.save).toHaveBeenCalled();
-  });
 
-  it('should like a comment', async () => {
-    // `transactionalEntityManager.createQueryBuilder().getOne()`이 댓글을 반환하도록 설정
-    queryBuilder.getOne.mockResolvedValue({
-      comment_id: 1,
-      like_count: 0,
-    } as Comment);
+    it('should throw NotFoundException when post not found', async () => {
+      transactionalEntityManager.findOne.mockResolvedValue(null);
 
-    // `transactionalEntityManager.findOne`이 좋아요를 찾지 못하도록 설정
-    transactionalEntityManager.findOne.mockResolvedValue(null);
-
-    // `transactionalEntityManager.save`가 새로운 좋아요를 반환하도록 설정
-    transactionalEntityManager.save.mockResolvedValue({
-      comment_like_id: 1,
-    } as CommentLike);
-
-    const result = await service.likeComment(1, 1, 1);
-
-    expect(result).toEqual({
-      statusCode: 200,
-      message: '댓글에 좋아요를 눌렀습니다.',
-      likeCount: 1,
+      await expect(service.createComment(1, 1, { content: 'Test comment' }))
+        .rejects
+        .toThrow(NotFoundException);
+      
+      expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
     });
   });
 
-  it('should remove like from a comment', async () => {
-    // `transactionalEntityManager.createQueryBuilder().getOne()`이 댓글을 반환하도록 설정
-    queryBuilder.getOne.mockResolvedValue({
-      comment_id: 1,
-      like_count: 1,
-    } as Comment);
+  describe('updateComment', () => {
+    it('should update a comment', async () => {
+      const mockComment = {
+        comment_id: 1,
+        content: 'Old content',
+        userAccount: { user_id: 1 } as UserAccount,
+      } as Comment;
 
-    // `transactionalEntityManager.findOne`이 기존 좋아요를 반환하도록 설정
-    transactionalEntityManager.findOne.mockResolvedValue({
-      comment_like_id: 1,
-    } as CommentLike);
+      mockCommentRepository.findOne.mockResolvedValue(mockComment);
+      mockCommentRepository.save.mockResolvedValue({
+        ...mockComment,
+        content: 'Updated comment'
+      });
 
-    // `transactionalEntityManager.remove`를 mock 설정
-    transactionalEntityManager.remove.mockResolvedValue(undefined);
+      const result = await service.updateComment(1, 1, 1, { content: 'Updated comment' });
 
-    const result = await service.likeComment(1, 1, 1);
+      expect(result).toEqual({
+        commentId: 1,
+        content: 'Updated comment'
+      });
+    });
 
-    expect(result).toEqual({
-      statusCode: 200,
-      message: '댓글 좋아요를 취소했습니다.',
-      likeCount: 0,
+    it('should throw NotFoundException when comment not found', async () => {
+      mockCommentRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.updateComment(1, 1, 1, { content: 'Updated comment' }))
+        .rejects
+        .toThrow(NotFoundException);
+    });
+  });
+
+  describe('deleteComment', () => {
+    it('should delete a comment', async () => {
+      mockCommentRepository.findOne.mockResolvedValue({
+        comment_id: 1,
+        content: 'Comment content',
+        post: {
+          post_id: 1,
+          comments_count: 2,
+        } as Post,
+        userAccount: { user_id: 1 } as UserAccount,
+      } as Comment);
+
+      const result = await service.deleteComment(1, 1, 1);
+
+      expect(result).toEqual({
+        commentId: 1,
+        isDeleted: true
+      });
+      expect(mockCommentRepository.softRemove).toHaveBeenCalled();
+      expect(mockPostRepository.save).toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException when comment not found', async () => {
+      mockCommentRepository.findOne.mockResolvedValue(null);
+
+      await expect(service.deleteComment(1, 1, 1))
+        .rejects
+        .toThrow(NotFoundException);
+    });
+  });
+
+  describe('likeComment', () => {
+    it('should like a comment', async () => {
+      queryBuilder.getOne.mockResolvedValue({
+        comment_id: 1,
+        like_count: 0,
+      } as Comment);
+
+      transactionalEntityManager.findOne.mockResolvedValue(null);
+      transactionalEntityManager.create.mockReturnValue({
+        comment_like_id: 1,
+      } as CommentLike);
+
+      const result = await service.likeComment(1, 1, 1);
+
+      expect(result).toEqual({
+        isLiked: true,
+        likeCount: 1
+      });
+    });
+
+    it('should remove like from a comment', async () => {
+      queryBuilder.getOne.mockResolvedValue({
+        comment_id: 1,
+        like_count: 1,
+      } as Comment);
+
+      transactionalEntityManager.findOne.mockResolvedValue({
+        comment_like_id: 1,
+      } as CommentLike);
+
+      const result = await service.likeComment(1, 1, 1);
+
+      expect(result).toEqual({
+        isLiked: false,
+        likeCount: 0
+      });
+    });
+
+    it('should throw NotFoundException when comment not found', async () => {
+      queryBuilder.getOne.mockResolvedValue(null);
+
+      await expect(service.likeComment(1, 1, 1))
+        .rejects
+        .toThrow(NotFoundException);
     });
   });
 });
