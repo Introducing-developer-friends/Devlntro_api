@@ -7,8 +7,9 @@ import { BusinessProfile } from '../entities/business-profile.entity';
 import { BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
-jest.mock('bcrypt'); // bcrypt 모듈을 모킹
+jest.mock('bcrypt');
 
+// 테스트 시작 전에 실행되는 초기화 블록
 describe('AuthService', () => {
   let service: AuthService;
   let mockUserRepository: any;
@@ -17,10 +18,7 @@ describe('AuthService', () => {
   let mockQueryBuilder: any;
   let mockQueryRunner: any;
 
-  // 각 테스트 전에 모킹된 객체 및 서비스 설정
   beforeEach(async () => {
-
-    // 쿼리 빌더 설정 (where, getCount, getOne 메서드 모킹)
     mockQueryBuilder = {
       where: jest.fn().mockReturnThis(),
       getCount: jest.fn(),
@@ -28,7 +26,7 @@ describe('AuthService', () => {
       select: jest.fn().mockReturnThis(),
     };
 
-    // 쿼리 러너 설정 (트랜잭션 관련 메서드 모킹)
+    // QueryRunner Mock 설정
     mockQueryRunner = {
       connect: jest.fn(),
       startTransaction: jest.fn(),
@@ -42,7 +40,7 @@ describe('AuthService', () => {
       },
     };
 
-    // UserAccount 리포지토리 설정
+    // 유저 레포지토리 Mock 설정
     mockUserRepository = {
       createQueryBuilder: jest.fn(() => mockQueryBuilder),
       manager: {
@@ -52,18 +50,18 @@ describe('AuthService', () => {
       },
     };
 
-    // BusinessProfile 리포지토리 설정
+    // 프로필 레포지토리 Mock 설정
     mockProfileRepository = {
       create: jest.fn(),
       save: jest.fn(),
     };
 
-    // JwtService 설정
+    // JwtService Mock 설정
     mockJwtService = {
-      sign: jest.fn(),
+      sign: jest.fn().mockReturnValue('test_token'),
     };
 
-    // 테스트 모듈 설정
+    // NestJS 테스트 모듈 생성 및 컴파일
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -76,33 +74,30 @@ describe('AuthService', () => {
     service = module.get<AuthService>(AuthService);
   });
 
-  // AuthService가 정의되었는지 확인
+  // AuthService가 정의되었는지 테스트
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  // ID 중복 체크 테스트
-  it('should return false if ID is not available', async () => {
-    mockQueryBuilder.getCount.mockResolvedValue(1); // 이미 아이디가 존재한다고 설정
-    const result = await service.checkIdAvailability('test_id');
-    expect(result).toEqual({ available: false, message: '이미 사용 중인 아이디입니다.' });
+  // checkIdAvailability 메서드 테스트
+  describe('checkIdAvailability', () => {
+    it('should return true if ID is available', async () => {
+      mockQueryBuilder.getCount.mockResolvedValue(0);
+      const result = await service.checkIdAvailability('test_id');
+      expect(result).toEqual({ available: true });
+    });
+
+    // ID가 이미 사용 중일 때
+    it('should return false if ID is not available', async () => {
+      mockQueryBuilder.getCount.mockResolvedValue(1);
+      const result = await service.checkIdAvailability('test_id');
+      expect(result).toEqual({ available: false });
+    });
   });
 
-  // 회원가입 테스트
-  it('should register a new user', async () => {
-    mockQueryBuilder.getOne.mockResolvedValue(null);
-    mockQueryRunner.manager.create.mockImplementation((entity, data) => {
-      if (entity === UserAccount) {
-        return { user_id: 1, ...data };
-      }
-      return data;
-    });
-    mockQueryRunner.manager.save.mockResolvedValueOnce({ user_id: 1 });
-    mockQueryRunner.manager.save.mockResolvedValueOnce({});
-    (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
-
-    // 회원가입 호출
-    const result = await service.register({
+  // register 메서드 테스트
+  describe('register', () => {
+    const registerDto = {
       login_id: 'test',
       password: 'password',
       confirm_password: 'password',
@@ -112,40 +107,100 @@ describe('AuthService', () => {
       position: 'Developer',
       email: 'test@test.com',
       phone: '01012345678',
+    };
+
+    // 유저 등록 성공 시
+    it('should register a new user', async () => {
+      mockQueryBuilder.getOne.mockResolvedValue(null);
+      mockQueryRunner.manager.create
+        .mockImplementationOnce((entity, data) => ({
+          user_id: 1,
+          ...data,
+        }))
+        .mockImplementationOnce((entity, data) => ({
+          ...data,
+        }));
+      
+      mockQueryRunner.manager.save
+        .mockResolvedValueOnce({ user_id: 1 })
+        .mockResolvedValueOnce({});
+      
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
+
+      const result = await service.register(registerDto);
+
+      // 트랜잭션 동작 확인
+      expect(mockQueryRunner.connect).toHaveBeenCalled();
+      expect(mockQueryRunner.startTransaction).toHaveBeenCalled();
+      expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();
+      expect(mockQueryRunner.release).toHaveBeenCalled();
+
+      expect(result).toEqual({
+        userId: 1
+      });
     });
 
-    // 트랜잭션 관련 메서드들이 호출되었는지 확인
-    expect(mockQueryRunner.connect).toHaveBeenCalled();
-    expect(mockQueryRunner.startTransaction).toHaveBeenCalled();
-    expect(mockQueryRunner.commitTransaction).toHaveBeenCalled();
-    expect(mockQueryRunner.release).toHaveBeenCalled();
+    // 비밀번호가 일치하지 않을 때
+    it('should throw BadRequestException if passwords do not match', async () => {
+      const invalidDto = {
+        ...registerDto,
+        confirm_password: 'different_password',
+      };
 
-    // 회원가입 결과 확인
-    expect(result).toEqual({
-      userId: 1,
-      message: '회원가입이 성공적으로 완료되었습니다.',
+      await expect(service.register(invalidDto))
+        .rejects
+        .toThrow(BadRequestException);
+
+      expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
+      expect(mockQueryRunner.release).toHaveBeenCalled();
+    });
+
+    // 유저가 이미 존재할 때
+    it('should throw BadRequestException if user already exists', async () => {
+      mockQueryBuilder.getOne.mockResolvedValue({ user_id: 1 });
+
+      await expect(service.register(registerDto))
+        .rejects
+        .toThrow(BadRequestException);
+
+      expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
+      expect(mockQueryRunner.release).toHaveBeenCalled();
     });
   });
 
-  // 회원가입 중 에러 발생 시 예외 처리 테스트
-  it('should throw BadRequestException if registration fails', async () => {
-    mockQueryBuilder.getOne.mockRejectedValue(new Error('Database error'));
-
-    // 회원가입 호출 시 BadRequestException이 발생하는지 확인
-    await expect(service.register({
+  // login 메서드 테스트
+  describe('login', () => {
+    const loginDto = {
       login_id: 'test',
-      password: 'password',
-      confirm_password: 'password',
-      name: 'Test User',
-      company: 'Test Company',
-      department: 'Test Dept',
-      position: 'Developer',
-      email: 'test@test.com',
-      phone: '01012345678',
-    })).rejects.toThrow(BadRequestException);
+      password: 'password'
+    };
 
-    // 트랜잭션 롤백과 release가 호출되었는지 확인
-    expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
-    expect(mockQueryRunner.release).toHaveBeenCalled();
+    // 로그인 성공 시
+    it('should return token and userId on successful login', async () => {
+      const mockUser = {
+        user_id: 1,
+        login_id: 'test',
+        password: 'hashed_password'
+      };
+
+      mockQueryBuilder.getOne.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      const result = await service.login(loginDto);
+
+      expect(result).toEqual({
+        token: 'test_token',
+        userId: 1
+      });
+    });
+
+    // 로그인 실패 (유저 정보 없음)
+    it('should return null for invalid credentials', async () => {
+      mockQueryBuilder.getOne.mockResolvedValue(null);
+
+      const result = await service.login(loginDto);
+
+      expect(result).toBeNull(); // 잘못된 자격 증명으로 null 반환
+    });
   });
 });
