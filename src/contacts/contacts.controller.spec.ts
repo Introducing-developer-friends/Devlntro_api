@@ -2,23 +2,25 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ContactsController } from './contacts.controller';
 import { ContactsService } from './contacts.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
-
-// ContactsService의 메서드를 모킹한 객체를 생성
-const mockContactsService = {
-  getContactList: jest.fn(),
-  getContactDetail: jest.fn(),
-  addContactRequest: jest.fn(),
-  acceptContactRequest: jest.fn(),
-  rejectContactRequest: jest.fn(),
-  getReceivedRequests: jest.fn(),
-  getSentRequests: jest.fn(),
-  deleteContact: jest.fn(),
-};
+import { BadRequestException, NotFoundException, ConflictException, HttpStatus  } from '@nestjs/common';
+import { ContactResponse } from '../types/contacts.types';
 
 describe('ContactsController', () => {
   let controller: ContactsController;
   let service: ContactsService;
+
+
+  // ContactsService의 메서드를 모킹한 객체를 생성
+  const mockContactsService = {
+    getContactList: jest.fn(),
+    getContactDetail: jest.fn(),
+    addContactRequest: jest.fn(),
+    acceptContactRequest: jest.fn(),
+    rejectContactRequest: jest.fn(),
+    getReceivedRequests: jest.fn(),
+    getSentRequests: jest.fn(),
+    deleteContact: jest.fn(),
+  };
 
   // 각 테스트 전 모듈을 설정하고 ContactsController와 ContactsService 인스턴스를 가져옴
   beforeEach(async () => {
@@ -48,175 +50,190 @@ describe('ContactsController', () => {
 
   // getContactList 메서드에 대한 테스트
   describe('getContactList', () => {
-    it('should return contact list', async () => {
+    const mockContacts = [
+      { userId: 1, name: 'John Doe', company: 'ABC Corp', department: 'Engineering' }
+    ];
 
-      // 서비스에서 반환할 가짜 데이터를 설정
-      const mockList = {
-        statusCode: 200,
+    it('should return contact list when contacts exist', async () => {
+      mockContactsService.getContactList.mockResolvedValue(mockContacts);
+
+      const expectedResponse: ContactResponse = {
+        statusCode: HttpStatus.OK,
         message: '명함 리스트를 성공적으로 조회했습니다.',
-        contacts: [{ userId: 1, name: 'John Doe', company: 'ABC Corp', department: 'Engineering' }],
+        contacts: mockContacts
       };
-      mockContactsService.getContactList.mockResolvedValue(mockList);
 
-      const req = { user: { userId: 1 } }; // 요청 객체 모킹
-      const result = await controller.getContactList(req as any);
-
-      // 결과와 서비스 메서드가 호출되었는지 확인
-      expect(result).toEqual(mockList);
+      const result = await controller.getContactList({ user: { userId: 1 } } as any);
+      expect(result).toEqual(expectedResponse);
       expect(mockContactsService.getContactList).toHaveBeenCalledWith(1);
     });
 
-    // 사용자의 정보가 없을 경우 BadRequestException이 발생하는지 확인하는 테스트
-    it('should throw BadRequestException if user info is missing', async () => {
-      const req = { user: {} }; // user 정보가 없는 요청
-      await expect(controller.getContactList(req as any)).rejects.toThrow(BadRequestException);
+    it('should return empty message when no contacts exist', async () => {
+      mockContactsService.getContactList.mockResolvedValue([]);
+
+      const expectedResponse: ContactResponse = {
+        statusCode: HttpStatus.OK,
+        message: '등록된 명함이 없습니다.',
+        contacts: []
+      };
+
+      const result = await controller.getContactList({ user: { userId: 1 } } as any);
+      expect(result).toEqual(expectedResponse);
     });
   });
 
   // getContactDetail 메서드에 대한 테스트
   describe('getContactDetail', () => {
+    const mockContact = {
+      userId: 1,
+      name: 'John Doe',
+      company: 'ABC Corp',
+      department: 'Engineering',
+      position: 'Manager',
+      email: 'john@example.com',
+      phone: '123-456-7890',
+    };
+
     it('should return contact details', async () => {
+      mockContactsService.getContactDetail.mockResolvedValue(mockContact);
 
-      // 서비스에서 반환할 가짜 데이터를 설정
-      const mockDetail = {
-        statusCode: 200,
+      const expectedResponse: ContactResponse = {
+        statusCode: HttpStatus.OK,
         message: '명함 상세 정보를 성공적으로 조회했습니다.',
-        contact: {
-          userId: 1,
-          name: 'John Doe',
-          company: 'ABC Corp',
-          department: 'Engineering',
-          position: 'Manager',
-          email: 'john@example.com',
-          phone: '123-456-7890',
-        },
+        contact: mockContact
       };
-      mockContactsService.getContactDetail.mockResolvedValue(mockDetail);
 
-      const req = { user: { userId: 1 } }; // 요청 객체 모킹
-      const result = await controller.getContactDetail(req as any, 2);
-
-      // 결과와 서비스 메서드가 호출되었는지 확인
-      expect(result).toEqual(mockDetail);
+      const result = await controller.getContactDetail({ user: { userId: 1 } } as any, 2);
+      expect(result).toEqual(expectedResponse);
       expect(mockContactsService.getContactDetail).toHaveBeenCalledWith(1, 2);
+
     });
 
-    // contact를 찾지 못할 경우 NotFoundException이 발생하는지 확인하는 테스트
     it('should throw NotFoundException if contact is not found', async () => {
       mockContactsService.getContactDetail.mockRejectedValue(new NotFoundException());
-      const req = { user: { userId: 1 } };
-      await expect(controller.getContactDetail(req as any, 999)).rejects.toThrow(NotFoundException);
+      await expect(controller.getContactDetail({ user: { userId: 1 } } as any, 999))
+        .rejects.toThrow(NotFoundException);
     });
   });
 
   // addContactRequest 메서드에 대한 테스트
   describe('addContactRequest', () => {
     it('should add a new contact request', async () => {
+      const mockResult = { requestId: 1 };
+      mockContactsService.addContactRequest.mockResolvedValue(mockResult);
 
-      // 서비스에서 반환할 가짜 데이터를 설정
-      const mockResponse = { statusCode: 201, message: '인맥 요청이 성공적으로 추가되었습니다.', requestId: 1 };
-      mockContactsService.addContactRequest.mockResolvedValue(mockResponse);
+      const expectedResponse: ContactResponse = {
+        statusCode: HttpStatus.CREATED,
+        message: '인맥 요청이 성공적으로 추가되었습니다.',
+        requestId: 1
+      };
 
-      const req = { user: { userId: 1 } };
-      const dto = { login_id: 'john_doe' };
+      const result = await controller.addContactRequest(
+        { user: { userId: 1 } } as any,
+        { login_id: 'john_doe' }
+      );
 
-      const result = await controller.addContactRequest(req as any, dto);
-      expect(result).toEqual(mockResponse);
+      expect(result).toEqual(expectedResponse);
       expect(mockContactsService.addContactRequest).toHaveBeenCalledWith(1, 'john_doe');
+
     });
 
-    // 유효하지 않은 요청일 때 BadRequestException이 발생하는지 확인하는 테스트
+    
+
     it('should throw BadRequestException on invalid request', async () => {
       mockContactsService.addContactRequest.mockRejectedValue(new BadRequestException());
-      const req = { user: { userId: 1 } };
-      const dto = { login_id: 'invalid_user' };
-      await expect(controller.addContactRequest(req as any, dto)).rejects.toThrow(BadRequestException);
+      
+      await expect(
+        controller.addContactRequest({ user: { userId: 1 } } as any, { login_id: 'invalid_user' })
+      ).rejects.toThrow(BadRequestException);
     });
 
-    // 이미 요청이 존재할 때 ConflictException이 발생하는지 확인하는 테스트
     it('should throw ConflictException if request already exists', async () => {
       mockContactsService.addContactRequest.mockRejectedValue(new ConflictException());
-      const req = { user: { userId: 1 } };
-      const dto = { login_id: 'existing_user' };
-      await expect(controller.addContactRequest(req as any, dto)).rejects.toThrow(ConflictException);
+      
+      await expect(
+        controller.addContactRequest({ user: { userId: 1 } } as any, { login_id: 'existing_user' })
+      ).rejects.toThrow(ConflictException);
     });
   });
 
   // acceptContactRequest 메서드에 대한 테스트
   describe('acceptContactRequest', () => {
     it('should accept a contact request', async () => {
-      const mockResponse = { statusCode: 200, message: '인맥 요청이 수락되었습니다.' };
-      mockContactsService.acceptContactRequest.mockResolvedValue(mockResponse);
+      mockContactsService.acceptContactRequest.mockResolvedValue(undefined);
 
-      const req = { user: { userId: 1 } };
-      const result = await controller.acceptContactRequest(req as any, 1);
+      const expectedResponse: ContactResponse = {
+        statusCode: HttpStatus.OK,
+        message: '인맥 요청이 수락되었습니다.'
+      };
 
-      // 결과와 서비스 메서드 호출 여부 확인
-      expect(result).toEqual(mockResponse);
+      const result = await controller.acceptContactRequest({ user: { userId: 1 } } as any, 1);
+      expect(result).toEqual(expectedResponse);
       expect(mockContactsService.acceptContactRequest).toHaveBeenCalledWith(1, 1);
+
     });
 
     it('should throw NotFoundException if request is not found', async () => {
       mockContactsService.acceptContactRequest.mockRejectedValue(new NotFoundException());
-      const req = { user: { userId: 1 } };
-      await expect(controller.acceptContactRequest(req as any, 999)).rejects.toThrow(NotFoundException);
+      await expect(controller.acceptContactRequest({ user: { userId: 1 } } as any, 999))
+        .rejects.toThrow(NotFoundException);
     });
   });
 
   // rejectContactRequest 메서드에 대한 테스트
   describe('rejectContactRequest', () => {
     it('should reject a contact request', async () => {
-      const mockResponse = { statusCode: 200, message: '인맥 요청이 거절되었습니다.' };
-      mockContactsService.rejectContactRequest.mockResolvedValue(mockResponse);
+      mockContactsService.rejectContactRequest.mockResolvedValue(undefined);
 
-      const req = { user: { userId: 1 } };
-      const result = await controller.rejectContactRequest(req as any, 1);
+      const expectedResponse: ContactResponse = {
+        statusCode: HttpStatus.OK,
+        message: '인맥 요청이 거절되었습니다.'
+      };
 
-      // rejectContactRequest 메서드에 대한 테스트
-      expect(result).toEqual(mockResponse);
+      const result = await controller.rejectContactRequest({ user: { userId: 1 } } as any, 1);
+      expect(result).toEqual(expectedResponse);
       expect(mockContactsService.rejectContactRequest).toHaveBeenCalledWith(1, 1);
-    });
-
-    // 요청을 찾지 못할 때 NotFoundException이 발생하는지 확인하는 테스트
-    it('should throw NotFoundException if request is not found', async () => {
-      mockContactsService.rejectContactRequest.mockRejectedValue(new NotFoundException());
-      const req = { user: { userId: 1 } };
-      await expect(controller.rejectContactRequest(req as any, 999)).rejects.toThrow(NotFoundException);
     });
   });
 
   // getReceivedRequests 메서드에 대한 테스트
   describe('getReceivedRequests', () => {
+    const mockRequests = [
+      { requestId: 1, senderLoginId: 'user1', senderName: 'User One', requestedAt: new Date() }
+    ];
+
     it('should return received requests', async () => {
-      const mockResponse = {
-        statusCode: 200,
+      mockContactsService.getReceivedRequests.mockResolvedValue(mockRequests);
+
+      const expectedResponse: ContactResponse = {
+        statusCode: HttpStatus.OK,
         message: '받은 인맥 요청 목록을 성공적으로 조회했습니다.',
-        requests: [{ requestId: 1, senderLoginId: 'user1', senderName: 'User One', requestedAt: new Date() }],
+        requests: mockRequests
       };
-      mockContactsService.getReceivedRequests.mockResolvedValue(mockResponse);
 
-      const req = { user: { userId: 1 } };
-      const result = await controller.getReceivedRequests(req as any);
-
-      expect(result).toEqual(mockResponse);
+      const result = await controller.getReceivedRequests({ user: { userId: 1 } } as any);
+      expect(result).toEqual(expectedResponse);
       expect(mockContactsService.getReceivedRequests).toHaveBeenCalledWith(1);
     });
   });
 
   // getSentRequests 메서드에 대한 테스트
   describe('getSentRequests', () => {
+    const mockRequests = [
+      { requestId: 1, receiverLoginId: 'user2', receiverName: 'User Two', requestedAt: new Date() }
+    ];
+
     it('should return sent requests', async () => {
-      const mockResponse = {
-        statusCode: 200,
+      mockContactsService.getSentRequests.mockResolvedValue(mockRequests);
+
+      const expectedResponse: ContactResponse = {
+        statusCode: HttpStatus.OK,
         message: '보낸 인맥 요청 목록을 성공적으로 조회했습니다.',
-        requests: [{ requestId: 1, receiverLoginId: 'user2', receiverName: 'User Two', requestedAt: new Date() }],
-      }; // 가짜 응답 데이터
-      mockContactsService.getSentRequests.mockResolvedValue(mockResponse);
+        requests: mockRequests
+      };
 
-      const req = { user: { userId: 1 } };
-      const result = await controller.getSentRequests(req as any);
-
-      expect(result).toEqual(mockResponse);
+      const result = await controller.getSentRequests({ user: { userId: 1 } } as any);
+      expect(result).toEqual(expectedResponse);
       expect(mockContactsService.getSentRequests).toHaveBeenCalledWith(1);
     });
   });
@@ -224,22 +241,24 @@ describe('ContactsController', () => {
   // deleteContact 메서드에 대한 테스트
   describe('deleteContact', () => {
     it('should delete a contact', async () => {
-      const mockResponse = { statusCode: 200, message: '인맥이 성공적으로 삭제되었습니다.' };
-      mockContactsService.deleteContact.mockResolvedValue(mockResponse);
+      mockContactsService.deleteContact.mockResolvedValue(undefined);
 
-      const req = { user: { userId: 1 } };
-      const result = await controller.deleteContact(req as any, 2);
+      const expectedResponse: ContactResponse = {
+        statusCode: HttpStatus.OK,
+        message: '인맥이 성공적으로 삭제되었습니다.'
+      };
 
-      // 결과와 서비스 메서드 호출 여부 확인
-      expect(result).toEqual(mockResponse);
+      const result = await controller.deleteContact({ user: { userId: 1 } } as any, 2);
+      expect(result).toEqual(expectedResponse);
       expect(mockContactsService.deleteContact).toHaveBeenCalledWith(1, 2);
     });
 
-    // contact를 찾지 못할 때 NotFoundException이 발생하는지 확인하는 테스트
     it('should throw NotFoundException if contact is not found', async () => {
       mockContactsService.deleteContact.mockRejectedValue(new NotFoundException());
-      const req = { user: { userId: 1 } };
-      await expect(controller.deleteContact(req as any, 999)).rejects.toThrow(NotFoundException);
+      
+      await expect(
+        controller.deleteContact({ user: { userId: 1 } } as any, 999)
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });
