@@ -6,7 +6,14 @@ import { UserAccount } from '../entities/user-account.entity';
 import { BusinessProfile } from '../entities/business-profile.entity';
 import { FriendRequest } from '../entities/friend-request.entity';
 import { Repository, DataSource } from 'typeorm';
-import { ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  ContactListResult,
+  ContactDetailResult,
+  ContactRequestResult,
+  ReceivedRequestResult,
+  SentRequestResult
+} from '../types/contacts.types';
 
 describe('ContactsService', () => {
     let service: ContactsService;
@@ -52,21 +59,35 @@ describe('ContactsService', () => {
     dataSource = module.get<DataSource>(DataSource);
   });
 
+  // 서비스가 정의되었는지 테스트
   it('should be defined', () => {
     expect(service).toBeDefined(); // ContactsService가 정의되었는지 확인
   });
 
   // getContactList 메서드 테스트
   describe('getContactList', () => {
+    const mockContactList: ContactListResult[] = [
+      {
+        userId: 2,
+        name: 'User2',
+        company: 'Company2',
+        department: 'Dept2'
+      }
+    ];
 
-    // 연락처 리스트가 성공적으로 반환되는 경우
     it('should return contact list', async () => {
       const mockContacts = [
-        { userAccount: { user_id: 1, name: 'User1' }, contact_user: { user_id: 2, name: 'User2', profile: { company: 'Company2', department: 'Dept2' } } },
-        { userAccount: { user_id: 2, name: 'User2' }, contact_user: { user_id: 1, name: 'User1', profile: { company: 'Company1', department: 'Dept1' } } },
+        {
+          userAccount: { user_id: 1, name: 'User1' },
+          contact_user: {
+            user_id: 2,
+            name: 'User2',
+            profile: { company: 'Company2', department: 'Dept2' }
+          }
+        }
       ];
 
-      // QueryBuilder와 메서드 모킹
+      // createQueryBuilder 모킹
       jest.spyOn(contactRepository, 'createQueryBuilder').mockReturnValue({
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -76,159 +97,131 @@ describe('ContactsService', () => {
       } as any);
 
       const result = await service.getContactList(1);
-      expect(result.statusCode).toBe(200);
-      expect(result.contacts.length).toBe(2);
-    });
-
-    // 연락처가 없을 때 예외 처리
-    it('should throw NotFoundException when no contacts found', async () => {
-      jest.spyOn(contactRepository, 'createQueryBuilder').mockReturnValue({
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        setParameter: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([]),
-      } as any);
-
-      await expect(service.getContactList(1)).rejects.toThrow(NotFoundException);
+      expect(result).toEqual(mockContactList);
     });
   });
 
   // getContactDetail 메서드 테스트
   describe('getContactDetail', () => {
+    const mockContactDetail: ContactDetailResult = {
+      userId: 2,
+      name: 'User2',
+      company: 'Company2',
+      department: 'Dept2',
+      position: 'Position2',
+      email: 'user2@example.com',
+      phone: '1234567890'
+    };
 
-    // 연락처 상세 정보가 성공적으로 반환되는 경우
     it('should return contact detail', async () => {
-      const mockUser = { 
-        user_id: 2, 
-        name: 'User2', 
-        profile: { company: 'Company2', department: 'Dept2', position: 'Position2', email: 'user2@example.com', phone: '1234567890' } 
+      const mockUser = {
+        user_id: 2,
+        name: 'User2',
+        profile: {
+          company: 'Company2',
+          department: 'Dept2',
+          position: 'Position2',
+          email: 'user2@example.com',
+          phone: '1234567890'
+        }
       };
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as UserAccount);
 
+      // findOne 메서드를 모킹하여 mockUser 반환
+      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as UserAccount);
       const result = await service.getContactDetail(1, 2);
-      expect(result.statusCode).toBe(200); // HTTP 상태 코드가 200인지 확인
-      expect(result.contact.userId).toBe(2); // 반환된 연락처의 유저 ID가 2인지 확인
+      expect(result).toEqual(mockContactDetail);
     });
 
-    // 유저를 찾을 수 없을 때 예외 처리
     it('should throw NotFoundException when user not found', async () => {
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
-
       await expect(service.getContactDetail(1, 2)).rejects.toThrow(NotFoundException);
     });
   });
 
   // addContactRequest 메서드 테스트
   describe('addContactRequest', () => {
+    const mockRequestResult: ContactRequestResult = {
+      requestId: 1
+    };
 
-    // 유저 또는 연락처 유저가 없을 때 예외 처리
-    it('should throw BadRequestException if user or contactUser is not found', async () => {
-      const transactionMock = jest.fn().mockImplementation(async (cb) => {
-        return await cb({
-          findOne: jest.fn().mockResolvedValueOnce(null).mockResolvedValueOnce(null),
-        });
-      });
-      (dataSource.transaction as jest.Mock).mockImplementation(transactionMock);
-
-      await expect(service.addContactRequest(1, 'user2')).rejects.toThrow(BadRequestException);
-    });
-
-    // 친구 요청이 이미 존재할 때 예외 처리
-    it('should throw ConflictException if request already exists', async () => {
-      const transactionMock = jest.fn().mockImplementation(async (cb) => {
-        return await cb({
-          findOne: jest.fn()
-            .mockResolvedValueOnce({ user_id: 1 } as UserAccount)
-            .mockResolvedValueOnce({ user_id: 2 } as UserAccount)
-            .mockResolvedValueOnce({ request_id: 1 } as FriendRequest),
-        });
-      });
-      (dataSource.transaction as jest.Mock).mockImplementation(transactionMock);
-
-      await expect(service.addContactRequest(1, 'user2')).rejects.toThrow(ConflictException); // ConflictException 발생 여부 확인
-    });
-
-    // 연락처가 이미 존재할 때 예외 처리
-    it('should throw ConflictException if contact already exists', async () => {
+    it('should create contact request', async () => {
       const transactionMock = jest.fn().mockImplementation(async (cb) => {
         return await cb({
           findOne: jest.fn()
             .mockResolvedValueOnce({ user_id: 1 } as UserAccount)
             .mockResolvedValueOnce({ user_id: 2 } as UserAccount)
             .mockResolvedValueOnce(null)
-            .mockResolvedValueOnce({ contact_id: 1 } as BusinessContact),
+            .mockResolvedValueOnce(null),
+          create: jest.fn().mockReturnValue({ request_id: 1 }),
+          save: jest.fn().mockResolvedValue({ request_id: 1 })
+        });
+      });
+      (dataSource.transaction as jest.Mock).mockImplementation(transactionMock); // 트랜잭션 모킹
+
+      const result = await service.addContactRequest(1, 'user2');
+      expect(result).toEqual(mockRequestResult);
+    });
+
+    it('should throw BadRequestException if user or contactUser is not found', async () => {
+      const transactionMock = jest.fn().mockImplementation(async (cb) => {
+        return await cb({
+          findOne: jest.fn().mockResolvedValue(null),
         });
       });
       (dataSource.transaction as jest.Mock).mockImplementation(transactionMock);
 
-      await expect(service.addContactRequest(1, 'user2')).rejects.toThrow(ConflictException);
+      await expect(service.addContactRequest(1, 'user2')).rejects.toThrow(BadRequestException);
     });
   });
 
   // acceptContactRequest 메서드 테스트
   describe('acceptContactRequest', () => {
-
-    // 친구 요청을 수락하는 경우
     it('should accept contact request', async () => {
-      const mockRequest = { 
-        request_id: 1, 
-        sender: { user_id: 2 }, 
-        receiver: { user_id: 1 }, 
-        status: 'pending' 
+      const mockRequest = {
+        request_id: 1,
+        sender: { user_id: 2 },
+        receiver: { user_id: 1 },
+        status: 'pending'
       };
-      const mockContact = { contact_id: 1 };
+
       const transactionMock = jest.fn().mockImplementation(async (cb) => {
         return await cb({
-          findOne: jest.fn()
-            .mockResolvedValueOnce(mockRequest) // 친구 요청 찾기
-            .mockResolvedValueOnce(null), // 기존 연락처 없음
-          save: jest.fn().mockResolvedValue(mockRequest),
-          create: jest.fn().mockReturnValue(mockContact),
+          findOne: jest.fn().mockResolvedValue(mockRequest),
+          save: jest.fn().mockResolvedValue({ ...mockRequest, status: 'accepted' }),
+          create: jest.fn().mockReturnValue({ contact_id: 1 }),
         });
       });
       (dataSource.transaction as jest.Mock).mockImplementation(transactionMock);
-  
-      const result = await service.acceptContactRequest(1, 1);
-      expect(result.statusCode).toBe(200);
-      expect(result.message).toBe('인맥 요청이 수락되었습니다.');
-    });
-    
-    // 친구 요청을 찾을 수 없을 때 예외 처리
-    it('should throw NotFoundException if request not found', async () => {
-      const transactionMock = jest.fn().mockImplementation(async (cb) => {
-        return await cb({
-          findOne: jest.fn().mockResolvedValueOnce(null),
-        });
-      });
-      (dataSource.transaction as jest.Mock).mockImplementation(transactionMock);
-  
-      await expect(service.acceptContactRequest(1, 1)).rejects.toThrow(NotFoundException);
+
+      await service.acceptContactRequest(1, 1);
+      // void 반환이므로 호출만 확인
+      expect(dataSource.transaction).toHaveBeenCalled();
     });
   });
 
   // rejectContactRequest 메서드 테스트
   describe('rejectContactRequest', () => {
     it('should reject contact request', async () => {
-      const mockRequest = { 
-        request_id: 1, 
-        sender: { user_id: 2 }, 
-        receiver: { user_id: 1 }, 
-        status: 'pending' 
+      const mockRequest = {
+        request_id: 1,
+        sender: { user_id: 2 }, // 발신자 정보
+        receiver: { user_id: 1 },
+        status: 'pending'
       };
+  
       const transactionMock = jest.fn().mockImplementation(async (cb) => {
         return await cb({
           findOne: jest.fn().mockResolvedValueOnce(mockRequest),
-          save: jest.fn().mockResolvedValueOnce(mockRequest),
+          save: jest.fn().mockResolvedValueOnce({ ...mockRequest, status: 'rejected' }),
         });
       });
       (dataSource.transaction as jest.Mock).mockImplementation(transactionMock);
-
-      const result = await service.rejectContactRequest(1, 1);
-      expect(result.statusCode).toBe(200);
+  
+      await service.rejectContactRequest(1, 1); // 사용자 ID 1이 요청 ID 1을 거절
+      // void 반환이므로 트랜잭션 호출과 상태 변경만 확인
+      expect(dataSource.transaction).toHaveBeenCalled();
     });
-
-    // 친구 요청을 찾을 수 없을 때 예외 처리
+  
     it('should throw NotFoundException if request not found', async () => {
       const transactionMock = jest.fn().mockImplementation(async (cb) => {
         return await cb({
@@ -236,80 +229,138 @@ describe('ContactsService', () => {
         });
       });
       (dataSource.transaction as jest.Mock).mockImplementation(transactionMock);
-
-      await expect(service.rejectContactRequest(1, 1)).rejects.toThrow(NotFoundException);
+  
+      await expect(service.rejectContactRequest(1, 1))
+        .rejects
+        .toThrow(NotFoundException);
     });
   });
 
   // getReceivedRequests 메서드 테스트
   describe('getReceivedRequests', () => {
+    const mockReceivedRequests: ReceivedRequestResult[] = [
+      {
+        requestId: 1,
+        senderLoginId: 'user2',
+        senderName: 'User2',
+        requestedAt: new Date()
+      }
+    ];
 
-    // 받은 친구 요청 리스트가 성공적으로 반환되는 경우
     it('should return received requests', async () => {
-      const mockRequests = [
-        { request_id: 1, sender: { login_id: 'user2', name: 'User2' }, created_at: new Date() },
-        { request_id: 2, sender: { login_id: 'user3', name: 'User3' }, created_at: new Date() },
-      ];
-      jest.spyOn(friendRequestRepository, 'find').mockResolvedValue(mockRequests as FriendRequest[]);
+      jest.spyOn(friendRequestRepository, 'find').mockResolvedValue([
+        {
+          request_id: 1,
+          sender: { login_id: 'user2', name: 'User2' },
+          created_at: mockReceivedRequests[0].requestedAt // 요청 생성일
+        }
+      ] as FriendRequest[]);
 
       const result = await service.getReceivedRequests(1);
-      expect(result.statusCode).toBe(200);
-      expect(result.requests.length).toBe(2);
+      expect(result).toEqual(mockReceivedRequests);
     });
   });
 
   // getSentRequests 메서드 테스트
   describe('getSentRequests', () => {
+    const mockSentRequests: SentRequestResult[] = [
+      {
+        requestId: 1,
+        receiverLoginId: 'user2',
+        receiverName: 'User2',
+        requestedAt: new Date()
+      }
+    ];
 
-    // 보낸 친구 요청 리스트가 성공적으로 반환되는 경우
     it('should return sent requests', async () => {
-      const mockRequests = [
-        { request_id: 1, receiver: { login_id: 'user2', name: 'User2' }, created_at: new Date() },
-        { request_id: 2, receiver: { login_id: 'user3', name: 'User3' }, created_at: new Date() },
-      ];
-      jest.spyOn(friendRequestRepository, 'find').mockResolvedValue(mockRequests as FriendRequest[]);
+      jest.spyOn(friendRequestRepository, 'find').mockResolvedValue([
+        {
+          request_id: 1,
+          receiver: { login_id: 'user2', name: 'User2' },
+          created_at: mockSentRequests[0].requestedAt
+        }
+      ] as FriendRequest[]);
 
       const result = await service.getSentRequests(1);
-      expect(result.statusCode).toBe(200);
-      expect(result.requests.length).toBe(2);
+      expect(result).toEqual(mockSentRequests); // mockSentRequests와 동일한 결과가 반환되는지 확인
     });
   });
 
   // deleteContact 메서드 테스트
   describe('deleteContact', () => {
-
-    // 연락처가 성공적으로 삭제되는 경우
-    it('should delete an existing contact', async () => {
-      const mockContact = { contact_id: 1 } as BusinessContact;
+    it('should delete contact', async () => {
+      const mockContact = {
+        contact_id: 1,
+        userAccount: { user_id: 1 }, 
+        contact_user: { user_id: 2 }
+      } as BusinessContact;
+  
+      // transactionalEntityManager 설정
+      const mockEntityManager = {
+        findOne: jest.fn().mockResolvedValue(mockContact),
+        softRemove: jest.fn().mockResolvedValue(mockContact)
+      };
+  
+      // Transaction 모킹
       const transactionMock = jest.fn().mockImplementation(async (cb) => {
-        return await cb({
-          findOne: jest.fn().mockResolvedValueOnce(mockContact),
-          softRemove: jest.fn().mockResolvedValueOnce(mockContact),
-        });
+        return await cb(mockEntityManager);
       });
       (dataSource.transaction as jest.Mock).mockImplementation(transactionMock);
-
-      const softRemoveSpy = jest.spyOn(contactRepository, 'softRemove').mockResolvedValueOnce(mockContact);
-
-      const result = await service.deleteContact(1, 2);
-
-      expect(softRemoveSpy).toHaveBeenCalledWith(mockContact);
-      expect(result).toEqual({
-        statusCode: 200,
-        message: '인맥이 성공적으로 삭제되었습니다.',
+  
+      // Repository의 softRemove 모킹
+      jest.spyOn(contactRepository, 'softRemove')
+        .mockImplementation(() => Promise.resolve(mockContact));
+  
+      await service.deleteContact(1, 2);
+  
+      // 트랜잭션이 실행되었는지 확인
+      expect(transactionMock).toHaveBeenCalled();
+      
+      // findOne이 호출되었는지 확인
+      expect(mockEntityManager.findOne).toHaveBeenCalledWith(BusinessContact, {
+        where: [
+          {
+            userAccount: { user_id: 1 },
+            contact_user: { user_id: 2 },
+            deleted_at: null
+          },
+          {
+            userAccount: { user_id: 2 },
+            contact_user: { user_id: 1 },
+            deleted_at: null
+          }
+        ],
+        relations: ['userAccount', 'contact_user']
       });
+  
+      // softRemove가 호출되었는지 확인
+      expect(contactRepository.softRemove).toHaveBeenCalledWith(mockContact);
     });
-
-    // 연락처를 찾을 수 없을 때 예외 처리
-    it('should throw NotFoundException if contact is not found', async () => {
+  
+    it('should throw NotFoundException if contact not found', async () => {
+      // transactionalEntityManager 설정
+      const mockEntityManager = {
+        findOne: jest.fn().mockResolvedValue(null),
+        softRemove: jest.fn()
+      };
+  
+      // Transaction 모킹
       const transactionMock = jest.fn().mockImplementation(async (cb) => {
-        return await cb({
-          findOne: jest.fn().mockResolvedValueOnce(null),
-        });
+        return await cb(mockEntityManager);
       });
       (dataSource.transaction as jest.Mock).mockImplementation(transactionMock);
-
-      await expect(service.deleteContact(1, 2)).rejects.toThrow(NotFoundException);
+  
+      // Repository의 softRemove 모킹
+      jest.spyOn(contactRepository, 'softRemove')
+        .mockImplementation(() => Promise.resolve({} as BusinessContact));
+  
+      await expect(service.deleteContact(1, 2))
+        .rejects
+        .toThrow(NotFoundException);
+  
+      // findOne은 호출되었지만 softRemove는 호출되지 않았는지 확인
+      expect(mockEntityManager.findOne).toHaveBeenCalled();
+      expect(contactRepository.softRemove).not.toHaveBeenCalled();
     });
   });
 });

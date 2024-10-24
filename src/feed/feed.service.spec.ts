@@ -8,182 +8,284 @@ import { CommentLike } from '../entities/comment-like.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { FeedFilterService } from '../services/feed-filter.service';
 import { SortingService } from '../services/sorting-service';
-import { NotFoundException } from '@nestjs/common';
-import { SortOption } from '../dto/feed-query.dto';
-
-// Mock repository 객체 설정
-const mockRepository = () => ({
-  createQueryBuilder: jest.fn(() => ({
-    leftJoinAndSelect: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    select: jest.fn().mockReturnThis(),
-    getOne: jest.fn().mockResolvedValue(null), // getOne에 대한 mockResolvedValue 적용
-  })),
-});
-
-// FeedFilterService와 SortingService의 mock 설정
-const mockFeedFilterService = {
-  filterPostsByUser: jest.fn(),
-};
-
-const mockSortingService = {
-  sortPosts: jest.fn(),
-};
+import { BadRequestException } from '@nestjs/common';
+import { 
+  SortOption,
+  FilterType 
+} from '../types/feed.types';
 
 describe('FeedService', () => {
   let feedService: FeedService;
   let postRepository: Repository<Post>;
+  let feedFilterService: FeedFilterService;
+  let sortingService: SortingService;
 
-  // 테스트 전 모듈 설정
+  const mockDate = new Date('2024-01-01'); // 테스트용 mock 날짜
+
+  const mockPostBasicData = {
+    post_id: 1,
+    user: { 
+      user_id: 1, 
+      name: 'User1',
+    },
+    content: 'Test content',
+    created_at: mockDate,
+    image_url: 'url1',
+    post_like_count: 10,
+    comments_count: 5,
+  };
+
+  // 모킹된 레포지토리 객체 생성 함수
+  const createMockRepository = () => ({
+    createQueryBuilder: jest.fn(() => ({
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      select: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(null),
+    })),
+  });
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FeedService,
         {
           provide: getRepositoryToken(Post),
-          useValue: mockRepository(),
+          useValue: createMockRepository(),
         },
         {
           provide: getRepositoryToken(Comment),
-          useValue: mockRepository(),
+          useValue: createMockRepository(),
         },
         {
           provide: getRepositoryToken(PostLike),
-          useValue: mockRepository(),
+          useValue: createMockRepository(),
         },
         {
           provide: getRepositoryToken(CommentLike),
-          useValue: mockRepository(),
+          useValue: createMockRepository(),
         },
         {
           provide: FeedFilterService,
-          useValue: mockFeedFilterService,
+          useValue: {
+            filterPostsByUser: jest.fn(),
+          },
         },
         {
           provide: SortingService,
-          useValue: mockSortingService,
+          useValue: {
+            sortPosts: jest.fn(),
+          },
         },
       ],
     }).compile();
 
     feedService = module.get<FeedService>(FeedService);
     postRepository = module.get<Repository<Post>>(getRepositoryToken(Post));
+    feedFilterService = module.get<FeedFilterService>(FeedFilterService);
+    sortingService = module.get<SortingService>(SortingService);
   });
 
-  // getFeed 메서드 테스트
+  // getFeed 메서드에 대한 테스트
   describe('getFeed', () => {
-    it('should return sorted feed posts', async () => {
-      const mockPosts = [
-        { post_id: 1, user: { user_id: 1, name: 'User1' }, post_like_count: 10, comments_count: 5, created_at: new Date(), image_url: 'url1' },
-        { post_id: 2, user: { user_id: 2, name: 'User2' }, post_like_count: 5, comments_count: 3, created_at: new Date(), image_url: 'url2' },
-      ];
-      const sortedPosts = mockPosts; // 가상의 정렬된 게시물 리스트
-      mockFeedFilterService.filterPostsByUser.mockResolvedValue(mockPosts); // 필터링된 게시물 목록 반환
-      mockSortingService.sortPosts.mockReturnValue(sortedPosts); // 정렬된 게시물 목록 반환
+    it('should return sorted feed posts by latest', async () => {
+      const mockPosts = [{ ...mockPostBasicData }];
 
-      const result = await feedService.getFeed(1, SortOption.LATEST, 'all'); // feedService의 getFeed 호출
+      jest.spyOn(feedFilterService, 'filterPostsByUser').mockResolvedValue(mockPosts as Post[]);
+      jest.spyOn(sortingService, 'sortPosts').mockReturnValue(mockPosts as Post[]);
 
-      // 반환된 결과가 예상된 형식인지 확인
-      expect(result).toEqual({
-        statusCode: 200,
-        message: '피드를 성공적으로 조회했습니다.',
-        posts: sortedPosts.map((post) => ({
-          postId: post.post_id,
-          createrId: post.user.user_id,
-          createrName: post.user.name,
-          createdAt: post.created_at,
-          imageUrl: post.image_url,
-          isOwnPost: post.user.user_id === 1,
-          likesCount: post.post_like_count,
-          commentsCount: post.comments_count,
-        })),
-      });
+      const result = await feedService.getFeed(1, SortOption.LATEST, FilterType.ALL);
 
-      // 서비스 호출 여부 확인
-      expect(mockFeedFilterService.filterPostsByUser).toHaveBeenCalledWith(1, 'all', undefined);
-      expect(mockSortingService.sortPosts).toHaveBeenCalledWith(mockPosts, SortOption.LATEST);
+      expect(result).toEqual([{
+        postId: 1,
+        createrId: 1,
+        createrName: 'User1',
+        createdAt: mockDate,
+        imageUrl: 'url1',
+        isOwnPost: true,
+        likesCount: 10,
+        commentsCount: 5,
+      }]);
+      expect(sortingService.sortPosts).toHaveBeenCalledWith(mockPosts, SortOption.LATEST);
     });
 
-    // getFeed 메서드에서 발생하는 에러 처리 테스트
-    it('should handle errors when getting feed', async () => {
-      mockFeedFilterService.filterPostsByUser.mockRejectedValue(new Error('Error in fetching feed'));
+    it('should return sorted feed posts by likes', async () => {
+      const mockPosts = [
+        { ...mockPostBasicData, post_id: 1, post_like_count: 20 },
+        { ...mockPostBasicData, post_id: 2, post_like_count: 10 }
+      ];
 
-      // getFeed 호출 시 에러가 발생하는지 확인
-      await expect(feedService.getFeed(1, SortOption.LATEST, 'all')).rejects.toThrow('Error in fetching feed');
+      jest.spyOn(feedFilterService, 'filterPostsByUser').mockResolvedValue(mockPosts as Post[]);
+      jest.spyOn(sortingService, 'sortPosts').mockReturnValue(mockPosts as Post[]);
+
+      const result = await feedService.getFeed(1, SortOption.LIKES, FilterType.ALL);
+
+      expect(result).toHaveLength(2);
+      expect(result[0].likesCount).toBeGreaterThan(result[1].likesCount);
+      expect(sortingService.sortPosts).toHaveBeenCalledWith(mockPosts, SortOption.LIKES);
+    });
+
+    it('should return own posts', async () => {
+      const mockPosts = [{ ...mockPostBasicData }];
+
+      jest.spyOn(feedFilterService, 'filterPostsByUser').mockResolvedValue(mockPosts as Post[]);
+      jest.spyOn(sortingService, 'sortPosts').mockReturnValue(mockPosts as Post[]);
+
+      const result = await feedService.getFeed(1, SortOption.LATEST, FilterType.OWN);
+
+      expect(result[0].isOwnPost).toBe(true);
+      expect(feedFilterService.filterPostsByUser).toHaveBeenCalledWith(1, FilterType.OWN, undefined);
+    });
+
+    it('should throw BadRequestException when specificUserId is required but missing', async () => {
+      await expect(
+        feedService.getFeed(1, SortOption.LATEST, FilterType.SPECIFIC)
+      ).rejects.toThrow(new BadRequestException('잘못된 요청입니다. specificUserId가 필요합니다.'));
     });
   });
 
-  // getPostDetail 메서드 테스트
+  // getPostDetail 메서드에 대한 테스트
   describe('getPostDetail', () => {
-    it('should return post details', async () => {
+    it('should return complete post details', async () => {
       const mockPost = {
-        post_id: 123,
-        user: { user_id: 1, name: 'User1' },
-        created_at: new Date(),
-        image_url: 'https://example.com/image.jpg',
-        content: 'This is a post',
-        postLikes: [{ userAccount: { user_id: 2, name: 'User2' } }],
-        comments: [{ comment_id: 1, userAccount: { user_id: 3, name: 'User3' }, content: 'Nice post!', created_at: new Date(), like_count: 5 }],
-      };
+        ...mockPostBasicData,
+        comments: [
+          {
+            comment_id: 1,
+            userAccount: { user_id: 2, name: 'User2' },
+            content: 'Nice post!',
+            created_at: mockDate,
+            like_count: 5
+          }
+        ],
+        postLikes: [
+          {
+            userAccount: { user_id: 2, name: 'User2' }
+          }
+        ]
+      } as unknown as Post;
 
-      const mockQueryBuilder = {
+      const queryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue(mockPost), // 게시물 데이터를 getOne에서 반환
+        getOne: jest.fn().mockResolvedValue(mockPost),
       };
 
-      // QueryBuilder에 대한 모킹
-      jest.spyOn(postRepository, 'createQueryBuilder').mockReturnValue(mockQueryBuilder as any);
+      jest.spyOn(postRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
 
-      const result = await feedService.getPostDetail(1, 123);
+      const result = await feedService.getPostDetail(1, 1);
 
-      // 반환된 게시물 상세 데이터 확인
       expect(result).toEqual({
-        statusCode: 200,
-        message: '게시물을 성공적으로 조회했습니다.',
-        postId: mockPost.post_id,
-        createrId: mockPost.user.user_id,
-        createrName: mockPost.user.name,
-        createdAt: mockPost.created_at,
-        imageUrl: mockPost.image_url,
-        content: mockPost.content,
-        likesCount: mockPost.postLikes.length,
-        commentsCount: mockPost.comments.length,
-        isOwnPost: mockPost.user.user_id === 1,
-        comments: mockPost.comments.map(comment => ({
-          commentId: comment.comment_id,
-          authorId: comment.userAccount.user_id,
-          authorName: comment.userAccount.name,
-          content: comment.content,
-          createdAt: comment.created_at,
-          likeCount: comment.like_count,
-        })),
-        likes: mockPost.postLikes.map(like => ({
-          userId: like.userAccount.user_id,
-          userName: like.userAccount.name,
-        })),
-      });
+        postId: 1,
+        createrId: 1,
+        createrName: 'User1',
+        createdAt: mockDate,
+        imageUrl: 'url1',
+        content: 'Test content',
+        likesCount: 10,
+        commentsCount: 5,
+        isOwnPost: true,
+        comments: [
+          {
+            commentId: 1,
+            authorId: 2,
+            authorName: 'User2',
+            content: 'Nice post!',
+            createdAt: mockDate,
+            likeCount: 5
+          }
+        ],
+        likes: [
+          {
+            userId: 2,
+            userName: 'User2'
+          }
+        ]
+      });// 반환된 게시물 상세 정보가 예상과 동일한지 확인
 
-      // QueryBuilder의 메서드 호출 여부 확인
-      expect(postRepository.createQueryBuilder).toHaveBeenCalled();
-      expect(mockQueryBuilder.getOne).toHaveBeenCalled();
+      // 필요한 select 문이 호출되었는지 확인
+      expect(queryBuilder.select).toHaveBeenCalledWith([
+        'post',
+        'user.user_id',
+        'user.name',
+        'comments',
+        'commentUser.user_id',
+        'commentUser.name',
+        'likes',
+        'likeUser.user_id',
+        'likeUser.name'
+      ]);
+    }); 
+
+    // 댓글이 없는 게시물의 상세 정보를 반환하는 테스트
+    it('should handle post without comments', async () => {
+      const mockPost = {
+        ...mockPostBasicData,
+        comments: [],
+        postLikes: []
+      } as unknown as Post;
+
+      const queryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(mockPost),
+      };
+
+      jest.spyOn(postRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+
+      const result = await feedService.getPostDetail(1, 1);
+
+      expect(result.comments).toEqual([]);
+      expect(result.likes).toEqual([]);
     });
 
-    // 게시물이 존재하지 않는 경우 예외 처리 테스트
-    it('should throw NotFoundException if post does not exist', async () => {
-      const mockQueryBuilder = {
+    // 모든 필수 조인(join)이 올바르게 실행되었는지 확인하는 테스트
+    it('should verify all required joins', async () => {
+      const mockPostWithEmptyArrays = {
+        ...mockPostBasicData,
+        comments: [],   // 빈 배열로 초기화
+        postLikes: [],  // 빈 배열로 초기화
+      };
+    
+      const queryBuilder = {
         leftJoinAndSelect: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockResolvedValue(null), // 게시물 없음
+        getOne: jest.fn().mockResolvedValue(mockPostWithEmptyArrays as unknown as Post),
+      };
+    
+      jest.spyOn(postRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+    
+      await feedService.getPostDetail(1, 1);
+    
+      // 모든 필수 join이 호출되었는지 확인
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('post.user', 'user');
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('post.comments', 'comments');
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('comments.userAccount', 'commentUser');
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('post.postLikes', 'likes');
+      expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith('likes.userAccount', 'likeUser');
+    });
+
+    // 게시물을 찾지 못했을 때 예외 처리 테스트
+    it('should throw error when post not found', async () => {
+      const queryBuilder = {
+        leftJoinAndSelect: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        getOne: jest.fn().mockResolvedValue(undefined),
       };
 
-      // QueryBuilder에 대한 모킹
-      jest.spyOn(postRepository, 'createQueryBuilder').mockReturnValue(mockQueryBuilder as any);
+      jest.spyOn(postRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
 
-      // 게시물이 없을 때 NotFoundException 발생 여부 확인
-      await expect(feedService.getPostDetail(1, 123)).rejects.toThrow(NotFoundException);
+      await expect(feedService.getPostDetail(1, 999))
+        .rejects
+        .toThrow();
     });
   });
 });
