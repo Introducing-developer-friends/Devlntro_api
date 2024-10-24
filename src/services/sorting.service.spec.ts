@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SortingService } from './sorting-service';
-import { SortOption } from '../dto/feed-query.dto';
+import { SortOption } from '../types/feed.types';
 
 // SortingService 테스트 스위트
 describe('SortingService', () => {
