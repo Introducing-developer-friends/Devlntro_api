@@ -1,12 +1,18 @@
 import { IsNotEmpty, IsNumber, IsString, IsArray } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-
+import { 
+  NotificationType,
+  FriendRequestNotificationDto,
+  LikePostNotificationDto,
+  CommentNotificationDto,
+  LikeCommentNotificationDto,
+  DeleteNotificationsDto
+ } from '../../types/notification.types';
 // 친구 요청 알림 생성을 위한 DTO
-export class CreateFriendRequestNotificationDto {
+export class CreateFriendRequestNotificationDto implements FriendRequestNotificationDto {
   @ApiProperty({
     example: 2,
     description: '친구 요청을 받은 사용자의 ID',
-    type: Number,
   })
   @IsNotEmpty()
   @IsNumber()
@@ -20,10 +26,13 @@ export class CreateFriendRequestNotificationDto {
   @IsNotEmpty()
   @IsString()
   message: string;
+
+  type: NotificationType.FRIEND_REQUEST = NotificationType.FRIEND_REQUEST;
 }
 
 // 게시물 좋아요 알림 생성을 위한 DTO
-export class CreateLikePostNotificationDto {
+
+export class CreateLikePostNotificationDto implements LikePostNotificationDto {
   @ApiProperty({
     example: 2,
     description: '게시물 작성자의 ID (알림을 받을 사용자)',
@@ -50,10 +59,11 @@ export class CreateLikePostNotificationDto {
   @IsNotEmpty()
   @IsString()
   message: string;
+  type: NotificationType.LIKE_POST = NotificationType.LIKE_POST;
 }
 
 // 댓글 알림 생성을 위한 DTO
-export class CreateCommentNotificationDto {
+export class CreateCommentNotificationDto implements CommentNotificationDto {
 
   @ApiProperty({
     example: 2,
@@ -81,10 +91,11 @@ export class CreateCommentNotificationDto {
   @IsNotEmpty()
   @IsString()
   message: string;
+  type: NotificationType.COMMENT = NotificationType.COMMENT;
 }
 
 // 댓글 좋아요 알림 생성을 위한 DTO
-export class CreateLikeCommentNotificationDto {
+export class CreateLikeCommentNotificationDto implements LikeCommentNotificationDto {
 
   @ApiProperty({
     example: 2,
@@ -112,10 +123,11 @@ export class CreateLikeCommentNotificationDto {
   @IsNotEmpty()
   @IsString()
   message: string;
+  type: NotificationType.LIKE_COMMENT = NotificationType.LIKE_COMMENT;
 }
 
 // 다수의 알림 삭제를 위한 DTO
-export class DeleteMultipleNotificationsDto {
+export class DeleteMultipleNotificationsDto implements DeleteNotificationsDto {
   @ApiProperty({
     example: [1, 2, 3],
     description: '삭제할 알림 ID 배열',

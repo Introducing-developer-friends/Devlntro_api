@@ -1,31 +1,41 @@
 import { IsEnum, IsOptional, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
+import { SortOption, FilterType, FeedQuery  } from '../types/feed.types';
 
-// 게시물을 정렬할 수 있는 옵션을 정의한 열거형
-export enum SortOption {
-  LATEST = 'latest', // 최신 순으로 정렬
-  LIKES = 'likes',
-  COMMENTS = 'comments',
-}
-
-// 게시물을 필터링할 수 있는 유형을 정의한 열거형
-export enum FilterType {
-  ALL = 'all',
-  OWN = 'own',
-  SPECIFIC = 'specific',
-}
-
-export class FeedQueryDto {
+export class FeedQueryDto implements Partial<FeedQuery> {
+  @ApiProperty({
+    enum: SortOption,
+    enumName: 'SortOption',
+    description: '게시물 정렬 옵션 (latest: 최신순, likes: 좋아요순, comments: 댓글순)',
+    required: false,
+    default: SortOption.LATEST,
+    example: SortOption.LATEST
+  })
   @IsEnum(SortOption)
   @IsOptional()
-  sort?: SortOption = SortOption.LATEST;
+  sort: SortOption = SortOption.LATEST;
 
+  @ApiProperty({
+    enum: FilterType,
+    enumName: 'FilterType',
+    description: '게시물 필터링 옵션 (all: 전체, own: 내 게시물, specific: 특정 사용자)',
+    required: false,
+    default: FilterType.ALL,
+    example: FilterType.ALL
+  })
   @IsEnum(FilterType)
   @IsOptional()
-  filter?: FilterType = FilterType.ALL;
+  filter: FilterType = FilterType.ALL;
 
+  @ApiProperty({
+    type: Number,
+    description: '특정 사용자의 게시물만 조회할 때 사용하는 사용자 ID (filter가 specific일 때 필수)',
+    required: false,
+    example: 12345
+  })
   @IsNumber()
   @IsOptional()
-  @Type(() => Number) // 문자열로 전달된 값도 숫자로 변환
+  @Type(() => Number)
   specificUserId?: number;
 }
