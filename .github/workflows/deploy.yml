@@ -61,4 +61,7 @@ jobs:
           -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
           -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
           -e AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }} \
+          -e CORS_ORIGIN=https://d2kpqep52eiy7y.cloudfront.net \
           --name dev_intro_container kimdoyeon3/dev_intro:${{ github.sha }}
+
+          sudo systemctl reload nginx
