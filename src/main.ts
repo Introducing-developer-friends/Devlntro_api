@@ -13,7 +13,7 @@ async function bootstrap() {
 
   // CORS 설정
   app.enableCors({
-    origin: /^(http:\/\/localhost:5173|http:\/\/devintro\.s3-website\.ap-northeast-2\.amazonaws\.com)$/,
+    origin: /^(http:\/\/localhost:5173|https:\/\/d2kpqep52eiy7y\.cloudfront\.net)$/,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
