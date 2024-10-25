@@ -59,9 +59,10 @@ export class S3Service implements OnModuleInit, OnModuleDestroy {
 
     await upload.done(); // 파일 업로드 완료까지 대기
     
-    // URL 슬래시 처리 및 형식 정리
-    const cleanKey = key.replace(/^\/+/, ''); // 시작 부분의 여러 슬래시 제거
-    return `https://${this.cloudFrontDomain}/${cleanKey}`;
+    // CLOUDFRONT_DOMAIN에서 'https://' 제거
+    const domain = this.cloudFrontDomain.replace(/^https?:\/\//, '');
+    const cleanKey = key.replace(/^\/+/, '');
+    return `https://${domain}/${cleanKey}`;
   }
 
   async deleteFile(key: string): Promise<void> {
