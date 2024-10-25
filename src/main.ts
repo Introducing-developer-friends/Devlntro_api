@@ -40,7 +40,7 @@ async function bootstrap() {
     },
   });
 
-  // // 데이터 시드 삽입2
+  // // 데이터 시드 삽입1
   const dataSource = app.get(DataSource);
   await seedInitialData(dataSource);
 
