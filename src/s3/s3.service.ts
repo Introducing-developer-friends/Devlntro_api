@@ -7,9 +7,12 @@ import { Upload } from '@aws-sdk/lib-storage';
 export class S3Service implements OnModuleInit, OnModuleDestroy {
   // S3Client 인스턴스를 저장할 변수
   private s3Client: S3Client;
+  cloudFrontDomain: string;
 
   // ConfigService를 주입받아 AWS 설정을 불러옴
-  constructor(private configService: ConfigService) {}
+  constructor(private configService: ConfigService) {
+    this.cloudFrontDomain = this.configService.get<string>('CLOUDFRONT_DOMAIN');
+  }
 
   // 모듈이 초기화될 때 S3 클라이언트를 초기화
   async onModuleInit() {
@@ -56,8 +59,10 @@ export class S3Service implements OnModuleInit, OnModuleDestroy {
 
     await upload.done(); // 파일 업로드 완료까지 대기
     
-    // 업로드한 파일의 S3 URL 반환
-    return `https://${this.configService.get<string>('AWS_S3_BUCKET_NAME')}.s3.${this.configService.get<string>('AWS_REGION')}.amazonaws.com/${key}`;
+    // CLOUDFRONT_DOMAIN에서 'https://' 제거
+    const domain = this.cloudFrontDomain.replace(/^https?:\/\//, '');
+    const cleanKey = key.replace(/^\/+/, '');
+    return `https://${domain}/${cleanKey}`;
   }
 
   async deleteFile(key: string): Promise<void> {
