@@ -1,8 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, CreateDateColumn, Unique  } from 'typeorm';
 import { UserAccount } from './user-account.entity';
 import { Post } from './post.entity';
 
 @Entity()
+@Unique(['post', 'userAccount'])
 export class PostLike {
   @PrimaryGeneratedColumn()
   post_like_id: number;
