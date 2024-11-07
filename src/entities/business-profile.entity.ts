@@ -11,21 +11,44 @@ export class BusinessProfile {
   @JoinColumn({ name: 'user_id' })
   userAccount: UserAccount;
 
-  @Column()
+  @Column({
+    type: 'varchar', 
+    length: 100, 
+    nullable: false 
+})
   company: string;
 
-  @Column()
+  @Column({
+    type: 'varchar', 
+    length: 100, 
+    nullable: false 
+})
   department: string;
 
-  @Column()
+  @Column({
+    type: 'varchar', 
+    length: 100, 
+    nullable: false 
+})
   position: string;
 
-  @Column()
+  @Column({
+    type: 'varchar', 
+    length: 100, 
+    nullable: false 
+})
   email: string;
 
-  @Column()
+  @Column({
+    type: 'varchar', 
+    length: 20, 
+    nullable: false 
+})
   phone: string;
 
-  @DeleteDateColumn()
+  @DeleteDateColumn({
+    type: 'timestamp',
+    nullable: true 
+})
   deletedAt: Date;
 }
