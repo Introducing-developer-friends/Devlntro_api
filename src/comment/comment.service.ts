@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException  } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException  } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
@@ -147,6 +147,7 @@ export class CommentService {
         comment.like_count -= 1;
         isLiked = false;
       } else {
+        try {
         const newLike = transactionalEntityManager.create(CommentLike, {
           comment: { comment_id: commentId },
           user: { user_id: userId }
@@ -154,7 +155,13 @@ export class CommentService {
         await transactionalEntityManager.save(newLike);
         comment.like_count += 1;
         isLiked = true;
+      }catch (error) {
+        if (error.code === 'ER_DUP_ENTRY') {
+          throw new ConflictException('이미 이 댓글에 좋아요를 누르셨습니다.');
+        }
+        throw error;
       }
+    }
   
       await transactionalEntityManager.save(comment);
   

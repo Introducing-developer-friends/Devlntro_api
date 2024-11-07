@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, EntityManager  } from 'typeorm';
 import { Post } from '../entities/post.entity';
@@ -135,6 +135,7 @@ export class PostService {
         post.post_like_count -= 1;
         isLiked = false;
       } else {
+        try {
         const newLike = transactionalEntityManager.create(PostLike, {
           post: { post_id: postId },
           userAccount: { user_id: userId }
@@ -142,7 +143,13 @@ export class PostService {
         await transactionalEntityManager.save(newLike);
         post.post_like_count += 1;
         isLiked = true;
+      } catch (error) {
+        if (error.code === 'ER_DUP_ENTRY') {
+          throw new ConflictException('이미 이 게시물에 좋아요를 누르셨습니다.');
+        }
+        throw error;
       }
+    }
 
       await transactionalEntityManager.save(post);
 
