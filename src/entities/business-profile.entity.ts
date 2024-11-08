@@ -47,6 +47,7 @@ export class BusinessProfile {
   phone: string;
 
   @DeleteDateColumn({
+    name: 'deleted_at',
     type: 'timestamp',
     nullable: true 
 })

@@ -12,7 +12,8 @@ export class Notification {
   @JoinColumn({ name: 'user_id' })
   user: UserAccount;
 
-  @Column({ 
+  @Column({
+    name: 'sender_id',
     nullable: false
   })
   senderId: number;
@@ -32,17 +33,20 @@ export class Notification {
   message: string;
 
   @Column({
+    name: `is_read`,
     default: false,
     nullable: false
 })
 isRead: boolean; // 알림 읽음 여부
 
   @CreateDateColumn({
+    name: `created_at`,
     type: 'timestamp'
 })
 createdAt: Date; // 알림 생성 시간
 
 @DeleteDateColumn({
+  name: 'deleted_at',
   type: 'timestamp',
   nullable: true
 })
