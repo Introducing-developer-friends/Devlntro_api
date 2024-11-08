@@ -3,19 +3,20 @@ import { UserAccount } from './user-account.entity';
 import { Post } from './post.entity';
 
 @Entity()
-@Unique(['post', 'userAccount'])
 export class PostLike {
   @PrimaryGeneratedColumn()
   post_like_id: number;
 
-  @ManyToOne(() => Post, post => post.postLikes)
+  @ManyToOne(() => Post, post => post.postLikes, { nullable: false })
   @JoinColumn({ name: 'post_id' })
   post: Post;
 
-  @ManyToOne(() => UserAccount, userAccount => userAccount.postLikes)
+  @ManyToOne(() => UserAccount, userAccount => userAccount.postLikes, { nullable: false } )
   @JoinColumn({ name: 'user_id' }) // 외래 키 user_id로 연결
   userAccount: UserAccount;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ 
+    type: 'timestamp'
+})
   created_at: Date;
 }

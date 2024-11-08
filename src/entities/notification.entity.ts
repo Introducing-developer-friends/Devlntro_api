@@ -4,33 +4,53 @@ import { Post } from './post.entity';
 import { Comment } from './comment.entity';
 
 @Entity()
-@Index(['user', 'createdAt'])
 export class Notification {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => UserAccount, user => user.notifications)
+  @ManyToOne(() => UserAccount, user => user.notifications, { nullable: false })
   @JoinColumn({ name: 'user_id' })
   user: UserAccount;
 
-  @Column({ name: 'sender_id', nullable: false })
+  @Column({
+    name: 'sender_id',
+    nullable: false
+  })
   senderId: number;
 
-  @Column()
+  @Column({
+    type: 'varchar', 
+    length: 50, 
+    nullable: false 
+})
   type: string;
 
-  @Column()
+  @Column({
+    type: 'varchar', 
+    length: 255, 
+    nullable: false 
+})
   message: string;
 
-  @Column({ name: 'is_read', default: false })
-  isRead: boolean; // 알림 읽음 여부
+  @Column({
+    name: `is_read`,
+    default: false,
+    nullable: false
+})
+isRead: boolean; // 알림 읽음 여부
 
-  @Index()
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date; // 알림 생성 시간
+  @CreateDateColumn({
+    name: `created_at`,
+    type: 'timestamp'
+})
+createdAt: Date; // 알림 생성 시간
 
-  @DeleteDateColumn({ name: 'deleted_at' })
-  deletedAt: Date; // 소프트 삭제를 위한 삭제 시간 (null이면 삭제되지 않은 상태)
+@DeleteDateColumn({
+  name: 'deleted_at',
+  type: 'timestamp',
+  nullable: true
+})
+deletedAt: Date; // 소프트 삭제를 위한 삭제 시간 (null이면 삭제되지 않은 상태)
 
   @ManyToOne(() => Post, { nullable: true })
   @JoinColumn({ name: 'postId' })

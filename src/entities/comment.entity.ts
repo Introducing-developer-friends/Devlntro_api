@@ -3,34 +3,44 @@ import { UserAccount } from './user-account.entity';
 import { Post } from './post.entity';
 import { CommentLike } from './comment-like.entity';
 
-@Index(['post', 'created_at'])
 @Entity()
 export class Comment {
   @PrimaryGeneratedColumn()
   comment_id: number;
 
-  @ManyToOne(() => Post, post => post.comments)
+  @ManyToOne(() => Post, post => post.comments, { nullable: false })
   @JoinColumn({ name: 'post_id' })
-  @Index()
   post: Post;
 
-  @ManyToOne(() => UserAccount, userAccount => userAccount.comments) // 댓글 작성자와의 다대일 관계
+  @ManyToOne(() => UserAccount, userAccount => userAccount.comments, { nullable: false }) // 댓글 작성자와의 다대일 관계
   @JoinColumn({ name: 'user_id' })
-  @Index()
   userAccount: UserAccount;
 
-  @Column('text')
+  @Column({
+    type: 'text', 
+    nullable: false 
+})
   content: string;
 
-  @CreateDateColumn()
+  @CreateDateColumn({
+    type: 'timestamp',
+    precision: 6
+})
   created_at: Date;
 
-  @Column({ default: 0 }) // 좋아요 수, 기본값은 0
+  @Column({
+    type: 'int', 
+    default: 0, 
+    nullable: true 
+}) // 좋아요 수, 기본값은 0
   like_count: number;
 
   @OneToMany(() => CommentLike, commentLike => commentLike.comment) // 댓글에 달린 좋아요와의 1:N 관계
   commentLike: CommentLike[];
 
-  @DeleteDateColumn()
+  @DeleteDateColumn({
+    type: 'timestamp',
+    nullable: true 
+})
   deleted_at: Date;
 }
