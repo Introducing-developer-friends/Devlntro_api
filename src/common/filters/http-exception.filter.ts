@@ -2,36 +2,63 @@ import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/co
 import { Request, Response } from 'express';
 import { Logger } from '@nestjs/common';
 
-// HttpException 발생 시 처리할 필터 클래스 정의
 @Catch(HttpException)
 export class HttpExceptionFilter implements ExceptionFilter {
-  // Logger를 사용하여 필터 동작 시 로그를 기록
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
-  // 예외 발생 시 실행되는 메서드
-  catch(exception: HttpException, host: ArgumentsHost) {
-    const ctx = host.switchToHttp(); // HTTP context로 변환
-    const response = ctx.getResponse<Response>(); // 응답 객체 가져오기
-    const request = ctx.getRequest<Request>(); // 요청 객체 가져오기
-    const status = exception.getStatus(); // 예외 상태 코드 가져오기
+  // 무시할 경로 목록 (자동화 요청 및 스캐닝 시도 방지)
+  private readonly ignorePaths = [
+    '/favicon.ico',    // 브라우저 자동 요청
+    '/robots.txt',     // 검색엔진 봇 요청
+    '/.env',          // 환경설정 파일 스캔
+    '/.git',          // git 저장소 스캔
+    '.php',           // PHP 취약점 스캔
+    '.asp',           // ASP 취약점 스캔
+    '.aspx',          // ASPX 취약점 스캔
+    '/static/',       // 정적 파일 자동 요청
+    '/assets/',       // 정적 파일 자동 요청
+    '/public/',       // 정적 파일 자동 요청
+    '/css/',          // CSS 파일 자동 요청
+    '/images/',       // 이미지 파일 자동 요청
+    '/Core/Skin/',    // CMS 스캐닝
+    '/console'        // 콘솔 접근 시도
+  ];
 
-    // 예외 응답에 포함할 정보를 구성
+  private shouldLogError(status: number, url: string): boolean {
+    // 1. 404가 아닌 모든 에러는 로깅 (500 등 서버 에러는 중요)
+    if (status !== 404) return true;
+
+    // 2. API 엔드포인트 관련 404는 로깅 (실제 서비스 로직 문제일 수 있음)
+    if (url.startsWith('/api/')) return true;
+
+    // 3. 무시할 패턴에 해당하는 404는 로깅하지 않음
+    return !this.ignorePaths.some(path => url.includes(path));
+  }
+
+  catch(exception: HttpException, host: ArgumentsHost) {
+    const ctx = host.switchToHttp();
+    const response = ctx.getResponse<Response>();
+    const request = ctx.getRequest<Request>();
+    const status = exception.getStatus(); // HTTP 상태 코드 가져오기
+
     const errorResponse = {
-      statusCode: status, // 상태 코드
-      message: exception.message, // 예외 메시지
-      error: exception.name || 'Bad Request', // 예외 이름 또는 기본 'Bad Request'
-      path: request.url, // 요청된 URL 경로
-      timestamp: new Date().toISOString(), // 예외 발생 시간 (ISO 형식)
+      statusCode: status,
+      message: exception.message,
+      error: exception.name || 'Bad Request',
+      path: request.url,
+      timestamp: new Date().toISOString(),
     };
 
-    // 로그에 예외 발생 시의 요청 정보와 스택 트레이스 기록
-    this.logger.error(
-      `${request.method} ${request.url}`,  // 요청 메서드와 URL 정보
-      exception.stack,  // 예외 스택 트레이스 정보
-      'HttpExceptionFilter', // 로그 구분을 위한 필터 이름
-    );
+    // 로깅이 필요한 경우만 로그 기록
+    if (this.shouldLogError(status, request.url)) {
+      this.logger.error(
+        `${request.method} ${request.url}`,
+        exception.stack,
+        'HttpExceptionFilter',
+      );
+    }
 
-    // 클라이언트에게 예외 정보와 상태 코드 전송
+    // 클라이언트에는 항상 응답
     response.status(status).json(errorResponse);
   }
 }

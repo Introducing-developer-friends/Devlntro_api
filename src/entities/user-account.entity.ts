@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany, DeleteDateColumn, Index  } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, OneToMany, DeleteDateColumn} from 'typeorm';
 import { BusinessProfile } from './business-profile.entity';
 import { BusinessContact } from './business-contact.entity';
 import { Post } from './post.entity';
@@ -9,31 +9,44 @@ import { Notification } from './notification.entity';
 
 // UserAccount 엔티티는 사용자의 계정 정보
 @Entity()
-@Index("idx_login_id", ["login_id"])
 export class UserAccount {
   // user_id는 기본 키로 자동 생성
   @PrimaryGeneratedColumn()
   user_id: number;
 
-  @Column({ unique: true }) // 로그인 ID, 중복 불가
-  @Index()
+  @Column({ 
+    type: 'varchar', 
+    length: 50, 
+    nullable: false 
+}) // 로그인 ID, 중복 불가
   login_id: string;
 
   // 사용자의 비밀번호를 저장
-  @Column()
+  @Column({ 
+    type: 'varchar', 
+    length: 255, 
+    nullable: false 
+})
   password: string;
 
   @Column()
   confirm_password: string;
 
-  @Column()
+  @Column({ 
+    type: 'varchar', 
+    length: 100, 
+    nullable: false 
+})
   name: string;
 
   // 계정이 삭제된 날짜를 기록합니다. 소프트 삭제를 위해 사용
-  @DeleteDateColumn()
+  @DeleteDateColumn({ 
+    type: 'timestamp',
+    nullable: true 
+})
   deletedAt: Date;
 
-  @OneToOne(() => BusinessProfile, businessContact => businessContact.userAccount) // 비즈니스 프로필과의 1:1 관계
+  @OneToOne(() => BusinessProfile, businessContact => businessContact.userAccount, { nullable: false } ) // 비즈니스 프로필과의 1:1 관계
   profile: BusinessProfile;
 
   @OneToMany(() => BusinessContact, businessContact => businessContact.userAccount) // 이 사용자가 소유한 연락처들과의 1:N 관계

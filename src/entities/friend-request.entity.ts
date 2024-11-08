@@ -8,11 +8,11 @@ export class FriendRequest {
   @PrimaryGeneratedColumn()
   request_id: number;
 
-  @ManyToOne(() => UserAccount, user => user.sentFriendRequests)
+  @ManyToOne(() => UserAccount, user => user.sentFriendRequests, { nullable: false })
   @JoinColumn({ name: 'sender_id' }) // 친구 요청을 보낸 사용자, user_account 테이블과 외래 키 관계
   sender: UserAccount;
 
-  @ManyToOne(() => UserAccount, user => user.receivedFriendRequests)
+  @ManyToOne(() => UserAccount, user => user.receivedFriendRequests, { nullable: false })
   @JoinColumn({ name: 'receiver_id' }) // 친구 요청을 받은 사용자, user_account 테이블과 외래 키 관계
   receiver: UserAccount;
 
@@ -24,6 +24,8 @@ export class FriendRequest {
   status: 'pending' | 'accepted' | 'rejected'; // 요청 상태 (대기 중, 수락됨, 거절됨)
 
 
-  @CreateDateColumn()
+  @CreateDateColumn({
+    type: 'timestamp',
+})
   created_at: Date; // 요청이 생성된 날짜와 시간을 자동으로 기록
 }
