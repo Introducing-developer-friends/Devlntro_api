@@ -31,18 +31,25 @@ export const seedInitialData = async (dataSource: DataSource) => {
   const hashedPassword = await bcrypt.hash('password123', 10);
 
   // 알림 생성 함수
-  const createNotification = async (user: UserAccount, senderId: number, type: string, message: string, post?: Post, comment?: Comment) => {
-    const notification = notificationRepository.create({
-      user,
-      senderId,
-      type,
-      message,
-      post,
-      comment
-    });
-    await notificationRepository.save(notification);
-    console.log(`${type} notification created for user ${user.login_id}`);
-  };
+const createNotification = async (
+  receiver: UserAccount,   
+  sender: UserAccount,     
+  type: string,
+  message: string,
+  post?: Post,
+  comment?: Comment
+) => {
+  const notification = notificationRepository.create({
+    receiver,             
+    sender,              
+    type,
+    message,
+    post,
+    comment
+  });
+  await notificationRepository.save(notification);
+  console.log(`${type} notification created: from ${sender.login_id} to ${receiver.login_id}`);
+};
 
   // S3에 이미지 업로드 함수
   const uploadImageToS3 = async () => {
@@ -120,7 +127,7 @@ export const seedInitialData = async (dataSource: DataSource) => {
   // 친구 요청 알림 생성
   await createNotification(
     users[2],
-    users[0].user_id,
+    users[0],
     'friend_request',
     `${users[0].name}님이 친구 요청을 보냈습니다.`
   );
@@ -159,7 +166,7 @@ export const seedInitialData = async (dataSource: DataSource) => {
       // 댓글 알림 생성
       await createNotification(
         user,
-        bUser.user_id,
+        bUser,
         'comment',
         `${bUser.name}님이 당신의 게시물에 댓글을 남겼습니다.`,
         post,
@@ -179,7 +186,7 @@ export const seedInitialData = async (dataSource: DataSource) => {
       // 게시물 좋아요 알림 생성
       await createNotification(
         user,
-        bUser.user_id,
+        bUser,
         'like_post',
         `${bUser.name}님이 당신의 게시물에 좋아요를 눌렀습니다.`,
         post
@@ -198,7 +205,7 @@ export const seedInitialData = async (dataSource: DataSource) => {
       // 댓글 좋아요 알림 생성
       await createNotification(
         user,
-        bUser.user_id,
+        bUser,
         'like_comment',
         `${bUser.name}님이 당신의 댓글에 좋아요를 눌렀습니다.`,
         post,

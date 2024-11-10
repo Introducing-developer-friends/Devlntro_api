@@ -49,7 +49,8 @@ export class Post {
   post_like_count: number;
 
   // 게시물에 달린 댓글 수를 저장
-  @Column({ 
+  @Column({
+    name: 'post_comments_count', 
     type: 'int', 
     default: 0, 
     nullable: true 

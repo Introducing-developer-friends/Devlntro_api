@@ -3,7 +3,7 @@ import { UserAccount } from './user-account.entity';
 
 @Entity()
 export class BusinessContact {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ name: 'business_contact_id' })
   contact_id: number;
 
   @ManyToOne(() => UserAccount, userAccount => userAccount.contacts, { nullable: false })

@@ -40,7 +40,8 @@ export class UserAccount {
   name: string;
 
   // 계정이 삭제된 날짜를 기록합니다. 소프트 삭제를 위해 사용
-  @DeleteDateColumn({ 
+  @DeleteDateColumn({
+    name: 'deleted_at', 
     type: 'timestamp',
     nullable: true 
 })

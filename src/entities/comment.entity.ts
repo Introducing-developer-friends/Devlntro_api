@@ -29,6 +29,7 @@ export class Comment {
   created_at: Date;
 
   @Column({
+    name: 'comment_like_count',
     type: 'int', 
     default: 0, 
     nullable: true 
