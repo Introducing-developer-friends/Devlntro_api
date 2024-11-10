@@ -4,7 +4,7 @@ import { UserAccount } from './user-account.entity';
 // BusinessProfile 엔티티는 사용자의 비즈니스 프로필 정보를 나타냅니다.
 @Entity()
 export class BusinessProfile {
-  @PrimaryGeneratedColumn() // 프로필 고유 ID
+  @PrimaryGeneratedColumn({ name: 'business_profile_id' }) // 프로필 고유 ID
   profile_id: number;
 
   @OneToOne(() => UserAccount, userAccount => userAccount.profile) // 사용자 계정과 1:1 관계
@@ -47,6 +47,7 @@ export class BusinessProfile {
   phone: string;
 
   @DeleteDateColumn({
+    name: 'deleted_at',
     type: 'timestamp',
     nullable: true 
 })
