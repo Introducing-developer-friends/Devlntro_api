@@ -6,17 +6,23 @@ import { Comment } from './comment.entity';
 @Entity()
 export class Notification {
   @PrimaryGeneratedColumn()
-  id: number;
+  notification_id: number;
 
-  @ManyToOne(() => UserAccount, user => user.notifications, { nullable: false })
-  @JoinColumn({ name: 'user_id' })
-  user: UserAccount;
+  @ManyToOne(() => UserAccount, { nullable: false })
+  @JoinColumn({ name: 'sender_id' })
+  sender: UserAccount;
 
-  @Column({
-    name: 'sender_id',
-    nullable: false
-  })
-  senderId: number;
+  @ManyToOne(() => UserAccount, { nullable: false })
+  @JoinColumn({ name: 'receiver_id' })
+  receiver: UserAccount;
+
+  @ManyToOne(() => Post, { nullable: true })
+  @JoinColumn({ name: 'post_id' })
+  post: Post; // 관련 게시물 (있는 경우)
+
+@ManyToOne(() => Comment, { nullable: true })
+  @JoinColumn({ name: 'comment_id' })
+  comment: Comment;
 
   @Column({
     type: 'varchar', 
@@ -34,6 +40,7 @@ export class Notification {
 
   @Column({
     name: `is_read`,
+    type: 'boolean',
     default: false,
     nullable: false
 })
@@ -51,12 +58,5 @@ createdAt: Date; // 알림 생성 시간
   nullable: true
 })
 deletedAt: Date; // 소프트 삭제를 위한 삭제 시간 (null이면 삭제되지 않은 상태)
-
-  @ManyToOne(() => Post, { nullable: true })
-  @JoinColumn({ name: 'postId' })
-  post: Post; // 관련 게시물 (있는 경우)
-
-  @ManyToOne(() => Comment, { nullable: true })
-  @JoinColumn({ name: 'commentId' })
-  comment: Comment; // 관련 댓글 (있는 경우)
+  user: any;
 }

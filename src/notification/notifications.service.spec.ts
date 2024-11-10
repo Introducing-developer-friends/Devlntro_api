@@ -110,13 +110,13 @@ describe('NotificationsService', () => {
 
       // 모의 알림 데이터 설정
       const mockNotification = {
-        id: 1,
+        notification_id: 1,
         type: NotificationType.COMMENT,
         message: 'New comment',
         isRead: false,
         createdAt: mockDate,
-        senderId: 123,
-        user: mockUser as UserAccount,
+        sender: { user_id: 123 },
+        receiver: { user_id: 1 },
         post: { post_id: 10 },
         comment: { comment_id: 20 }
       };
@@ -136,14 +136,14 @@ describe('NotificationsService', () => {
 
       // 반환된 알림 목록이 올바른지 확인
       expect(result).toEqual([{
-        notificationId: mockNotification.id,
+        notificationId: mockNotification.notification_id,
         type: mockNotification.type,
         message: mockNotification.message,
         postId: mockNotification.post?.post_id,
         commentId: mockNotification.comment?.comment_id,
         isRead: mockNotification.isRead,
         createdAt: mockNotification.createdAt,
-        senderId: mockNotification.senderId
+        senderId: mockNotification.sender.user_id
       }]);
     });
 
@@ -176,7 +176,7 @@ describe('NotificationsService', () => {
 
       await service.markAsRead(1, 1);
       expect(notificationRepository.update).toHaveBeenCalledWith(
-        { id: 1, user: { user_id: 1 } },
+        { notification_id: 1, receiver: { user_id: 1 } },
         { isRead: true }
       );
     });
@@ -206,8 +206,8 @@ describe('NotificationsService', () => {
     it('should create notification successfully', async () => {
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as UserAccount);
       jest.spyOn(postRepository, 'findOne').mockResolvedValue({ post_id: 1, user: mockUser } as Post);
-      jest.spyOn(notificationRepository, 'create').mockReturnValue({ id: 1 } as Notification);
-      jest.spyOn(notificationRepository, 'save').mockResolvedValue({ id: 1 } as Notification);
+      jest.spyOn(notificationRepository, 'create').mockReturnValue({ notification_id: 1 }  as Notification);
+      jest.spyOn(notificationRepository, 'save').mockResolvedValue({ notification_id: 1 }  as Notification);
 
       const result = await service.createNotification(createData);
       expect(result).toEqual({ notificationId: 1 });
@@ -240,8 +240,8 @@ describe('NotificationsService', () => {
 
       await service.deleteNotification(1, 1);
       expect(notificationRepository.softDelete).toHaveBeenCalledWith({
-        id: 1,
-        user: { user_id: 1 }
+        notification_id: 1,
+        receiver: { user_id: 1 }
       });
     });
 
@@ -262,7 +262,7 @@ describe('NotificationsService', () => {
     // 여러 알림을 성공적으로 삭제하는지 테스트
     it('should delete multiple notifications', async () => {
       const mockNotification = {
-        id: 1,
+        notification_id: 1,
         user: mockUser,
         type: NotificationType.COMMENT,
         message: 'test',
