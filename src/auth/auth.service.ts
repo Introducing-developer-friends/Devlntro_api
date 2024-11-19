@@ -8,7 +8,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto'; // 로그인 요청을 위한 DTO
 import * as bcrypt from 'bcrypt';
 import { AuthResult, IdCheckResult, TokenPayload, RegisterResult } from '../types/auth.type';
-import { RefreshToken } from 'src/entities/refresh-token.entity';
+import { RefreshToken } from '../entities/refresh-token.entity';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable() // NestJS의 의존성 주입 데코레이터
