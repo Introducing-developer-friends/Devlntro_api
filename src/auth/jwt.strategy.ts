@@ -1,14 +1,18 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, UnauthorizedException  } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { TokenPayload } from '../types/auth.type';
+import { InjectRepository } from '@nestjs/typeorm';
+import { UserAccount } from 'src/entities/user-account.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private configService: ConfigService,
-    @Inject(CACHE_MANAGER) private cacheManager: any
+    @InjectRepository(UserAccount)
+    private userRepository: Repository<UserAccount>
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -17,18 +21,23 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: any) {
-    const cacheKey = `user_${payload.sub}`;
-    const cachedUser = await this.cacheManager.get(cacheKey);
-    
-    if (cachedUser) {
-      
-      return cachedUser;
+  async validate(payload: TokenPayload) {
+    if (payload.type !== 'access') {
+      throw new UnauthorizedException('유효하지 않은 토큰 타입입니다.');
     }
-
-    const user = { userId: payload.sub, username: payload.username };
-    await this.cacheManager.set(cacheKey, user, { ttl: 3600 }); // 1시간 캐시
-    
-    return Promise.resolve(user);
+  
+    // 토큰 버전 검증
+    const user = await this.userRepository.findOne({
+      where: { user_id: payload.sub }
+    });
+  
+    if (user.currentTokenVersion > payload.version) {
+      throw new UnauthorizedException('만료된 토큰입니다.');
+    }
+  
+    return {
+      userId: payload.sub,
+      username: payload.username
+    };
   }
 }

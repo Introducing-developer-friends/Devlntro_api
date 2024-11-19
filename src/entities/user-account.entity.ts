@@ -6,6 +6,7 @@ import { Comment } from './comment.entity';
 import { PostLike } from './post-like.entity';
 import { FriendRequest } from './friend-request.entity';
 import { Notification } from './notification.entity';
+import { RefreshToken } from './refresh-token.entity';
 
 // UserAccount 엔티티는 사용자의 계정 정보
 @Entity()
@@ -38,6 +39,13 @@ export class UserAccount {
     nullable: false 
 })
   name: string;
+
+  @Column({ 
+    type: 'int',
+    default: 0,
+    name: 'current_token_version'
+  })
+  currentTokenVersion: number;
 
   // 계정이 삭제된 날짜를 기록합니다. 소프트 삭제를 위해 사용
   @DeleteDateColumn({
@@ -79,4 +87,7 @@ export class UserAccount {
 
   @OneToMany(() => Notification, notification => notification.user)
   notifications: Notification[];
+  
+  @OneToMany(() => RefreshToken, refreshToken => refreshToken.user)
+refreshTokens: RefreshToken[];
 }

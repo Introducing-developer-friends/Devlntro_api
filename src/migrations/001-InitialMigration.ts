@@ -11,6 +11,7 @@ export class InitialMigration1700000000001 implements MigrationInterface {
                     password VARCHAR(255) NOT NULL,
                     confirm_password VARCHAR(255) NOT NULL,
                     name VARCHAR(100) NOT NULL,
+                    current_token_version INT DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     deleted_at TIMESTAMP NULL,
                     CONSTRAINT UQ_user_login_id UNIQUE (login_id)
