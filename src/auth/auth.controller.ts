@@ -1,33 +1,24 @@
-import { Controller, Post, Body, Get, Param, UnauthorizedException, BadRequestException, HttpStatus  } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, UnauthorizedException, BadRequestException, HttpStatus, UseGuards, Req } from '@nestjs/common';
 import { AuthService } from './auth.service'; // AuthService 사용
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
-import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger'; // Swagger 데코레이터 추가
-// 응답 타입 정의
-type CheckIdResponse = {
-  statusCode: number;
-  message: string;
-};
-
-type RegisterResponse = {
-  statusCode: number;
-  message: string;
-  userId: number;
-};
-
-type LoginResponse = {
-  statusCode: number;
-  message: string;
-  token: string;
-  userId: number;
-};
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth, ApiHeader, ApiBody } from '@nestjs/swagger'; // Swagger 데코레이터 추가
+import { 
+  CheckIdResponse, 
+  RegisterResponse, 
+  LoginResponse, 
+  RefreshTokenResponse,
+  LogoutResponse 
+} from '../types/auth.type';
+import { JwtAuthGuard } from './jwt-auth.guard';
 @ApiTags('auth') // Swagger 태그 추가
 @ApiBearerAuth()
 @Controller('auth') // /auth 경로로 라우팅
 export class AuthController {
   constructor(private readonly authService: AuthService) {} // AuthService 의존성 주입
 
-  @ApiOperation({ summary: 'Check ID availability' }) // API 설명
+  @ApiOperation({ summary: '중복체크' }) // API 설명
   @ApiResponse({
     status: HttpStatus.OK,
     description: '사용 가능한 아이디 또는 이미 사용 중인 아이디 메시지를 반환합니다.',
@@ -46,7 +37,7 @@ export class AuthController {
     };
   }
 
-  @ApiOperation({ summary: 'Register a new user' }) // API 설명
+  @ApiOperation({ summary: '회원가입' }) // API 설명
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: '회원가입이 성공적으로 완료되면 메시지와 userId를 반환합니다.',
@@ -74,10 +65,10 @@ export class AuthController {
     }
   }
 
-  @ApiOperation({ summary: 'Login' }) // API 설명
+  @ApiOperation({ summary: '로그인' }) // API 설명
   @ApiResponse({
     status: HttpStatus.OK,
-    description: '로그인이 성공하면 JWT 토큰과 userId를 반환합니다.',
+    description: '로그인 성공시 액세스 토큰, 리프레시 토큰과 사용자 ID를 반환합니다.',
   }) // 200 응답 설명
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
@@ -97,8 +88,50 @@ export class AuthController {
     return {
       statusCode: HttpStatus.OK,
       message: '로그인 성공',
-      token: result.token,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
       userId: result.userId
+    };
+  }
+
+  @Post('refresh')
+  @ApiOperation( { summary: '엑세스 토큰 갱신'})
+  @ApiResponse( {
+    status: HttpStatus.OK,
+    description: '토큰 갱신 성공시 새로운 엑세스 토큰을 반환합니다.',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: '리프레시 토큰이 유효하지 않을 때 401 상태 코드를 반환합니다.',
+  })
+  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto): Promise<RefreshTokenResponse> {
+    const result = await this.authService.refreshAccessToken(refreshTokenDto.refreshToken);
+    return {
+      statusCode: HttpStatus.OK,
+      message: '토큰 갱신 성공',
+      accessToken: result.accessToken
+    };
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation( {summary: '로그아웃'})
+  @ApiResponse( {
+    status: HttpStatus.OK,
+    description: '로그아웃 성공시 메시지를 반환합니다.'
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: '인증되지 않은 사용자의 경우 401 상태 코드를 반환합니다.',
+  })
+  async logout(
+    @Req() req: any
+  ): Promise<LogoutResponse> {
+    await this.authService.logout(req.user.userId);
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: '로그아웃 성공'
     };
   }
 }
