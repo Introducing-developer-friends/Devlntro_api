@@ -11,6 +11,7 @@ export class InitialMigration1700000000001 implements MigrationInterface {
                     password VARCHAR(255) NOT NULL,
                     confirm_password VARCHAR(255) NOT NULL,
                     name VARCHAR(100) NOT NULL,
+                    current_token_version INT DEFAULT 0,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     deleted_at TIMESTAMP NULL,
                     CONSTRAINT UQ_user_login_id UNIQUE (login_id)
@@ -26,7 +27,7 @@ export class InitialMigration1700000000001 implements MigrationInterface {
                     department VARCHAR(100) NOT NULL,
                     position VARCHAR(100) NOT NULL,
                     email VARCHAR(100) NOT NULL,
-                    phone VARCHAR(20) NOT NULL,
+                    phone VARCHAR(50) NOT NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     deleted_at TIMESTAMP NULL,
                     CONSTRAINT FK_business_profile_user FOREIGN KEY (user_id) 

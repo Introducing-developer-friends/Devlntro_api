@@ -41,7 +41,7 @@ export class BusinessProfile {
 
   @Column({
     type: 'varchar', 
-    length: 20, 
+    length: 50, 
     nullable: false 
 })
   phone: string;
