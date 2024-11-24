@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException  } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, InternalServerErrorException  } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
@@ -30,87 +30,111 @@ export class CommentService {
     createCommentDto: CreateCommentDto
   ): Promise<CommentCreateResult> {
 
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+      // 게시물 존재 확인 및 댓글 수 확인
+      const [post, currentCount] = await Promise.all([
+        this.postRepository.findOne({
+          select: ['post_id'],
+          where: { post_id: postId }
+        }),
+        this.commentRepository.count({
+          where: { post: { post_id: postId }}
+        })
+      ]);
 
-    try {
-    const post = await queryRunner.manager.findOne(Post, { where: { post_id: postId } });
-    if (!post) {
-      throw new NotFoundException('게시물을 찾을 수 없습니다.');
-    }
+      if (!post) {
+        throw new NotFoundException('게시물을 찾을 수 없습니다.');
+      }
 
-    const comment = queryRunner.manager.create(Comment, {
-      ...createCommentDto,
-      userAccount: { user_id: userId },
-      post: { post_id: postId },
-    });
+      // 댓글 생성
+      const result = await this.commentRepository
+        .createQueryBuilder()
+        .insert()
+        .into(Comment)
+        .values({
+          content: createCommentDto.content,
+          userAccount: { user_id: userId},
+          post: { post_id: postId}
+        })
+        .execute();
 
-    await queryRunner.manager.save(comment);
+        // 정확한 카운트 업데이트
+        await this.postRepository
+          .createQueryBuilder()
+          .update(Post)
+          .set({ comments_count: currentCount + 1 })
+          .where("post_id = :postId", { postId })
+          .execute();
+      
 
-    // 게시물의 댓글 수 업데이트
-    post.comments_count += 1;
-    await queryRunner.manager.save(post);
-
-    await queryRunner.commitTransaction();
-
-      return { commentId: comment.comment_id };
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+      return { commentId: result.identifiers[0].comment_id };
   }
 
   // 댓글 수정 메서드
   async updateComment(
-    userId: number, 
-    postId: number, 
-    commentId: number, 
+    userId: number,
+    postId: number,
+    commentId: number,
     updateCommentDto: UpdateCommentDto
   ): Promise<CommentUpdateResult> {
-    
-    // 댓글 ID, 게시물 ID, 사용자 ID를 기반으로 댓글 조회
-    const comment = await this.commentRepository.findOne({
-      where: { comment_id: commentId, post: { post_id: postId }, userAccount: { user_id: userId } },
-    });
 
-    // 댓글이 존재하지 않을 경우 예외 처리
-    if (!comment) {
+    // 단일 쿼리로 업데이트
+    const result = await this.commentRepository
+      .createQueryBuilder()
+      .update(Comment)
+      .set({ content: updateCommentDto.content })
+      .where("comment_id = :commentId AND userAccount.user_id = :userId AND post.post_id = :postId", {
+        commentId,
+        userId,
+        postId
+      })
+      .execute();
+  
+    if (result.affected === 0) {
       throw new NotFoundException('댓글을 찾을 수 없습니다.');
     }
-
-    // 댓글 내용 업데이트
-    comment.content = updateCommentDto.content;
-    await this.commentRepository.save(comment); // 업데이트된 댓글을 데이터베이스에 저장
-
+  
     return {
-      commentId: comment.comment_id,
-      content: comment.content
+      commentId,
+      content: updateCommentDto.content
     };
   }
 
   async deleteComment(
-    userId: number, 
-    postId: number, 
+    userId: number,
+    postId: number,
     commentId: number
   ): Promise<CommentDeleteResult> {
-    const comment = await this.commentRepository.findOne({
-      where: { comment_id: commentId, post: { post_id: postId }, userAccount: { user_id: userId } },
-      relations: ['post'],
+
+    // 현재 댓글 수 확인
+    const currentCount = await this.commentRepository.count({
+      where: { 
+        post: { post_id: postId },
+        deleted_at: null
+      }
     });
+      
+      // 댓글 소프트 삭제
+      const deleteResult = await this.commentRepository
+          .createQueryBuilder()
+          .softDelete()
+          .where(
+            "comment_id = :commentId AND userAccount.user_id = :userId AND post.post_id = :postId",
+            { commentId, userId, postId }
+          )
+        .execute();
 
-    if (!comment) {
-      throw new NotFoundException('댓글을 찾을 수 없습니다.');
-    }
-
-    await this.commentRepository.softRemove(comment);
-
-    // 게시물의 댓글 수 감소
-    comment.post.comments_count -= 1;
-    await this.postRepository.save(comment.post);
-
+        if (deleteResult.affected === 0) {
+          throw new NotFoundException('댓글을 찾을 수 없거나 삭제 권한이 없습니다.');
+        }
+      
+      // 3. 정확한 카운트 업데이트
+        await this.postRepository
+          .createQueryBuilder()
+          .update(Post)
+          .set({ comments_count: currentCount - 1 })
+          .where("post_id = :postId", { postId })
+          .execute();
+     
     return {
       commentId,
       isDeleted: true
@@ -123,53 +147,77 @@ export class CommentService {
     postId: number, 
     commentId: number
   ): Promise<CommentLikeResult> {
-    return this.dataSource.manager.transaction(async transactionalEntityManager => {
-      // SELECT ... FOR UPDATE를 사용하여 행 잠금
-      const comment = await transactionalEntityManager
-        .createQueryBuilder(Comment, "comment")
-        .setLock("pessimistic_write")
-        .where("comment.comment_id = :commentId", { commentId })
-        .andWhere("comment.post.post_id = :postId", { postId })
-        .getOne();
-  
+
+    // 댓글 존재 확인 및 좋아요 수 한번에 조회
+    try{
+      const [comment, currentLikeCount] = await Promise.all([
+        this.commentRepository.findOne({
+          select: ['comment_id'],
+          where: {
+            comment_id: commentId,
+            post: { post_id: postId }
+          }
+        }),
+        this.commentLikeRepository.count({
+          where: { comment: { comment_id: commentId }}
+        })
+      ]);
+
       if (!comment) {
         throw new NotFoundException('댓글을 찾을 수 없습니다.');
       }
-  
-      const existingLike = await transactionalEntityManager.findOne(CommentLike, {
-        where: { comment: { comment_id: commentId }, user: { user_id: userId } }
-      });
 
-      let isLiked = false;
+      // 좋아요 추가/제거 시도
+      try {
+        await this.commentLikeRepository
+        .createQueryBuilder()
+        .insert()
+        .into(CommentLike)
+        .values({
+          comment: {comment_id: commentId},
+          user: { user_id: userId}
+        })
+        .execute();
 
-      if (existingLike) {
-        await transactionalEntityManager.remove(existingLike);
-        comment.like_count -= 1;
-        isLiked = false;
-      } else {
-        try {
-        const newLike = transactionalEntityManager.create(CommentLike, {
-          comment: { comment_id: commentId },
-          user: { user_id: userId }
-        });
-        await transactionalEntityManager.save(newLike);
-        comment.like_count += 1;
-        isLiked = true;
-      }catch (error) {
+
+        // 정확한 카운트 반영
+        await this.commentRepository
+          .createQueryBuilder()
+          .update(Comment)
+          .set({ like_count: currentLikeCount + 1 })
+          .where("comment_id = :commentId", { commentId})
+          .execute();
+
+        return {
+          isLiked: true,
+          likeCount: currentLikeCount + 1
+        };
+
+      } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
-          throw new ConflictException('이미 이 댓글에 좋아요를 누르셨습니다.');
+          // 좋아요 제거 시도 정확한 카운트 반영
+          await this.commentLikeRepository.delete({
+            comment: { comment_id: commentId },
+            user: { user_id: userId}
+          });
+
+          await this.commentRepository
+            .createQueryBuilder()
+            .update(Comment)
+            .set({ like_count: currentLikeCount - 1 })
+            .where("comment_id = :commentId", { commentId})
+            .execute();
+          
+          return {
+            isLiked: false,
+            likeCount: currentLikeCount - 1
+          };
         }
         throw error;
       }
+    } catch (error) {
+      console.error('Like comment error:', error);
+      throw new InternalServerErrorException('좋아요 처리 중 오류가 발생했습니다.');
     }
-  
-      await transactionalEntityManager.save(comment);
-  
-      return {
-        isLiked,
-        likeCount: comment.like_count
-      };
-    });
   }
-
 }
