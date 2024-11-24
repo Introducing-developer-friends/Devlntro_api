@@ -1,63 +1,79 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Brackets } from 'typeorm';
 import { Post } from '../entities/post.entity';
 import { BusinessContact } from '../entities/business-contact.entity';
+import { FilterType } from 'src/types/feed.types';
 
 @Injectable()
 export class FeedFilterService {
-
   // FeedFilterService 클래스에서 사용할 로거 인스턴스 생성
   private readonly logger = new Logger(FeedFilterService.name);
 
   constructor(
     @InjectRepository(Post)
-    private postRepository: Repository<Post>, // Post 엔티티에 대한 리포지토리 주입
-    
+    private readonly postRepository: Repository<Post>,
     @InjectRepository(BusinessContact)
-    private businessContactRepository: Repository<BusinessContact>, // BusinessContact 엔티티에 대한 리포지토리 주입
+    private readonly businessContactRepository: Repository<BusinessContact>,
   ) {}
 
+  // 사용자 기준으로 게시물을 필터링하는 메서드
   async filterPostsByUser(
     userId: number,
-    filterType: 'all' | 'own' | 'specific',
+    filterType: FilterType,
     specificUserId?: number
-  ) {
+  ): Promise<Post[]> {
+    try {
 
-    // 게시물을 조회하는 쿼리 빌더 생성
-    let query = this.postRepository.createQueryBuilder('post')
-      .leftJoinAndSelect('post.user', 'user') // post와 연관된 user를 조인
-      .select(['post.post_id', 'post.created_at', 'post.image_url', 'user.user_id', 'user.name'])
-      .addSelect('post.post_like_count') 
-      .addSelect('post.comments_count'); 
+      // 기본 쿼리 빌더 설정
+      const query = this.postRepository.createQueryBuilder('post')
+        .leftJoin('post.user', 'user')
+        .where('post.deleted_at IS NULL');
 
-      // 'all' 필터 타입: 사용자의 모든 게시물과 비즈니스 연락처의 게시물을 조회
-      if (filterType === 'all') {
-        query = query
-          .where(new Brackets(qb => {
-            qb.where('user.user_id = :userId', { userId })
-              .orWhere(`user.user_id IN (
-                SELECT CASE
-                  WHEN bc.user_id = :userId THEN bc.contact_user_id
-                  WHEN bc.contact_user_id = :userId THEN bc.user_id
-                END
-                FROM business_contact bc
-                WHERE bc.user_id = :userId OR bc.contact_user_id = :userId
-              )`, { userId });
-          }));
-      // 'own' 필터 타입: 사용자의 자신의 게시물만 조회
-    } else if (filterType === 'own') {
-        query = query.where('user.user_id = :userId', { userId });
+      // 필터 타입에 따른 조건 추가
+      switch (filterType) {
+        case FilterType.ALL:
+          // 비즈니스 연락처 조회를 Join으로 변경
+          query.innerJoin(
+            'business_contact',
+            'bc',
+            '(bc.user_id = :userId AND bc.contact_user_id = user.user_id) OR ' +
+            '(bc.contact_user_id = :userId AND bc.user_id = user.user_id) OR ' +
+            'user.user_id = :userId',
+            { userId }
+          );
+          break;
 
-      // 'specific' 필터 타입: 특정 사용자의 게시물만 조회
-      } else if (filterType === 'specific' && specificUserId) {
-        query = query.where('user.user_id = :specificUserId', { specificUserId });
+        case FilterType.OWN:
+          // 사용자 자신의 게시물만 조회
+          query.andWhere('user.user_id = :userId', { userId });
+          break;
+
+        case FilterType.SPECIFIC:
+          // 특정 사용자의 게시물만 조회
+          if (!specificUserId) {
+            throw new BadRequestException('특정 사용자 ID가 필요합니다.');
+          }
+          query.andWhere('user.user_id = :specificUserId', { specificUserId });
+          break;
+      }
+
+      // 필요한 필드만 선택하여 조회
+      return await query
+        .select([
+          'post.post_id',
+          'post.created_at',
+          'post.image_url',
+          'post.post_like_count',
+          'post.comments_count',
+          'user.user_id',
+          'user.name'
+        ])
+        .getMany();
+
+    } catch (error) {
+      this.logger.error(`Error filtering posts: ${error.message}`);
+      throw error;
     }
-
-    query = query
-      .orderBy('post.created_at', 'DESC')
-
-    // 최종적으로 필터링된 게시물들을 조회하여 반환
-    return await query.getMany();
   }
 }
