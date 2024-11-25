@@ -50,82 +50,84 @@ export class PostService {
   
   // 게시물을 수정하는 메서드
   async updatePost(userId: number, postId: number, updatePostData: PostUpdateData): Promise<void> {
-    // 1. 먼저 게시물 존재 여부와 이전 이미지 URL 확인
-    const post = await this.postRepository.findOne({
-      select: ['post_id', 'image_url'],
-      where: { 
-        post_id: postId, 
-        user: { user_id: userId } 
-      }
-    });
+    // 이미지 변경이 있는 경우만 이전 이미지 URL 조회
+    let oldImageUrl: string | null = null;
+    if (updatePostData.imageUrl !== undefined) {
+      const post = await this.postRepository
+        .createQueryBuilder('post')
+        .select('post.image_url')
+        .where('post.post_id = :postId', { postId })
+        .andWhere('post.user_id = :userId', { userId })
+        .getOne();
   
-    if (!post) {
+      if (!post) {
+        throw new NotFoundException('게시물을 찾을 수 없습니다.');
+      }
+      oldImageUrl = post.image_url;
+    }
+  
+    // 업데이트 실행
+    const updateResult = await this.postRepository
+      .createQueryBuilder()
+      .update(Post)
+      .set({
+        ...(updatePostData.content !== undefined && { content: updatePostData.content }),
+        ...(updatePostData.imageUrl !== undefined && { image_url: updatePostData.imageUrl })
+      })
+      .where('post_id = :postId', { postId })
+      .andWhere('user_id = :userId', { userId })
+      .execute();
+  
+    if (updateResult.affected === 0) {
       throw new NotFoundException('게시물을 찾을 수 없습니다.');
     }
   
-    // 2. 업데이트할 데이터 준비
-    const updateData: any = {};
-    let oldImageUrl = null;
-  
-    if (updatePostData.content !== undefined) {
-      updateData.content = updatePostData.content;
-    }
-  
-    if (updatePostData.imageUrl !== undefined) {
-      oldImageUrl = post.image_url;
-      updateData.image_url = updatePostData.imageUrl;
-    }
-  
-    // 3. DB 업데이트 (단일 쿼리)
-    if (Object.keys(updateData).length > 0) {
-      await this.postRepository
-        .createQueryBuilder()
-        .update(Post)
-        .set(updateData)
-        .where("post_id = :postId AND user.user_id = :userId", { 
-          postId, 
-          userId 
-        })
-        .execute();
-    }
-  
-    // 4. 이전 이미지 삭제 (DB 작업 성공 후)
+    // 이미지가 변경된 경우만 S3 처리
     if (oldImageUrl && updatePostData.imageUrl && oldImageUrl !== updatePostData.imageUrl) {
-      try {
-        const oldKey = this.extractKeyFromUrl(oldImageUrl);
-        if (oldKey) {
+      const oldKey = this.extractKeyFromUrl(oldImageUrl);
+      if (oldKey) {
+        try {
           await this.s3Service.deleteFile(oldKey);
+        } catch (error) {
+          console.error('이미지 삭제 실패:', error);
         }
-      } catch (error) {
-        // S3 삭제 실패는 로깅만 하고 계속 진행
-        console.error('S3 파일 삭제 실패:', error);
       }
     }
   }
-
+  
   // 게시물 삭제 메서드 
   async deletePost(userId: number, postId: number): Promise<void> {
-    const post = await this.postRepository.findOne({
-      where: { post_id: postId, user: { user_id: userId } },
-    });
-
+    // 이미지 URL만 조회
+    const post = await this.postRepository
+      .createQueryBuilder('post')
+      .select('post.image_url')
+      .where('post.post_id = :postId', { postId })
+      .andWhere('post.user_id = :userId', { userId })
+      .getOne();
+  
     if (!post) {
       throw new NotFoundException('게시물을 찾을 수 없습니다.');
     }
-    await this.postRepository.softRemove(post);
-
-    // 이미지가 있으면 S3에서 이미지 삭제
+  
+    // soft delete 실행
+    await this.postRepository
+      .createQueryBuilder()
+      .softDelete()
+      .where('post_id = :postId', { postId })
+      .andWhere('user_id = :userId', { userId })
+      .execute();
+  
+    // 이미지가 있었다면 S3에서 삭제
     if (post.image_url) {
-      try {
-        const key = this.extractKeyFromUrl(post.image_url);
+      const key = this.extractKeyFromUrl(post.image_url);
       if (key) {
-        await this.s3Service.deleteFile(key);
+        try {
+          await this.s3Service.deleteFile(key);
+        } catch (error) {
+          console.error('이미지 삭제 실패:', error);
+        }
       }
-    } catch (error) {
-      // S3 삭제 실패해도 로깅만 하고 계속 진행.
-      console.log('Failed to delete image S3:', error);
     }
-  }
   }
 
   async likePost(userId: number, postId: number): Promise<PostLikeInfo> {
