@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Brackets } from 'typeorm';
 import { Post } from '../entities/post.entity';
 import { BusinessContact } from '../entities/business-contact.entity';
-import { FilterType } from 'src/types/feed.types';
+import { FilterType } from '../types/feed.types';
 
 @Injectable()
 export class FeedFilterService {
