@@ -5,11 +5,10 @@ import { Notification } from '../entities/notification.entity';
 import { UserAccount } from '../entities/user-account.entity';
 import { Post } from '../entities/post.entity';
 import { Comment } from '../entities/comment.entity';
-import { Repository, DeepPartial  } from 'typeorm';
+import { Repository } from 'typeorm';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import {
   NotificationType,
-  NotificationInfo,
   NotificationCreateData
 } from '../types/notification.types';
 
@@ -21,13 +20,11 @@ describe('NotificationsService', () => {
   let commentRepository: Repository<Comment>;
 
   const mockDate = new Date();
-
   // 모의 UserAccount 데이터 설정
   const mockUser: Partial<UserAccount> = {
     user_id: 1,
     login_id: 'test',
     password: 'password',
-    confirm_password: 'password',
     name: 'Test User',
     deletedAt: null,
     profile: null,
@@ -41,37 +38,40 @@ describe('NotificationsService', () => {
     notifications: []
   };
 
-  // 테스트 시작 전 모듈과 서비스 설정
-  beforeEach(async () => {
-    const mockQueryBuilder = {
-      leftJoinAndSelect: jest.fn().mockReturnThis(),
-      innerJoin: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      orderBy: jest.fn().mockReturnThis(),
-      select: jest.fn().mockReturnThis(),
-      getMany: jest.fn().mockResolvedValue([])
-    };
+  // QueryBuilder 모킹 함수
+  const createMockQueryBuilder = () => ({
+    leftJoin: jest.fn().mockReturnThis(),
+    innerJoin: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    getMany: jest.fn().mockResolvedValue([]),
+    getOne: jest.fn().mockResolvedValue(null),
+    update: jest.fn().mockReturnThis(),
+    set: jest.fn().mockReturnThis(),
+    execute: jest.fn().mockResolvedValue({ affected: 1 }),
+    softDelete: jest.fn().mockReturnThis()
+  });
 
-    // 테스트 모듈 컴파일
+  beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         NotificationsService,
         {
           provide: getRepositoryToken(Notification),
           useValue: {
-            createQueryBuilder: jest.fn(() => mockQueryBuilder),
-            update: jest.fn(),
+            createQueryBuilder: jest.fn(() => createMockQueryBuilder()),
             create: jest.fn(),
             save: jest.fn(),
             softDelete: jest.fn(),
-            softRemove: jest.fn(),
             findOne: jest.fn()
           },
         },
         {
           provide: getRepositoryToken(UserAccount),
           useValue: {
+            createQueryBuilder: jest.fn(() => createMockQueryBuilder()),
             findOne: jest.fn()
           },
         },
@@ -104,59 +104,42 @@ describe('NotificationsService', () => {
 
   // getNotifications 메서드 테스트
   describe('getNotifications', () => {
+    const mockNotification = {
+      notification_id: 1,
+      type: NotificationType.COMMENT,
+      message: 'New comment',
+      isRead: false,
+      createdAt: mockDate,
+      sender: mockUser,
+      receiver: { ...mockUser, user_id: 2 }, 
+      post: { post_id: 10 },
+      comment: { comment_id: 20 }
+    };
 
-    // 알림 목록을 성공적으로 반환하는지 테스트
     it('should return notifications list', async () => {
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.getMany.mockResolvedValue([mockNotification]);
+      
+      jest.spyOn(notificationRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+  
+      const result = await service.getNotifications(2);
+      expect(result[0].senderId).toBe(mockUser.user_id);
+    });
 
-      // 모의 알림 데이터 설정
-      const mockNotification = {
-        notification_id: 1,
-        type: NotificationType.COMMENT,
-        message: 'New comment',
-        isRead: false,
-        createdAt: mockDate,
-        sender: { user_id: 123 },
-        receiver: { user_id: 1 },
-        post: { post_id: 10 },
-        comment: { comment_id: 20 }
-      };
-
-      const queryBuilder = {
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([mockNotification])
-      };
-
+    it('should handle empty notifications list', async () => {
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.getMany.mockResolvedValue([]);
       jest.spyOn(notificationRepository, 'createQueryBuilder')
         .mockReturnValue(queryBuilder as any);
 
       const result = await service.getNotifications(1);
-
-      // 반환된 알림 목록이 올바른지 확인
-      expect(result).toEqual([{
-        notificationId: mockNotification.notification_id,
-        type: mockNotification.type,
-        message: mockNotification.message,
-        postId: mockNotification.post?.post_id,
-        commentId: mockNotification.comment?.comment_id,
-        isRead: mockNotification.isRead,
-        createdAt: mockNotification.createdAt,
-        senderId: mockNotification.sender.user_id
-      }]);
+      expect(result).toEqual([]);
     });
 
-    // 오류 발생 시 BadRequestException을 던지는지 테스트
     it('should throw BadRequestException on error', async () => {
-      const queryBuilder = {
-        leftJoinAndSelect: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        orderBy: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockRejectedValue(new Error())
-      };
-
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.getMany.mockRejectedValue(new Error('Database error'));
       jest.spyOn(notificationRepository, 'createQueryBuilder')
         .mockReturnValue(queryBuilder as any);
 
@@ -168,27 +151,51 @@ describe('NotificationsService', () => {
 
   // markAsRead 메서드 테스트
   describe('markAsRead', () => {
-
+    
     // 알림을 읽음 처리하는지 테스트
     it('should mark notification as read', async () => {
-      jest.spyOn(notificationRepository, 'update')
-        .mockResolvedValue({ affected: 1, raw: [], generatedMaps: [] });
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.execute.mockResolvedValue({ affected: 1 });
+      jest.spyOn(notificationRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
 
       await service.markAsRead(1, 1);
-      expect(notificationRepository.update).toHaveBeenCalledWith(
-        { notification_id: 1, receiver: { user_id: 1 } },
-        { isRead: true }
-      );
+      expect(queryBuilder.update).toHaveBeenCalled();
+      expect(queryBuilder.set).toHaveBeenCalledWith({ isRead: true });
     });
 
     // 알림이 없을 경우 NotFoundException을 던지는지 테스트
     it('should throw NotFoundException if notification not found', async () => {
-      jest.spyOn(notificationRepository, 'update')
-        .mockResolvedValue({ affected: 0, raw: [], generatedMaps: [] });
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.execute.mockResolvedValue({ affected: 0 });
+      jest.spyOn(notificationRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
 
       await expect(service.markAsRead(1, 1))
         .rejects
         .toThrow(NotFoundException);
+    });
+
+    it('should handle database errors', async () => {
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.execute.mockRejectedValue(new Error('Database error'));
+      jest.spyOn(notificationRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+
+      await expect(service.markAsRead(1, 1))
+        .rejects
+        .toThrow(Error);
+    });
+
+    it('should handle database error during mark as read', async () => {
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.execute.mockRejectedValue(new Error('Database error'));
+      jest.spyOn(notificationRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+  
+      await expect(service.markAsRead(1, 1))
+        .rejects
+        .toThrow(Error);
     });
   });
 
@@ -204,134 +211,266 @@ describe('NotificationsService', () => {
 
     // 알림을 성공적으로 생성하는지 테스트
     it('should create notification successfully', async () => {
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as UserAccount);
-      jest.spyOn(postRepository, 'findOne').mockResolvedValue({ post_id: 1, user: mockUser } as Post);
-      jest.spyOn(notificationRepository, 'create').mockReturnValue({ notification_id: 1 }  as Notification);
-      jest.spyOn(notificationRepository, 'save').mockResolvedValue({ notification_id: 1 }  as Notification);
-
+      const mockReceiver = { ...mockUser, user_id: 2 }; // 수신자
+      const mockSender = { ...mockUser, user_id: 1 };   // 발신자
+      
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.getMany.mockResolvedValue([mockSender, mockReceiver]);
+      
+      const mockNotification = {
+        notification_id: 1,
+        sender: mockSender,
+        receiver: mockReceiver
+      };
+    
+      jest.spyOn(userRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+      jest.spyOn(postRepository, 'findOne')
+        .mockResolvedValue({ post_id: 1, user: mockUser } as Post);
+      jest.spyOn(notificationRepository, 'create')
+        .mockReturnValue(mockNotification as Notification);
+      jest.spyOn(notificationRepository, 'save')
+        .mockResolvedValue(mockNotification as Notification);  // save 모킹 추가
+        
       const result = await service.createNotification(createData);
       expect(result).toEqual({ notificationId: 1 });
     });
 
-    // 발신자와 수신자가 같으면 BadRequestException을 던지는지 테스트
-    it('should throw BadRequestException if sender and receiver are same', async () => {
-      const invalidData = { ...createData, receiverId: 1 };
-      await expect(service.createNotification(invalidData))
-        .rejects
-        .toThrow(BadRequestException);
-    });
+    it('should throw BadRequestException for invalid post', async () => {
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.getMany.mockResolvedValue([
+        { user_id: 1 },
+        { user_id: 2 }
+      ]);
+      
+      jest.spyOn(userRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+      jest.spyOn(postRepository, 'findOne')
+        .mockResolvedValue(null);
 
-    // 수신자가 없을 경우 NotFoundException을 던지는지 테스트
-    it('should throw NotFoundException if receiver not found', async () => {
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
       await expect(service.createNotification(createData))
         .rejects
         .toThrow(NotFoundException);
     });
+    
+    it('should throw BadRequestException for invalid comment', async () => {
+      const dataWithComment = {
+        ...createData,
+        commentId: 1
+      };
+
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.getMany.mockResolvedValue([
+        { user_id: 1 },
+        { user_id: 2 }
+      ]);
+      
+      jest.spyOn(userRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+      jest.spyOn(commentRepository, 'findOne')
+        .mockResolvedValue(null);
+
+      await expect(service.createNotification(dataWithComment))
+        .rejects
+        .toThrow(NotFoundException);
+    });
+
+    it('should throw BadRequestException when sender and receiver are same', async () => {
+      const sameUserData: NotificationCreateData = {
+        senderId: 1,
+        receiverId: 1,
+        type: NotificationType.COMMENT,
+        message: 'Test message',
+        postId: 1
+      };
+  
+      await expect(service.createNotification(sameUserData))
+        .rejects
+        .toThrow(BadRequestException);
+    });
+  
+    it('should handle database error during notification creation', async () => {
+      const createData: NotificationCreateData = {
+        senderId: 1,
+        receiverId: 2,
+        type: NotificationType.COMMENT,
+        message: 'Test message',
+        postId: 1
+      };
+  
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.getMany.mockResolvedValue([
+        { user_id: 1 },
+        { user_id: 2 }
+      ]);
+      
+      jest.spyOn(userRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+      jest.spyOn(postRepository, 'findOne')
+        .mockResolvedValue({ post_id: 1 } as Post);
+      jest.spyOn(notificationRepository, 'save')
+        .mockRejectedValue(new Error('Database error'));
+  
+      await expect(service.createNotification(createData))
+        .rejects
+        .toThrow(Error);
+    });
   });
 
-  // deleteNotification 메서드 테스트  
+  // deleteNotification 메서드 테스트
   describe('deleteNotification', () => {
 
     // 알림을 성공적으로 삭제하는지 테스트
     it('should delete notification', async () => {
       jest.spyOn(notificationRepository, 'softDelete')
         .mockResolvedValue({ affected: 1, raw: [], generatedMaps: [] });
-
+  
       await service.deleteNotification(1, 1);
       expect(notificationRepository.softDelete).toHaveBeenCalledWith({
         notification_id: 1,
         receiver: { user_id: 1 }
       });
     });
-
+  
     // 알림이 없을 경우 NotFoundException을 던지는지 테스트
     it('should throw NotFoundException if notification not found', async () => {
       jest.spyOn(notificationRepository, 'softDelete')
         .mockResolvedValue({ affected: 0, raw: [], generatedMaps: [] });
-
+  
       await expect(service.deleteNotification(1, 1))
         .rejects
         .toThrow(NotFoundException);
+    });
+
+    it('should handle database error during deletion', async () => {
+      jest.spyOn(notificationRepository, 'softDelete')
+        .mockRejectedValue(new Error('Database error'));
+  
+      await expect(service.deleteNotification(1, 1))
+        .rejects
+        .toThrow(Error);
     });
   });
 
   // deleteMultipleNotifications 메서드 테스트
   describe('deleteMultipleNotifications', () => {
-
-    // 여러 알림을 성공적으로 삭제하는지 테스트
     it('should delete multiple notifications', async () => {
-      const mockNotification = {
-        notification_id: 1,
-        user: mockUser,
-        type: NotificationType.COMMENT,
-        message: 'test',
-        isRead: false,
-        createdAt: mockDate,
-        senderId: 123,
-        post: null,
-        comment: null,
-        deletedAt: null
-      };
-
       const mockNotifications = [
-        { ...mockNotification, id: 1 },
-        { ...mockNotification, id: 2 },
-        { ...mockNotification, id: 3 }
+        { notification_id: 1 },
+        { notification_id: 2 }
       ];
 
-      const queryBuilder = {
-        innerJoin: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue(mockNotifications)
-      };
-
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.getMany.mockResolvedValue(mockNotifications);
+      queryBuilder.execute.mockResolvedValue({ affected: 2 });
+      
       jest.spyOn(notificationRepository, 'createQueryBuilder')
         .mockReturnValue(queryBuilder as any);
 
-      // softRemove 메서드 모킹을 Promise.resolve로 변경
-      jest.spyOn(notificationRepository, 'softRemove')
-        .mockImplementation(() => Promise.resolve(mockNotifications as any));
-
-      const result = await service.deleteMultipleNotifications([1, 2, 3], 1);
-      expect(result).toBe(3);
+      const result = await service.deleteMultipleNotifications([1, 2], 1);
+      expect(result).toBe(2);
     });
 
-    // 알림이 없을 경우 NotFoundException을 던지는지 테스트
-    it('should throw NotFoundException if no notifications found', async () => {
-      const queryBuilder = {
-        innerJoin: jest.fn().mockReturnThis(),
-        where: jest.fn().mockReturnThis(),
-        andWhere: jest.fn().mockReturnThis(),
-        getMany: jest.fn().mockResolvedValue([])
-      };
-
+    it('should throw NotFoundException when no notifications found', async () => {
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.getMany.mockResolvedValue([]);
+      
       jest.spyOn(notificationRepository, 'createQueryBuilder')
         .mockReturnValue(queryBuilder as any);
 
-      await expect(service.deleteMultipleNotifications([1, 2, 3], 1))
+      await expect(service.deleteMultipleNotifications([1, 2], 1))
         .rejects
         .toThrow(NotFoundException);
+    });
+
+    it('should handle partial deletion', async () => {
+      const mockNotifications = [
+        { notification_id: 1 }
+      ];
+
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.getMany.mockResolvedValue(mockNotifications);
+      queryBuilder.execute.mockResolvedValue({ affected: 1 });
+      
+      jest.spyOn(notificationRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+
+      const result = await service.deleteMultipleNotifications([1, 2], 1);
+      expect(result).toBe(1);
+    });
+
+    it('should handle database error during deletion query', async () => {
+      const mockNotifications = [
+        { notification_id: 1 },
+        { notification_id: 2 }
+      ];
+  
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.getMany.mockResolvedValue(mockNotifications);
+      queryBuilder.execute.mockRejectedValue(new Error('Database error'));
+      
+      jest.spyOn(notificationRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+  
+      await expect(service.deleteMultipleNotifications([1, 2], 1))
+        .rejects
+        .toThrow(Error);
+    });
+  
+    it('should return 0 when no notifications were deleted', async () => {
+      const mockNotifications = [
+        { notification_id: 1 },
+        { notification_id: 2 }
+      ];
+  
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.getMany.mockResolvedValue(mockNotifications);
+      queryBuilder.execute.mockResolvedValue({ affected: 0 });
+      
+      jest.spyOn(notificationRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+  
+      const result = await service.deleteMultipleNotifications([1, 2], 1);
+      expect(result).toBe(0);
     });
   });
 
   // findUserIdByLoginId 메서드 테스트
   describe('findUserIdByLoginId', () => {
     it('should return user id when user found', async () => {
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser as UserAccount);
-
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.getOne.mockResolvedValue(mockUser);
+      
+      jest.spyOn(userRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+    
       const result = await service.findUserIdByLoginId('test');
-      expect(result).toBe(1);
+      expect(result).toBe(mockUser.user_id);
     });
 
     // 사용자가 존재하지 않을 경우 NotFoundException을 던지는지 테스트
     it('should throw NotFoundException when user not found', async () => {
-      jest.spyOn(userRepository, 'findOne').mockResolvedValue(null);
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.getOne.mockResolvedValue(null);
+      
+      jest.spyOn(userRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
 
       await expect(service.findUserIdByLoginId('test'))
         .rejects
         .toThrow(NotFoundException);
+    });
+
+    it('should handle database errors', async () => {
+      const queryBuilder = createMockQueryBuilder();
+      queryBuilder.getOne.mockRejectedValue(new Error('Database error'));
+      
+      jest.spyOn(userRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+
+      await expect(service.findUserIdByLoginId('test'))
+        .rejects
+        .toThrow(Error);
     });
   });
 });

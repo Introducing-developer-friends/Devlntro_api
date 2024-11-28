@@ -4,271 +4,312 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Comment } from '../entities/comment.entity';
 import { CommentLike } from '../entities/comment-like.entity';
 import { Post } from '../entities/post.entity';
-import { UserAccount } from '../entities/user-account.entity';
-import { Repository, DataSource, QueryRunner, SelectQueryBuilder } from 'typeorm';
-import { NotFoundException } from '@nestjs/common';
+import { Repository, DataSource, SelectQueryBuilder } from 'typeorm';
+import { NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import exp from 'constants';
 
 describe('CommentService', () => {
-  let service: CommentService;
-  let mockCommentRepository: jest.Mocked<Repository<Comment>>;
-  let mockCommentLikeRepository: jest.Mocked<Repository<CommentLike>>;
-  let mockPostRepository: jest.Mocked<Repository<Post>>;
-  let mockUserRepository: jest.Mocked<Repository<UserAccount>>;
-  let mockDataSource: jest.Mocked<DataSource>;
-  let queryRunner: jest.Mocked<QueryRunner>;
-  let queryBuilder: jest.Mocked<SelectQueryBuilder<Comment>>;
-  let transactionalEntityManager: any;
+ let service: CommentService;
+ let mockCommentRepository: jest.Mocked<Repository<Comment>>;
+ let mockCommentLikeRepository: jest.Mocked<Repository<CommentLike>>;
+ let mockPostRepository: jest.Mocked<Repository<Post>>;
+ let queryBuilder: jest.Mocked<SelectQueryBuilder<Comment>>;
 
-  beforeEach(async () => {
-    // QueryBuilder를 mock하여 getOne을 사용하도록 설정
-    queryBuilder = {
-      setLock: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      getOne: jest.fn(),
-    } as unknown as jest.Mocked<SelectQueryBuilder<Comment>>;
+ beforeEach(async () => {
+   // QueryBuilder를 모킹하여 메서드 체이닝 동작 설정
+   queryBuilder = {
+     insert: jest.fn().mockReturnThis(),
+     into: jest.fn().mockReturnThis(),
+     values: jest.fn().mockReturnThis(),
+     update: jest.fn().mockReturnThis(),
+     set: jest.fn().mockReturnThis(),
+     where: jest.fn().mockReturnThis(),
+     andWhere: jest.fn().mockReturnThis(),
+     execute: jest.fn(),
+     softDelete: jest.fn().mockReturnThis(),
+     select: jest.fn().mockReturnThis(),
+   } as unknown as jest.Mocked<SelectQueryBuilder<Comment>>;
 
-    // transaction 관련 mock 설정
-    transactionalEntityManager = {
-      findOne: jest.fn(),
-      save: jest.fn(),
-      remove: jest.fn(),
-      create: jest.fn(),
-      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
-    };
+   // 각 Repository를 Mock 객체로 생성
+   mockCommentRepository = {
+     createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+     findOne: jest.fn(),
+     count: jest.fn(),
+   } as unknown as jest.Mocked<Repository<Comment>>;
 
-    // QueryRunner mock 설정
-    queryRunner = {
-      manager: transactionalEntityManager,
-      connect: jest.fn(),
-      startTransaction: jest.fn(),
-      commitTransaction: jest.fn(),
-      rollbackTransaction: jest.fn(),
-      release: jest.fn(),
-    } as unknown as jest.Mocked<QueryRunner>;
+   mockCommentLikeRepository = {
+     createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+     count: jest.fn(),
+     delete: jest.fn(),
+   } as unknown as jest.Mocked<Repository<CommentLike>>;
 
-    // 각 Repository를 mock 설정
-    mockCommentRepository = {
-      findOne: jest.fn(),
-      save: jest.fn(),
-      softRemove: jest.fn(),
-    } as any;
+   mockPostRepository = {
+     createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+     findOne: jest.fn(),
+   } as unknown as jest.Mocked<Repository<Post>>;
 
-    mockCommentLikeRepository = {
-      findOne: jest.fn(),
-      save: jest.fn(),
-      remove: jest.fn(),
-    } as any;
+   // 테스트 모듈 생성
+   const module: TestingModule = await Test.createTestingModule({
+     providers: [
+       CommentService,
+       {
+         provide: getRepositoryToken(Comment),
+         useValue: mockCommentRepository,
+       },
+       {
+         provide: getRepositoryToken(CommentLike),
+         useValue: mockCommentLikeRepository,
+       },
+       {
+         provide: getRepositoryToken(Post),
+         useValue: mockPostRepository,
+       },
+       {
+         provide: DataSource,
+         useValue: {},
+       },
+     ],
+   }).compile();
 
-    mockPostRepository = {
-      findOne: jest.fn(),
-      save: jest.fn(),
-    } as any;
+   service = module.get<CommentService>(CommentService);
+ });
 
-    mockUserRepository = {
-      findOne: jest.fn(),
-      save: jest.fn(),
-    } as any;
+ describe('createComment', () => {
+   // 댓글을 성공적으로 생성하는 경우
+   it('should create comment successfully', async () => {
+     // Post가 존재한다고 Mock 설정
+     mockPostRepository.findOne.mockResolvedValue({ post_id: 1 } as Post);
+     
+     // 현재 댓글 개수 Mock 설정
+     mockCommentRepository.count.mockResolvedValue(5);
+     
+     // QueryBuilder 실행 Mock 설정
+     queryBuilder.execute.mockResolvedValueOnce({
+       identifiers: [{ comment_id: 1 }],
+       raw: [],
+       affected: 1,
+     });
 
-    mockDataSource = {
-      createQueryRunner: jest.fn().mockReturnValue(queryRunner),
-      manager: {
-        transaction: jest.fn().mockImplementation(async (cb) => cb(transactionalEntityManager)),
-      },
-    } as any;
+     // 댓글 개수 업데이트 성공 Mock 설정
+     queryBuilder.execute.mockResolvedValueOnce({
+       raw: [],
+       affected: 1,
+     });
 
-    // 테스트 모듈 생성
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CommentService,
-        { provide: getRepositoryToken(Comment), useValue: mockCommentRepository },
-        { provide: getRepositoryToken(CommentLike), useValue: mockCommentLikeRepository },
-        { provide: getRepositoryToken(Post), useValue: mockPostRepository },
-        { provide: getRepositoryToken(UserAccount), useValue: mockUserRepository },
-        { provide: DataSource, useValue: mockDataSource },
-      ],
-    }).compile();
+     // 서비스 메서드 실행 및 결과 확인
+     const result = await service.createComment(1, 1, { content: 'Test comment' });
+     expect(result).toEqual({ commentId: 1 });
+   });
 
-    // CommentService 인스턴스 생성
-    service = module.get<CommentService>(CommentService);
-  });
 
-  // 서비스가 정의되었는지 확인하는 기본 테스트
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
+   // Post를 찾지 못한 경우 예외 처리
+   it('should throw NotFoundException when post not found', async () => {
+     mockPostRepository.findOne.mockResolvedValue(null);
+     mockCommentRepository.count.mockResolvedValue(0);
 
-  // createComment 메서드에 대한 테스트
-  describe('createComment', () => {
+     // Post가 없을 때 예외 발생 확인
+     await expect(
+       service.createComment(1, 1, { content: 'Test comment' })
+     ).rejects.toThrow(NotFoundException);
+   });
 
-    // 댓글이 정상적으로 생성되는지 테스트
-    it('should create a comment', async () => {
-      transactionalEntityManager.findOne.mockResolvedValue({
-        post_id: 1,
-        comments_count: 0,
-      } as Post);
+   // 댓글 개수 조회 중 오류 발생 시 처리
+   it('should handle count query failure', async () => {
+     mockPostRepository.findOne.mockResolvedValue({ post_id: 1 } as Post);
+     const error = new Error('Count failed');
+     mockCommentRepository.count.mockRejectedValue(error);
 
-      // 댓글 생성
-      transactionalEntityManager.create.mockReturnValue({
-        comment_id: 1,
-        content: 'Test comment',
-      } as Comment);
+     await expect(service.createComment(1, 1, { content: 'Test' }))
+      .rejects
+      .toThrow(Error);
+   });
 
-      // 저장된 댓글 반환
-      transactionalEntityManager.save.mockResolvedValue({
-        comment_id: 1,
-        content: 'Test comment',
-      } as Comment);
+   // 유효하지 않은 댓글 내용 처리
+   it('should validate comment content', async () => {
+     await expect(service.createComment(1, 1, { content: '' }))
+       .rejects
+       .toThrow();
+   });
+ });
 
-      const result = await service.createComment(1, 1, { content: 'Test comment' });
+ describe('updateComment', () => {
 
-      expect(result).toEqual({
-        commentId: 1
-      });
+   // 댓글을 성공적으로 업데이트하는 경우
+   it('should update comment successfully', async () => {
+     queryBuilder.execute.mockResolvedValue({ affected: 1 });
 
-      // 트랜잭션이 성공적으로 커밋되었는지 확인
-      expect(queryRunner.commitTransaction).toHaveBeenCalled();
+     const result = await service.updateComment(1, 1, 1, {
+       content: 'Updated content',
+     });
+
+     expect(result).toEqual({
+       commentId: 1,
+       content: 'Updated content',
+     });
+   });
+
+   // 업데이트 쿼리 실패 시 처리
+   it('should handle update query failure', async () => {
+     const error = new Error('Update failed');
+     queryBuilder.execute.mockRejectedValue(error);
+
+     await expect(service.updateComment(1, 1, 1, { content: 'Updated' }))
+      .rejects
+      .toThrow(Error)
+   });
+ });
+
+ describe('deleteComment', () => {
+
+   // 댓글을 성공적으로 삭제하는 경우
+   it('should delete comment successfully', async () => {
+     mockCommentRepository.count.mockResolvedValue(5);
+     
+     queryBuilder.execute.mockResolvedValueOnce({
+       affected: 1,
+       raw: [],
+     });
+
+     queryBuilder.execute.mockResolvedValueOnce({
+       affected: 1,
+       raw: [],
+     });
+
+     const result = await service.deleteComment(1, 1, 1);
+     expect(result).toEqual({
+       commentId: 1,
+       isDeleted: true,
+     });
+   });
+
+   // 삭제하려는 댓글이 존재하지 않을 때 예외 처리
+   it('should throw NotFoundException when comment not found', async () => {
+     mockCommentRepository.count.mockResolvedValue(5);
+     queryBuilder.execute.mockResolvedValueOnce({ affected: 0 });
+
+     await expect(service.deleteComment(1, 1, 1))
+       .rejects
+       .toThrow(NotFoundException);
+   });
+
+   // 삭제 실패 시 예외 처리
+   it('should handle count query failure', async () => {
+     const error = new Error('Count failed');
+     mockCommentRepository.count.mockRejectedValue(error);
+
+     await expect(service.deleteComment(1, 1, 1))
+      .rejects
+      .toThrow(Error);
+   });
+
+   it('should handle update count failure after successful delete', async () => {
+     mockCommentRepository.count.mockResolvedValue(5);
+     queryBuilder.execute
+       .mockResolvedValueOnce({ affected: 1 })
+       .mockRejectedValueOnce(new Error('Update count failed'));
+
+     // 삭제 후 업데이트에서 예외가 발생하면 처리하는지 확인
+     await expect(service.deleteComment(1, 1, 1))
+      .rejects
+      .toThrow(Error);
+   });
+
+   it('should handle soft delete failure', async () => {
+     mockCommentRepository.count.mockResolvedValue(5);
+     const error = new Error('Soft delete failed');
+     queryBuilder.execute.mockRejectedValue(error);
+
+     // Soft delete 실패 시 예외가 발생하는지 확인
+     await expect(service.deleteComment(1, 1, 1))
+      .rejects
+      .toThrow(Error);
+   });
+ });
+
+ describe('likeComment', () => {
+
+  // 좋아요를 성공적으로 추가하는 경우
+  it('should like comment successfully', async () => {
+    const mockComment = { comment_id: 1 } as Comment;
+    mockCommentRepository.findOne.mockResolvedValue(mockComment);
+    mockCommentLikeRepository.count.mockResolvedValue(5);
+
+    queryBuilder.execute.mockResolvedValueOnce({
+      raw: [],
+      affected: 1,
     });
 
-    // post가 존재하지 않는 경우 NotFoundException 발생 여부 확인
-    it('should throw NotFoundException when post not found', async () => {
-      transactionalEntityManager.findOne.mockResolvedValue(null);
-
-      await expect(service.createComment(1, 1, { content: 'Test comment' }))
-        .rejects
-        .toThrow(NotFoundException);
-      
-      // 트랜잭션이 롤백되었는지 확인
-      expect(queryRunner.rollbackTransaction).toHaveBeenCalled();
-    });
-  });
-
-  // updateComment 메서드에 대한 테스트
-  describe('updateComment', () => {
-    it('should update a comment', async () => {
-      const mockComment = {
-        comment_id: 1,
-        content: 'Old content',
-        userAccount: { user_id: 1 } as UserAccount,
-      } as Comment;
-
-      // 기존 댓글을 찾고 업데이트
-      mockCommentRepository.findOne.mockResolvedValue(mockComment);
-      mockCommentRepository.save.mockResolvedValue({
-        ...mockComment,
-        content: 'Updated comment'
-      });
-
-      // updateComment 서비스 메서드 호출
-      const result = await service.updateComment(1, 1, 1, { content: 'Updated comment' });
-
-      // 결과가 예상한 값과 일치하는지 확인
-      expect(result).toEqual({
-        commentId: 1,
-        content: 'Updated comment'
-      });
+    queryBuilder.execute.mockResolvedValueOnce({
+      raw: [],
+      affected: 1,
     });
 
-    // 댓글을 찾지 못한 경우 NotFoundException 발생 여부 확인
-    it('should throw NotFoundException when comment not found', async () => {
-      mockCommentRepository.findOne.mockResolvedValue(null);
-
-      // NotFoundException이 발생하는지 확인
-      await expect(service.updateComment(1, 1, 1, { content: 'Updated comment' }))
-        .rejects
-        .toThrow(NotFoundException);
-    });
-  });
-
-  // deleteComment 메서드에 대한 테스트
-  describe('deleteComment', () => {
-    it('should delete a comment', async () => {
-      mockCommentRepository.findOne.mockResolvedValue({
-        comment_id: 1,
-        content: 'Comment content',
-        post: {
-          post_id: 1,
-          comments_count: 2,
-        } as Post,
-        userAccount: { user_id: 1 } as UserAccount,
-      } as Comment);
-
-      // deleteComment 서비스 메서드 호출
-      const result = await service.deleteComment(1, 1, 1);
-
-      // 결과가 예상한 값과 일치하는지 확인
-      expect(result).toEqual({
-        commentId: 1,
-        isDeleted: true
-      });
-
-      // softRemove 및 Post 저장 여부 확인
-      expect(mockCommentRepository.softRemove).toHaveBeenCalled();
-      expect(mockPostRepository.save).toHaveBeenCalled();
-    });
-
-    // 댓글을 찾지 못한 경우 NotFoundException 발생 여부 확인
-    it('should throw NotFoundException when comment not found', async () => {
-      mockCommentRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.deleteComment(1, 1, 1))
-        .rejects
-        .toThrow(NotFoundException);
-    });
-  });
-
-  // likeComment 메서드에 대한 테스트
-  describe('likeComment', () => {
-    it('should like a comment', async () => {
-      queryBuilder.getOne.mockResolvedValue({
-        comment_id: 1,
-        like_count: 0,
-      } as Comment);
-
-      // 좋아요가 없는 경우 새로 생성
-      transactionalEntityManager.findOne.mockResolvedValue(null);
-      transactionalEntityManager.create.mockReturnValue({
-        comment_like_id: 1,
-      } as CommentLike);
-
-      // likeComment 서비스 메서드 호출
-      const result = await service.likeComment(1, 1, 1);
-
-      expect(result).toEqual({
-        isLiked: true,
-        likeCount: 1
-      });
-    });
-
-    // 좋아요 취소 테스트
-    it('should remove like from a comment', async () => {
-      queryBuilder.getOne.mockResolvedValue({
-        comment_id: 1,
-        like_count: 1,
-      } as Comment);
-
-      transactionalEntityManager.findOne.mockResolvedValue({
-        comment_like_id: 1,
-      } as CommentLike);
-
-      // likeComment 서비스 메서드 호출
-      const result = await service.likeComment(1, 1, 1);
-
-      // 결과가 예상한 값과 일치하는지 확인
-      expect(result).toEqual({
-        isLiked: false,
-        likeCount: 0
-      });
-    });
-
-    // 댓글을 찾지 못한 경우 NotFoundException 발생 여부 확인
-    it('should throw NotFoundException when comment not found', async () => {
-      queryBuilder.getOne.mockResolvedValue(null);
-
-      // NotFoundException이 발생하는지 확인
-      await expect(service.likeComment(1, 1, 1))
-        .rejects
-        .toThrow(NotFoundException);
+    const result = await service.likeComment(1, 1, 1);
+    expect(result).toEqual({
+      isLiked: true,
+      likeCount: 6,
     });
   });
+
+  // 좋아요 취소를 처리하는 경우
+  it('should unlike comment when already liked', async () => {
+    const mockComment = { comment_id: 1 } as Comment;
+    mockCommentRepository.findOne.mockResolvedValue(mockComment);
+    mockCommentLikeRepository.count.mockResolvedValue(5);
+
+    queryBuilder.execute.mockRejectedValueOnce({
+      code: 'ER_DUP_ENTRY',
+    });
+
+    mockCommentLikeRepository.delete.mockResolvedValue({
+      affected: 1,
+      raw: [],
+    });
+
+    queryBuilder.execute.mockResolvedValueOnce({
+      raw: [],
+      affected: 1,
+    });
+
+    const result = await service.likeComment(1, 1, 1);
+    expect(result).toEqual({
+      isLiked: false,
+      likeCount: 4,
+    });
+  });
+
+  // 댓글이 없을 때 예외 처리
+  it('should throw NotFoundException when comment not found', async () => {
+    mockCommentRepository.findOne.mockResolvedValue(null);
+    mockCommentLikeRepository.count.mockResolvedValue(0);
+
+    await expect(service.likeComment(1, 1, 1))
+      .rejects
+      .toThrow(new NotFoundException('댓글을 찾을 수 없습니다.'));
+  });
+
+  // 데이터베이스 오류 처리
+  it('should handle database errors properly', async () => {
+    mockCommentRepository.findOne.mockResolvedValue({ comment_id: 1 } as Comment);
+    mockCommentLikeRepository.count.mockResolvedValue(5);
+    queryBuilder.execute.mockRejectedValue(new Error('DB Error'));
+
+    await expect(service.likeComment(1, 1, 1))
+      .rejects
+      .toThrow(new InternalServerErrorException('좋아요 처리 중 오류가 발생했습니다.'));
+  });
+
+
+  it('should handle delete operation failure', async () => {
+    mockCommentRepository.findOne.mockResolvedValue({ comment_id: 1 } as Comment);
+    mockCommentLikeRepository.count.mockResolvedValue(5);
+    queryBuilder.execute.mockRejectedValueOnce({ code: 'ER_DUP_ENTRY' });
+    mockCommentLikeRepository.delete.mockRejectedValue(new Error('Delete failed'));
+
+    // 좋아요 처리 중 예외가 발생하면 InternalServerErrorException인지 확인
+    await expect(service.likeComment(1, 1, 1))
+      .rejects
+      .toThrow(new InternalServerErrorException('좋아요 처리 중 오류가 발생했습니다.'));
+  });
+});
 });

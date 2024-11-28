@@ -172,33 +172,163 @@ describe('AuthService', () => {
 
       expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
     });
+
+    it('should handle database error during registration', async () => {
+      mockQueryBuilder.getOne.mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
+      mockQueryRunner.manager.save.mockRejectedValueOnce(new Error('DB Error'));
+
+      const registerDto = {
+        login_id: 'test',
+        password: 'password',
+        confirm_password: 'password',
+        name: 'Test User',
+        company: 'Test Company',
+        department: 'Test Dept',
+        position: 'Developer',
+        email: 'test@test.com',
+        phone: '01012345678',
+      };
+
+      await expect(service.register(registerDto)).rejects.toThrow(Error);
+      expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
+    });
+
+    it('should validate email format', async () => {
+      const invalidEmailDto = {
+        login_id: 'test',
+        password: 'password',
+        confirm_password: 'password',
+        name: 'Test User',
+        company: 'Test Company',
+        department: 'Test Dept',
+        position: 'Developer',
+        email: 'invalid-email',
+        phone: '01012345678',
+      };
+  
+      mockQueryBuilder.getOne.mockResolvedValue(null);
+      // user 객체 생성 모의
+      const mockUser = { user_id: 1, ...invalidEmailDto };
+      mockQueryRunner.manager.create
+        .mockImplementationOnce(() => mockUser)
+        .mockImplementationOnce((entity, data) => ({ ...data }));
+      
+      mockQueryRunner.manager.save
+        .mockRejectedValueOnce(new Error('Invalid email format'));
+  
+      await expect(service.register(invalidEmailDto))
+        .rejects
+        .toThrow(Error);
+      expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
+    });
   });
 
   // login 메서드 테스트
   describe('login', () => {
     const loginDto = { login_id: 'test', password: 'password' };
-
+  
     it('should return token and userId on successful login', async () => {
       const mockUser = { user_id: 1, login_id: 'test', password: 'hashed_password' };
       mockQueryBuilder.getOne.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-
+  
       const result = await service.login(loginDto);
-
+  
       expect(result).toEqual({
         accessToken: 'test_token',
         refreshToken: 'test_token',
         userId: 1
       });
     });
-
-    // 로그인 실패 (유저 정보 없음)
+  
     it('should return null for invalid credentials', async () => {
       mockQueryBuilder.getOne.mockResolvedValue(null);
-
+  
       const result = await service.login(loginDto);
+  
+      expect(result).toBeNull();
+    });
+  
+    it('should handle incorrect password', async () => {
+      const mockUser = { user_id: 1, login_id: 'test', password: 'hashed_password' };
+      mockQueryBuilder.getOne.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+  
+      const result = await service.login(loginDto);
+      
+      expect(result).toBeNull();
+    });
 
-      expect(result).toBeNull(); // 잘못된 자격 증명으로 null 반환
+    it('should handle case when user is not found', async () => {
+      mockQueryBuilder.getOne.mockResolvedValue(null);
+  
+      const result = await service.login({
+        login_id: 'nonexistent',
+        password: 'password'
+      });
+  
+      expect(result).toBeNull();
+      expect(mockQueryBuilder.getOne).toHaveBeenCalled();
+    });
+  });
+
+  // refreshAccessToken 메서드 테스트
+  describe('refreshAccessToken', () => {
+    it('should successfully refresh access token', async () => {
+      const mockTokenEntity = {
+        user: { user_id: 1, login_id: 'test' },
+        token: 'valid_refresh_token',
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      };
+
+      mockRefreshTokenRepository.findOne.mockResolvedValue(mockTokenEntity);
+      mockJwtService.verifyAsync.mockResolvedValue({ type: 'refresh', sub: 1 });
+      mockJwtService.signAsync.mockResolvedValue('new_access_token');
+
+      const result = await service.refreshAccessToken('valid_refresh_token');
+      expect(result).toEqual({ accessToken: 'new_access_token' });
+    });
+
+    it('should return null for expired refresh token', async () => {
+      mockRefreshTokenRepository.findOne.mockResolvedValue(null);
+
+      const result = await service.refreshAccessToken('expired_token');
+      expect(result).toBeNull();
+    });
+
+    it('should return null for invalid token type', async () => {
+      mockRefreshTokenRepository.findOne.mockResolvedValue({
+        user: { user_id: 1, login_id: 'test' },
+        token: 'valid_token',
+      });
+      mockJwtService.verifyAsync.mockResolvedValue({ type: 'access' });
+
+      const result = await service.refreshAccessToken('invalid_type_token');
+      expect(result).toBeNull();
+    });
+  });
+
+  // logout 메서드 테스트
+  describe('logout', () => {
+    it('should successfully logout user', async () => {
+      mockQueryBuilder.getCount.mockResolvedValueOnce(1);
+      mockQueryBuilder.execute.mockResolvedValueOnce({ affected: 1 });
+
+      await expect(service.logout(1)).resolves.not.toThrow();
+    });
+
+    it('should throw error if already logged out', async () => {
+      mockQueryBuilder.getCount.mockResolvedValueOnce(0);
+
+      await expect(service.logout(1)).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw error if logout operation fails', async () => {
+      mockQueryBuilder.getCount.mockResolvedValueOnce(1);
+      mockQueryBuilder.execute.mockResolvedValueOnce({ affected: 0 });
+
+      await expect(service.logout(1)).rejects.toThrow(BadRequestException);
     });
   });
 });

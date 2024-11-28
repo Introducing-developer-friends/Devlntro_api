@@ -1,5 +1,5 @@
 // user.service.ts
-import { Injectable, NotFoundException, BadRequestException, UnauthorizedException, Logger  } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, UnauthorizedException, Logger, InternalServerErrorException  } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource  } from 'typeorm';
 import { UserAccount } from '../entities/user-account.entity';
@@ -9,12 +9,12 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
 import { BusinessProfileInfo } from '../types/user.types';
 import * as bcrypt from 'bcrypt';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class UserService {
   // Logger 인스턴스 생성
   private readonly logger = new Logger(UserService.name);
-
   constructor(
 
     // UserAccount 리포지토리를 주입
@@ -24,123 +24,142 @@ export class UserService {
     // BusinessProfile 리포지토리를 주입
     @InjectRepository(BusinessProfile)
     private readonly  businessProfileRepository: Repository<BusinessProfile>,
-    private readonly  dataSource: DataSource
+    private readonly  dataSource: DataSource,
+    private readonly authService: AuthService
   ) {}
+
+  // 비밀번호 검증 공통 로직
+  private async validateUserPassword(userId: number, password: string): Promise<UserAccount> {
+    const user = await this.userAccountRepository
+      .createQueryBuilder('user')
+      .select(['user.user_id', 'user.password'])
+      .where('user.user_id = :userId', { userId })
+      .getOne();
+
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+      throw new UnauthorizedException('비밀번호가 올바르지 않습니다.');
+    }
+
+    return user;
+  }
 
   // 비즈니스 프로필 업데이트 메서드
   async updateBusinessProfile(
     userId: number, 
     updateProfileDto: UpdateBusinessProfileDto
   ): Promise<BusinessProfileInfo> {
-
-    // 트랜잭션 사용
     return this.dataSource.manager.transaction(async transactionalEntityManager => {
-      
-      // UserAccount 엔티티에서 유저 정보를 조회 (프로필과 함께)
-      const user = await transactionalEntityManager.findOne(UserAccount, { 
-        where: { user_id: userId },
-        relations: ['profile'] // 프로필 관계도 조회
-      });
-    
-    // 사용자가 없으면 예외 발생
-    if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+      try {
+        // 필요한 필드만 조회
+        const user = await transactionalEntityManager
+          .createQueryBuilder(UserAccount, 'user')
+          .leftJoinAndSelect('user.profile', 'profile')
+          .select([
+            'user.user_id',
+            'user.name',
+            'profile.profile_id',
+            'profile.company',
+            'profile.department',
+            'profile.position',
+            'profile.email',
+            'profile.phone'
+          ])
+          .where('user.user_id = :userId', { userId })
+          .getOne();
+
+        if (!user) {
+          throw new NotFoundException('사용자를 찾을 수 없습니다.');
+        }
+
+        // 프로필 업데이트 또는 생성
+       const { name, ...profileData } = updateProfileDto;
+
+       // 이름과 프로필 정보 동시 업데이트
+       const updates = [];
+       
+       if (name) {
+         user.name = name;
+         updates.push(transactionalEntityManager.save(UserAccount, user));
+       }
+
+       const profile = user.profile
+         ? Object.assign(user.profile, profileData)
+         : transactionalEntityManager.create(BusinessProfile, {
+             ...profileData,
+             userAccount: user
+           });
+
+       updates.push(transactionalEntityManager.save(BusinessProfile, profile));
+
+       // 모든 업데이트를 병렬로 처리
+       await Promise.all(updates);
+
+       return this.mapToBusinessProfileInfo(profile);
+    } catch (error) {
+      this.logger.error(`Error updating business profile: ${error.message}`);
+      throw error;
     }
-
-    // UserAccount 업데이트 (이름 필드만)
-    if (updateProfileDto.name) {
-        user.name = updateProfileDto.name;
-        await transactionalEntityManager.save(UserAccount, user);
-      }
-      
-      let profile: BusinessProfile;
-
-      // BusinessProfile 업데이트
-      if (!user.profile) {
-        profile = transactionalEntityManager.create(BusinessProfile, {
-          ...updateProfileDto,
-          userAccount: user
-        });
-      } else {
-        const { name, ...profileUpdateData } = updateProfileDto;
-        profile = Object.assign(user.profile, profileUpdateData);
-      }
-
-    await transactionalEntityManager.save(BusinessProfile, profile);  
-    return this.mapToBusinessProfileInfo(profile);
-    });
-  }
-
-  // 비밀번호 변경 메서드
-  async changePassword(
-    userId: number, 
-    changePasswordDto: ChangePasswordDto
-  ): Promise<void> {
-
-    // 트랜잭션 사용
-    return this.dataSource.manager.transaction(async transactionalEntityManager => {
-      const user = await transactionalEntityManager.findOne(UserAccount, { 
-        where: { user_id: userId } 
-      });
-    
-    // 사용자가 없으면 예외 발생
-    if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
-    }
-
-    const isPasswordValid = await bcrypt.compare(
-      changePasswordDto.currentPassword, 
-      user.password
-    );
-
-    // 현재 비밀번호가 올바른지 확인
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('현재 비밀번호가 올바르지 않습니다.');
-    }
-
-    if (changePasswordDto.newPassword !== changePasswordDto.confirmNewPassword) {
-      throw new BadRequestException('새 비밀번호와 확인 비밀번호가 일치하지 않습니다.');
-    }
-
-    user.password = await bcrypt.hash(changePasswordDto.newPassword, 10);
-    await transactionalEntityManager.save(UserAccount, user);
   });
+}
+// 비밀번호 변경 메서드
+async changePassword(
+  userId: number, 
+  changePasswordDto: ChangePasswordDto
+): Promise<void> {
+  const { currentPassword, newPassword, confirmNewPassword } = changePasswordDto;
+
+  if (newPassword !== confirmNewPassword) {
+    throw new BadRequestException('새 비밀번호와 확인 비밀번호가 일치하지 않습니다.');
   }
 
-  // 회원 탈퇴 메서드 (소프트 삭제)
-  async deleteAccount(
-    userId: number, 
-    deleteAccountDto: DeleteAccountDto
-  ): Promise<void> {
-    return this.dataSource.manager.transaction(async transactionalEntityManager => {
-      const user = await transactionalEntityManager.findOne(UserAccount, { 
-        where: { user_id: userId },
-        relations: ['profile']
-      });
+  // 공통 비밀번호 검증 로직 사용
+  await this.validateUserPassword(userId, currentPassword);
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
+  // 비밀번호 업데이트
+  await this.userAccountRepository
+    .createQueryBuilder()
+    .update(UserAccount)
+    .set({ password: await bcrypt.hash(newPassword, 10) })
+    .where('user_id = :userId', { userId })
+    .execute();
+}
 
-    const isPasswordValid = await bcrypt.compare(
-      deleteAccountDto.password, 
-      user.password
-    );
+async deleteAccount(
+  userId: number, 
+  deleteAccountDto: DeleteAccountDto
+): Promise<void> {
+  // 비밀번호 검증
+  await this.validateUserPassword(userId, deleteAccountDto.password);
 
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('비밀번호가 올바르지 않습니다.');
-    }
+  try {
+    // 1. 로그아웃 처리 (리프레시 토큰 삭제)
+    await this.authService.logout(userId);
 
-    // 비즈니스 프로필 소프트 삭제
-    if (user.profile) {
-      await transactionalEntityManager.softDelete(BusinessProfile, user.profile.profile_id);
-    }
+    // 2. 비즈니스 프로필 소프트 삭제
+    await this.businessProfileRepository
+      .createQueryBuilder()
+      .softDelete()
+      .where('user_id = :userId', { userId })
+      .execute();
 
-    // 소프트 삭제 실행
-    await transactionalEntityManager.softDelete(UserAccount, userId);
+    // 3. 유저 계정 소프트 삭제
+    await this.userAccountRepository
+      .createQueryBuilder()
+      .softDelete()
+      .where('user_id = :userId', { userId })
+      .execute();
 
-  });
+  } catch (error) {
+    this.logger.error(`Error during account deletion: ${error.message}`);
+    throw new InternalServerErrorException('회원 탈퇴 처리 중 오류가 발생했습니다.');
   }
+}
+  
 
   // 비즈니스 프로필 정보를 BusinessProfileInfo 타입으로 변환하는 메서드
   private mapToBusinessProfileInfo(profile: BusinessProfile): BusinessProfileInfo {
