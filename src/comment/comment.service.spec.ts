@@ -228,91 +228,88 @@ describe('CommentService', () => {
 
  describe('likeComment', () => {
 
-   // 좋아요를 성공적으로 추가하는 경우
-   it('should like comment successfully', async () => {
-     mockCommentRepository.findOne.mockResolvedValue({
-       comment_id: 1,
-     } as Comment);
-     mockCommentLikeRepository.count.mockResolvedValue(5);
+  // 좋아요를 성공적으로 추가하는 경우
+  it('should like comment successfully', async () => {
+    const mockComment = { comment_id: 1 } as Comment;
+    mockCommentRepository.findOne.mockResolvedValue(mockComment);
+    mockCommentLikeRepository.count.mockResolvedValue(5);
 
-     queryBuilder.execute.mockResolvedValueOnce({
-       raw: [],
-       affected: 1,
-     });
+    queryBuilder.execute.mockResolvedValueOnce({
+      raw: [],
+      affected: 1,
+    });
 
-     queryBuilder.execute.mockResolvedValueOnce({
-       raw: [],
-       affected: 1,
-     });
+    queryBuilder.execute.mockResolvedValueOnce({
+      raw: [],
+      affected: 1,
+    });
 
-     const result = await service.likeComment(1, 1, 1);
-     expect(result).toEqual({
-       isLiked: true,
-       likeCount: 6,
-     });
-   });
+    const result = await service.likeComment(1, 1, 1);
+    expect(result).toEqual({
+      isLiked: true,
+      likeCount: 6,
+    });
+  });
 
-   // 좋아요 취소를 처리하는 경우
-   it('should unlike comment when already liked', async () => {
-     mockCommentRepository.findOne.mockResolvedValue({
-       comment_id: 1,
-     } as Comment);
-     mockCommentLikeRepository.count.mockResolvedValue(5);
+  // 좋아요 취소를 처리하는 경우
+  it('should unlike comment when already liked', async () => {
+    const mockComment = { comment_id: 1 } as Comment;
+    mockCommentRepository.findOne.mockResolvedValue(mockComment);
+    mockCommentLikeRepository.count.mockResolvedValue(5);
 
-     queryBuilder.execute.mockRejectedValueOnce({
-       code: 'ER_DUP_ENTRY',
-     });
+    queryBuilder.execute.mockRejectedValueOnce({
+      code: 'ER_DUP_ENTRY',
+    });
 
-     mockCommentLikeRepository.delete.mockResolvedValue({
-       affected: 1,
-       raw: [],
-     });
+    mockCommentLikeRepository.delete.mockResolvedValue({
+      affected: 1,
+      raw: [],
+    });
 
-     queryBuilder.execute.mockResolvedValueOnce({
-       raw: [],
-       affected: 1,
-     });
+    queryBuilder.execute.mockResolvedValueOnce({
+      raw: [],
+      affected: 1,
+    });
 
-     const result = await service.likeComment(1, 1, 1);
-     expect(result).toEqual({
-       isLiked: false,
-       likeCount: 4,
-     });
-   });
+    const result = await service.likeComment(1, 1, 1);
+    expect(result).toEqual({
+      isLiked: false,
+      likeCount: 4,
+    });
+  });
 
-   // 댓글이 없을 때 예외 처리
-   it('should throw NotFoundException when comment not found', async () => {
-     mockCommentRepository.findOne.mockResolvedValue(null);
-     mockCommentLikeRepository.count.mockResolvedValue(0);
+  // 댓글이 없을 때 예외 처리
+  it('should throw NotFoundException when comment not found', async () => {
+    mockCommentRepository.findOne.mockResolvedValue(null);
+    mockCommentLikeRepository.count.mockResolvedValue(0);
 
-     await expect(service.likeComment(1, 1, 1))
+    await expect(service.likeComment(1, 1, 1))
       .rejects
-      .toThrow(new NotFoundException);
-   });
+      .toThrow(new NotFoundException('댓글을 찾을 수 없습니다.'));
+  });
 
-   // 데이터베이스 오류 처리
-   it('should handle database errors properly', async () => {
-     mockCommentRepository.findOne.mockResolvedValue({ comment_id: 1 } as Comment);
-     mockCommentLikeRepository.count.mockResolvedValue(5);
-     queryBuilder.execute.mockRejectedValue(new Error('DB Error'));
+  // 데이터베이스 오류 처리
+  it('should handle database errors properly', async () => {
+    mockCommentRepository.findOne.mockResolvedValue({ comment_id: 1 } as Comment);
+    mockCommentLikeRepository.count.mockResolvedValue(5);
+    queryBuilder.execute.mockRejectedValue(new Error('DB Error'));
 
-     await expect(service.likeComment(1, 1, 1))
-      .rejects
-      .toThrow(NotFoundException);
-   });
-
-
-   it('should handle delete operation failure', async () => {
-     mockCommentRepository.findOne.mockResolvedValue({ comment_id: 1 } as Comment);
-     mockCommentLikeRepository.count.mockResolvedValue(5);
-
-     queryBuilder.execute.mockRejectedValueOnce({ code: 'ER_DUP_ENTRY' });
-     mockCommentLikeRepository.delete.mockRejectedValue(new Error('Delete failed'));
-
-     // 좋아요 처리 중 예외가 발생하면 InternalServerErrorException인지 확인
-     await expect(service.likeComment(1, 1, 1))
+    await expect(service.likeComment(1, 1, 1))
       .rejects
       .toThrow(new InternalServerErrorException('좋아요 처리 중 오류가 발생했습니다.'));
-   });
- });
+  });
+
+
+  it('should handle delete operation failure', async () => {
+    mockCommentRepository.findOne.mockResolvedValue({ comment_id: 1 } as Comment);
+    mockCommentLikeRepository.count.mockResolvedValue(5);
+    queryBuilder.execute.mockRejectedValueOnce({ code: 'ER_DUP_ENTRY' });
+    mockCommentLikeRepository.delete.mockRejectedValue(new Error('Delete failed'));
+
+    // 좋아요 처리 중 예외가 발생하면 InternalServerErrorException인지 확인
+    await expect(service.likeComment(1, 1, 1))
+      .rejects
+      .toThrow(new InternalServerErrorException('좋아요 처리 중 오류가 발생했습니다.'));
+  });
+});
 });

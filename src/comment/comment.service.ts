@@ -217,6 +217,9 @@ export class CommentService {
       }
     } catch (error) {
       console.error('Like comment error:', error);
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
       throw new InternalServerErrorException('좋아요 처리 중 오류가 발생했습니다.');
     }
   }
