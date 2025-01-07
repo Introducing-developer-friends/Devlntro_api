@@ -1,4 +1,9 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  BadRequestException,
+} from '@nestjs/common';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 import { Upload } from '@aws-sdk/lib-storage';
@@ -10,7 +15,8 @@ export class S3Service implements OnModuleInit, OnModuleDestroy {
 
   // ConfigService를 주입하여 AWS 및 CloudFront 설정 불러오기
   constructor(private configService: ConfigService) {
-    const cloudFrontDomain = this.configService.get<string>('CLOUDFRONT_DOMAIN');
+    const cloudFrontDomain =
+      this.configService.get<string>('CLOUDFRONT_DOMAIN');
     if (!cloudFrontDomain) {
       throw new Error('CloudFront domain configuration is missing');
     }
@@ -21,7 +27,9 @@ export class S3Service implements OnModuleInit, OnModuleDestroy {
   async onModuleInit() {
     // AWS 자격 증명 검증
     const accessKeyId = this.configService.get<string>('AWS_ACCESS_KEY_ID');
-    const secretAccessKey = this.configService.get<string>('AWS_SECRET_ACCESS_KEY');
+    const secretAccessKey = this.configService.get<string>(
+      'AWS_SECRET_ACCESS_KEY',
+    );
     const region = this.configService.get<string>('AWS_REGION');
     const bucketName = this.configService.get<string>('AWS_S3_BUCKET_NAME');
 
@@ -45,7 +53,9 @@ export class S3Service implements OnModuleInit, OnModuleDestroy {
       region: this.configService.get<string>('AWS_REGION'),
       credentials: {
         accessKeyId: this.configService.get<string>('AWS_ACCESS_KEY_ID'),
-        secretAccessKey: this.configService.get<string>('AWS_SECRET_ACCESS_KEY'),
+        secretAccessKey: this.configService.get<string>(
+          'AWS_SECRET_ACCESS_KEY',
+        ),
       },
     });
   }
@@ -78,7 +88,9 @@ export class S3Service implements OnModuleInit, OnModuleDestroy {
     // 파일 크기 제한 체크 (예: 10MB)
     const maxSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxSize) {
-      throw new BadRequestException(`File size exceeds limit (${maxSize / 1024 / 1024}MB)`);
+      throw new BadRequestException(
+        `File size exceeds limit (${maxSize / 1024 / 1024}MB)`,
+      );
     }
   }
 
@@ -105,7 +117,9 @@ export class S3Service implements OnModuleInit, OnModuleDestroy {
       await upload.done();
 
       // CloudFront URL 생성 시 중복 슬래시 제거
-      const domain = this.cloudFrontDomain.replace(/^https?:\/\//, '').replace(/\/+$/, '');
+      const domain = this.cloudFrontDomain
+        .replace(/^https?:\/\//, '')
+        .replace(/\/+$/, '');
       const cleanKey = key.replace(/^\/+/, '');
       return `https://${domain}/${cleanKey}`;
     } catch (error) {

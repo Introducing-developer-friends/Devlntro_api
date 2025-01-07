@@ -73,7 +73,9 @@ describe('AuthController', () => {
     });
 
     it('should throw BadRequestException on error', async () => {
-      authService.register.mockRejectedValue(new BadRequestException('회원가입 실패'));
+      authService.register.mockRejectedValue(
+        new BadRequestException('회원가입 실패'),
+      );
 
       const dto = {
         login_id: 'test',
@@ -87,7 +89,9 @@ describe('AuthController', () => {
         phone: '01012345678',
       };
 
-      await expect(controller.register(dto)).rejects.toThrow(BadRequestException);
+      await expect(controller.register(dto)).rejects.toThrow(
+        BadRequestException,
+      );
       expect(authService.register).toHaveBeenCalledWith(dto);
     });
   });
@@ -117,14 +121,18 @@ describe('AuthController', () => {
       authService.login.mockResolvedValue(null);
 
       const dto = { login_id: 'test', password: 'wrongpassword' };
-      await expect(controller.login(dto)).rejects.toThrow(UnauthorizedException);
+      await expect(controller.login(dto)).rejects.toThrow(
+        UnauthorizedException,
+      );
       expect(authService.login).toHaveBeenCalledWith(dto);
     });
   });
 
   describe('refreshToken', () => {
     it('should refresh token successfully', async () => {
-      authService.refreshAccessToken.mockResolvedValue({ accessToken: 'NEW_ACCESS_TOKEN' });
+      authService.refreshAccessToken.mockResolvedValue({
+        accessToken: 'NEW_ACCESS_TOKEN',
+      });
 
       const dto = { refreshToken: 'REFRESH_TOKEN' };
       const result = await controller.refreshToken(dto);
@@ -134,7 +142,9 @@ describe('AuthController', () => {
         message: '토큰 갱신 성공',
         accessToken: 'NEW_ACCESS_TOKEN',
       });
-      expect(authService.refreshAccessToken).toHaveBeenCalledWith('REFRESH_TOKEN');
+      expect(authService.refreshAccessToken).toHaveBeenCalledWith(
+        'REFRESH_TOKEN',
+      );
     });
   });
 

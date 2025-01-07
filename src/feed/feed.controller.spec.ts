@@ -3,12 +3,16 @@ import { FeedController } from './feed.controller';
 import { FeedService } from './feed.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { FeedQueryDto } from '../dto/feed-query.dto';
-import { BadRequestException, NotFoundException, HttpStatus } from '@nestjs/common';
-import { 
-  SortOption, 
+import {
+  BadRequestException,
+  NotFoundException,
+  HttpStatus,
+} from '@nestjs/common';
+import {
+  SortOption,
   FilterType,
   PostBasicInfo,
-  PostDetailInfo 
+  PostDetailInfo,
 } from '../types/feed.types';
 
 // FeedController 테스트를 위한 기본 설정
@@ -25,7 +29,7 @@ describe('FeedController', () => {
 
   // Mock 요청 객체. 요청에서 user 정보를 제공하기 위해 사용.
   const mockRequest = {
-    user: { userId: 1 }
+    user: { userId: 1 },
   };
 
   // Mock 데이터: 게시물 리스트.
@@ -71,14 +75,14 @@ describe('FeedController', () => {
         content: '멋진 게시물이네요!',
         createdAt: new Date('2024-09-18T12:45:00.000Z'),
         likeCount: 5,
-      }
+      },
     ],
     likes: [
       {
         userId: 789,
         userName: '김철수',
-      }
-    ]
+      },
+    ],
   };
 
   // 각 테스트 전에 실행되는 설정 단계.
@@ -92,10 +96,10 @@ describe('FeedController', () => {
         },
       ],
     })
-    // JwtAuthGuard를 mock 처리하여 항상 인증 성공으로 가정.
-    .overrideGuard(JwtAuthGuard)
-    .useValue({ canActivate: jest.fn(() => true) })
-    .compile();
+      // JwtAuthGuard를 mock 처리하여 항상 인증 성공으로 가정.
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: jest.fn(() => true) })
+      .compile();
 
     // 테스트 대상 컨트롤러와 서비스를 주입받음.
     controller = module.get<FeedController>(FeedController);
@@ -109,7 +113,10 @@ describe('FeedController', () => {
   describe('getFeed', () => {
     // 기본 옵션으로 게시물을 성공적으로 조회하는 경우
     it('should return posts with default options', async () => {
-      const query: FeedQueryDto = { sort: SortOption.LATEST, filter: FilterType.ALL };
+      const query: FeedQueryDto = {
+        sort: SortOption.LATEST,
+        filter: FilterType.ALL,
+      };
       jest.spyOn(feedService, 'getFeed').mockResolvedValue(mockPosts);
 
       const result = await controller.getFeed(mockRequest as any, query);
@@ -118,57 +125,90 @@ describe('FeedController', () => {
       expect(result).toEqual({
         statusCode: HttpStatus.OK,
         message: '피드를 성공적으로 조회했습니다.',
-        posts: mockPosts
+        posts: mockPosts,
       });
       // FeedService의 getFeed가 올바른 인자로 호출되었는지 확인
-      expect(feedService.getFeed).toHaveBeenCalledWith(1, SortOption.LATEST, FilterType.ALL, undefined);
+      expect(feedService.getFeed).toHaveBeenCalledWith(
+        1,
+        SortOption.LATEST,
+        FilterType.ALL,
+        undefined,
+      );
     });
 
     // 좋아요 수 기준으로 정렬된 게시물을 조회하는 경우
     it('should return posts sorted by likes', async () => {
-      const query: FeedQueryDto = { sort: SortOption.LIKES, filter: FilterType.ALL };
-      const sortedPosts = [...mockPosts].sort((a, b) => b.likesCount - a.likesCount);
+      const query: FeedQueryDto = {
+        sort: SortOption.LIKES,
+        filter: FilterType.ALL,
+      };
+      const sortedPosts = [...mockPosts].sort(
+        (a, b) => b.likesCount - a.likesCount,
+      );
       jest.spyOn(feedService, 'getFeed').mockResolvedValue(sortedPosts);
 
       const result = await controller.getFeed(mockRequest as any, query);
 
       expect(result.statusCode).toBe(HttpStatus.OK);
       expect(result.posts).toEqual(sortedPosts);
-      expect(feedService.getFeed).toHaveBeenCalledWith(1, SortOption.LIKES, FilterType.ALL, undefined);
+      expect(feedService.getFeed).toHaveBeenCalledWith(
+        1,
+        SortOption.LIKES,
+        FilterType.ALL,
+        undefined,
+      );
     });
 
     // 댓글 수 기준으로 정렬된 게시물을 조회하는 경우
     it('should return posts sorted by comments', async () => {
-      const query: FeedQueryDto = { sort: SortOption.COMMENTS, filter: FilterType.ALL };
-      const sortedPosts = [...mockPosts].sort((a, b) => b.commentsCount - a.commentsCount);
+      const query: FeedQueryDto = {
+        sort: SortOption.COMMENTS,
+        filter: FilterType.ALL,
+      };
+      const sortedPosts = [...mockPosts].sort(
+        (a, b) => b.commentsCount - a.commentsCount,
+      );
       jest.spyOn(feedService, 'getFeed').mockResolvedValue(sortedPosts);
 
       const result = await controller.getFeed(mockRequest as any, query);
 
       expect(result.statusCode).toBe(HttpStatus.OK);
       expect(result.posts).toEqual(sortedPosts);
-      expect(feedService.getFeed).toHaveBeenCalledWith(1, SortOption.COMMENTS, FilterType.ALL, undefined);
+      expect(feedService.getFeed).toHaveBeenCalledWith(
+        1,
+        SortOption.COMMENTS,
+        FilterType.ALL,
+        undefined,
+      );
     });
 
     // 자신의 게시물만 조회하는 경우
     it('should return own posts', async () => {
-      const query: FeedQueryDto = { sort: SortOption.LATEST, filter: FilterType.OWN };
-      const ownPosts = mockPosts.filter(post => post.isOwnPost);
+      const query: FeedQueryDto = {
+        sort: SortOption.LATEST,
+        filter: FilterType.OWN,
+      };
+      const ownPosts = mockPosts.filter((post) => post.isOwnPost);
       jest.spyOn(feedService, 'getFeed').mockResolvedValue(ownPosts);
 
       const result = await controller.getFeed(mockRequest as any, query);
 
       expect(result.statusCode).toBe(HttpStatus.OK);
       expect(result.posts).toEqual(ownPosts);
-      expect(feedService.getFeed).toHaveBeenCalledWith(1, SortOption.LATEST, FilterType.OWN, undefined);
+      expect(feedService.getFeed).toHaveBeenCalledWith(
+        1,
+        SortOption.LATEST,
+        FilterType.OWN,
+        undefined,
+      );
     });
 
     // 특정 사용자 게시물만 조회하는 경우
     it('should return specific user posts', async () => {
-      const query: FeedQueryDto = { 
-        sort: SortOption.LATEST, 
-        filter: FilterType.SPECIFIC, 
-        specificUserId: 2 
+      const query: FeedQueryDto = {
+        sort: SortOption.LATEST,
+        filter: FilterType.SPECIFIC,
+        specificUserId: 2,
       };
       jest.spyOn(feedService, 'getFeed').mockResolvedValue(mockPosts);
 
@@ -176,72 +216,92 @@ describe('FeedController', () => {
 
       expect(result.statusCode).toBe(HttpStatus.OK);
       expect(result.posts).toEqual(mockPosts);
-      expect(feedService.getFeed).toHaveBeenCalledWith(1, SortOption.LATEST, FilterType.SPECIFIC, 2);
+      expect(feedService.getFeed).toHaveBeenCalledWith(
+        1,
+        SortOption.LATEST,
+        FilterType.SPECIFIC,
+        2,
+      );
     });
 
     // SPECIFIC 필터에서 specificUserId가 누락된 경우 예외 처리
     it('should throw BadRequestException if specificUserId is missing for SPECIFIC filter', async () => {
-      const query: FeedQueryDto = { 
-        sort: SortOption.LATEST, 
-        filter: FilterType.SPECIFIC 
+      const query: FeedQueryDto = {
+        sort: SortOption.LATEST,
+        filter: FilterType.SPECIFIC,
       };
-      jest.spyOn(feedService, 'getFeed').mockRejectedValue(
-        new BadRequestException('specificUserId가 필요합니다.')
-      );
+      jest
+        .spyOn(feedService, 'getFeed')
+        .mockRejectedValue(
+          new BadRequestException('specificUserId가 필요합니다.'),
+        );
 
-      await expect(controller.getFeed(mockRequest as any, query))
-        .rejects
-        .toThrow(BadRequestException);
-      expect(feedService.getFeed).toHaveBeenCalledWith(1, SortOption.LATEST, FilterType.SPECIFIC, undefined);
+      await expect(
+        controller.getFeed(mockRequest as any, query),
+      ).rejects.toThrow(BadRequestException);
+      expect(feedService.getFeed).toHaveBeenCalledWith(
+        1,
+        SortOption.LATEST,
+        FilterType.SPECIFIC,
+        undefined,
+      );
     });
   });
 
   // getPostDetail 메서드 테스트
   describe('getPostDetail', () => {
     it('should return post detail successfully', async () => {
-      jest.spyOn(feedService, 'getPostDetail').mockResolvedValue(mockPostDetail);
+      jest
+        .spyOn(feedService, 'getPostDetail')
+        .mockResolvedValue(mockPostDetail);
 
       const result = await controller.getPostDetail(mockRequest as any, 123);
 
       expect(result).toEqual({
         statusCode: HttpStatus.OK,
         message: '게시물을 성공적으로 조회했습니다.',
-        ...mockPostDetail
+        ...mockPostDetail,
       });
       expect(feedService.getPostDetail).toHaveBeenCalledWith(1, 123);
     });
 
     // 유효하지 않은 postId에 대해 예외 처리
     it('should throw BadRequestException for invalid postId', async () => {
-      jest.spyOn(feedService, 'getPostDetail').mockRejectedValue(
-        new BadRequestException('유효하지 않은 게시물 ID입니다.')
-      );
+      jest
+        .spyOn(feedService, 'getPostDetail')
+        .mockRejectedValue(
+          new BadRequestException('유효하지 않은 게시물 ID입니다.'),
+        );
 
-      await expect(controller.getPostDetail(mockRequest as any, null))
-        .rejects
-        .toThrow(BadRequestException);
+      await expect(
+        controller.getPostDetail(mockRequest as any, null),
+      ).rejects.toThrow(BadRequestException);
       expect(feedService.getPostDetail).toHaveBeenCalledWith(1, null);
     });
 
     // 존재하지 않는 게시물에 대해 예외 처리
     it('should throw NotFoundException for non-existent post', async () => {
-      jest.spyOn(feedService, 'getPostDetail').mockRejectedValue(
-        new NotFoundException('해당 게시물을 찾을 수 없습니다.')
-      );
+      jest
+        .spyOn(feedService, 'getPostDetail')
+        .mockRejectedValue(
+          new NotFoundException('해당 게시물을 찾을 수 없습니다.'),
+        );
 
-      await expect(controller.getPostDetail(mockRequest as any, 999))
-        .rejects
-        .toThrow(NotFoundException);
+      await expect(
+        controller.getPostDetail(mockRequest as any, 999),
+      ).rejects.toThrow(NotFoundException);
       expect(feedService.getPostDetail).toHaveBeenCalledWith(1, 999);
     });
 
     // 서비스에서 알 수 없는 오류가 발생했을 경우 예외 처리
     it('should handle service errors', async () => {
-      jest.spyOn(feedService, 'getPostDetail').mockRejectedValue(new Error('Unknown error'));
+      jest
+        .spyOn(feedService, 'getPostDetail')
+        .mockRejectedValue(new Error('Unknown error'));
 
-      await expect(controller.getPostDetail(mockRequest as any, 123))
-        .rejects
-        .toThrow(Error);
+      await expect(
+        controller.getPostDetail(mockRequest as any, 123),
+      ).rejects.toThrow(Error);
       expect(feedService.getPostDetail).toHaveBeenCalledWith(1, 123);
     });
   });

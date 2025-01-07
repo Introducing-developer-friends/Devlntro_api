@@ -57,19 +57,19 @@ describe('JwtStrategy', () => {
       const mockUser = {
         user_id: validPayload.sub,
         currentTokenVersion: validPayload.version,
-        username: validPayload.username
+        username: validPayload.username,
       };
-      
+
       mockUserRepository.findOne.mockResolvedValueOnce(mockUser);
 
       const result = await strategy.validate(validPayload);
 
       expect(result).toEqual({
         userId: validPayload.sub,
-        username: validPayload.username
+        username: validPayload.username,
       });
       expect(mockUserRepository.findOne).toHaveBeenCalledWith({
-        where: { user_id: validPayload.sub }
+        where: { user_id: validPayload.sub },
       });
     });
 
@@ -77,13 +77,13 @@ describe('JwtStrategy', () => {
     it('should reject refresh token type', async () => {
       const refreshTokenPayload: TokenPayload = {
         ...validPayload,
-        type: 'refresh'
+        type: 'refresh',
       };
 
-      await expect(strategy.validate(refreshTokenPayload))
-        .rejects
-        .toThrow(new UnauthorizedException('Invalid token type'));
-      
+      await expect(strategy.validate(refreshTokenPayload)).rejects.toThrow(
+        new UnauthorizedException('Invalid token type'),
+      );
+
       expect(mockUserRepository.findOne).not.toHaveBeenCalled();
     });
 
@@ -92,31 +92,31 @@ describe('JwtStrategy', () => {
       const mockUser = {
         user_id: validPayload.sub,
         currentTokenVersion: validPayload.version + 1,
-        username: validPayload.username
+        username: validPayload.username,
       };
-      
+
       mockUserRepository.findOne.mockResolvedValueOnce(mockUser);
 
-      await expect(strategy.validate(validPayload))
-        .rejects
-        .toThrow(new UnauthorizedException('Token expired'));
+      await expect(strategy.validate(validPayload)).rejects.toThrow(
+        new UnauthorizedException('Token expired'),
+      );
     });
 
     // 존재하지 않는 사용자에 대한 토큰 거부 테스트
     it('should reject non-existent user', async () => {
       mockUserRepository.findOne.mockResolvedValueOnce(null);
 
-      await expect(strategy.validate(validPayload))
-        .rejects
-        .toThrow(new UnauthorizedException('Invalid token'));
+      await expect(strategy.validate(validPayload)).rejects.toThrow(
+        new UnauthorizedException('Invalid token'),
+      );
     });
 
     it('should handle database error gracefully', async () => {
       mockUserRepository.findOne.mockRejectedValueOnce(new Error('DB Error'));
 
-      await expect(strategy.validate(validPayload))
-        .rejects
-        .toThrow(new UnauthorizedException('Authentication failed'));
+      await expect(strategy.validate(validPayload)).rejects.toThrow(
+        new UnauthorizedException('Authentication failed'),
+      );
     });
   });
 });

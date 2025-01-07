@@ -2,9 +2,12 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CommentController } from './comment.controller';
 import { CommentService } from './comment.service';
 import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
-import { NotFoundException, BadRequestException, HttpStatus } from '@nestjs/common';
+import {
+  NotFoundException,
+  BadRequestException,
+  HttpStatus,
+} from '@nestjs/common';
 import { CommentResponse } from '../types/comment.types';
-
 
 describe('CommentController', () => {
   let controller: CommentController; // CommentController 인스턴스
@@ -12,18 +15,22 @@ describe('CommentController', () => {
 
   beforeEach(async () => {
     mockCommentService = {
-      createComment: jest.fn().mockImplementation(() => Promise.resolve({
-        commentId: 1
-      })),
+      createComment: jest.fn().mockImplementation(() =>
+        Promise.resolve({
+          commentId: 1,
+        }),
+      ),
 
       updateComment: jest.fn().mockImplementation(() => Promise.resolve()),
 
       deleteComment: jest.fn().mockImplementation(() => Promise.resolve()),
 
-      likeComment: jest.fn().mockImplementation(() => Promise.resolve({
-        isLiked: true,
-        likeCount: 1
-      })),
+      likeComment: jest.fn().mockImplementation(() =>
+        Promise.resolve({
+          isLiked: true,
+          likeCount: 1,
+        }),
+      ),
     };
 
     // 테스트 모듈 설정
@@ -46,8 +53,6 @@ describe('CommentController', () => {
       const createCommentDto: CreateCommentDto = { content: 'Test comment' };
       const req = { user: { userId: 1 } } as any;
 
-      
-
       // 결과가 예상한 값과 일치하는지 확인
 
       const expectedResponse: CommentResponse = {
@@ -62,7 +67,7 @@ describe('CommentController', () => {
       expect(mockCommentService.createComment).toHaveBeenCalledWith(
         req.user.userId,
         1,
-        createCommentDto
+        createCommentDto,
       );
     });
 
@@ -70,16 +75,18 @@ describe('CommentController', () => {
     it('should throw BadRequestException when content is empty', async () => {
       const createCommentDto: CreateCommentDto = { content: '' };
       const req = { user: { userId: 1 } } as any;
-      
+
       // 서비스 메서드가 BadRequestException을 던지도록 설정
       jest.spyOn(mockCommentService, 'createComment').mockImplementation(() => {
-        throw new BadRequestException('댓글 작성에 실패했습니다. 내용을 입력해주세요.');
+        throw new BadRequestException(
+          '댓글 작성에 실패했습니다. 내용을 입력해주세요.',
+        );
       });
 
       // BadRequestException이 발생하는지 확인
-      await expect(controller.createComment(req, 1, createCommentDto))
-        .rejects
-        .toThrow(BadRequestException);
+      await expect(
+        controller.createComment(req, 1, createCommentDto),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -89,22 +96,25 @@ describe('CommentController', () => {
       const updateCommentDto: UpdateCommentDto = { content: 'Updated comment' };
       const req = { user: { userId: 1 } } as any;
 
-      
-
       // 결과가 예상한 값과 일치하는지 확인
       const expectedResponse: CommentResponse = {
         statusCode: HttpStatus.OK,
         message: '댓글이 성공적으로 수정되었습니다.',
       };
 
-      const result = await controller.updateComment(req, 1, 1, updateCommentDto);
+      const result = await controller.updateComment(
+        req,
+        1,
+        1,
+        updateCommentDto,
+      );
       expect(result).toEqual(expectedResponse);
 
       expect(mockCommentService.updateComment).toHaveBeenCalledWith(
         req.user.userId,
         1,
         1,
-        updateCommentDto
+        updateCommentDto,
       );
     });
 
@@ -112,16 +122,16 @@ describe('CommentController', () => {
     it('should throw NotFoundException when comment is not found', async () => {
       const updateCommentDto: UpdateCommentDto = { content: 'Updated comment' };
       const req = { user: { userId: 1 } } as any;
-      
+
       // 서비스 메서드가 NotFoundException을 던지도록 설정
       jest.spyOn(mockCommentService, 'updateComment').mockImplementation(() => {
         throw new NotFoundException('댓글을 찾을 수 없습니다.');
       });
 
       // NotFoundException이 발생하는지 확인
-      await expect(controller.updateComment(req, 1, 999, updateCommentDto))
-        .rejects
-        .toThrow(NotFoundException);
+      await expect(
+        controller.updateComment(req, 1, 999, updateCommentDto),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -141,22 +151,22 @@ describe('CommentController', () => {
       expect(mockCommentService.deleteComment).toHaveBeenCalledWith(
         req.user.userId,
         1,
-        1
+        1,
       );
     });
 
     it('should throw NotFoundException when comment is not found', async () => {
       const req = { user: { userId: 1 } } as any;
-      
+
       // 서비스 메서드가 NotFoundException을 던지도록 설정
       jest.spyOn(mockCommentService, 'deleteComment').mockImplementation(() => {
         throw new NotFoundException('댓글을 찾을 수 없습니다.');
       });
 
       // NotFoundException이 발생하는지 확인
-      await expect(controller.deleteComment(req, 1, 999))
-        .rejects
-        .toThrow(NotFoundException);
+      await expect(controller.deleteComment(req, 1, 999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -168,7 +178,7 @@ describe('CommentController', () => {
 
       jest.spyOn(mockCommentService, 'likeComment').mockResolvedValue({
         isLiked: true,
-        likeCount: 1
+        likeCount: 1,
       });
 
       const expectedResponse: CommentResponse = {
@@ -184,18 +194,18 @@ describe('CommentController', () => {
       expect(mockCommentService.likeComment).toHaveBeenCalledWith(
         req.user.userId,
         1,
-        1
+        1,
       );
     });
 
     // 좋아요 취소할 경우의 테스트
     it('should unlike a comment successfully', async () => {
       const req = { user: { userId: 1 } } as any;
-      
+
       // 서비스 메서드가 좋아요 취소 결과를 반환하도록 설정
       jest.spyOn(mockCommentService, 'likeComment').mockResolvedValue({
         isLiked: false,
-        likeCount: 0
+        likeCount: 0,
       });
 
       // 결과가 예상한 값과 일치하는지 확인
@@ -213,15 +223,15 @@ describe('CommentController', () => {
     // 댓글을 찾지 못했을 경우 NotFoundException을 발생시키는지 확인
     it('should throw NotFoundException when comment is not found', async () => {
       const req = { user: { userId: 1 } } as any;
-      
+
       jest.spyOn(mockCommentService, 'likeComment').mockImplementation(() => {
         throw new NotFoundException('댓글을 찾을 수 없습니다.');
       });
 
       // NotFoundException이 발생하는지 확인
-      await expect(controller.likeComment(req, 1, 999))
-        .rejects
-        .toThrow(NotFoundException);
+      await expect(controller.likeComment(req, 1, 999)).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

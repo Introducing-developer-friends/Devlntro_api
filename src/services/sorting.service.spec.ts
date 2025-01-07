@@ -21,7 +21,7 @@ describe('SortingService', () => {
       post_like_count: 10,
       comments_count: 5,
       comments: [],
-      postLikes: []
+      postLikes: [],
     } as Post,
     {
       post_id: 2,
@@ -32,7 +32,7 @@ describe('SortingService', () => {
       post_like_count: 3,
       comments_count: 10,
       comments: [],
-      postLikes: []
+      postLikes: [],
     } as Post,
     {
       post_id: 3,
@@ -43,7 +43,7 @@ describe('SortingService', () => {
       post_like_count: 20,
       comments_count: 2,
       comments: [],
-      postLikes: []
+      postLikes: [],
     } as Post,
   ];
 
@@ -60,7 +60,7 @@ describe('SortingService', () => {
   describe('sortPosts', () => {
     it('should sort posts by likes in descending order', () => {
       const sorted = service.sortPosts(mockPosts, SortOption.LIKES);
-      
+
       expect(sorted[0].likesCount).toBe(20);
       expect(sorted[1].likesCount).toBe(10);
       expect(sorted[2].likesCount).toBe(3);
@@ -74,14 +74,14 @@ describe('SortingService', () => {
         imageUrl: 'test3.jpg',
         isOwnPost: false,
         likesCount: 20,
-        commentsCount: 2
+        commentsCount: 2,
       });
     });
 
     // 댓글 수 순 정렬 테스트
     it('should sort posts by comments in descending order', () => {
       const sorted = service.sortPosts(mockPosts, SortOption.COMMENTS);
-      
+
       expect(sorted[0].commentsCount).toBe(10);
       expect(sorted[1].commentsCount).toBe(5);
       expect(sorted[2].commentsCount).toBe(2);
@@ -90,7 +90,7 @@ describe('SortingService', () => {
     // 최신순 정렬 테스트
     it('should sort posts by latest in descending order', () => {
       const sorted = service.sortPosts(mockPosts, SortOption.LATEST);
-      
+
       expect(sorted[0].createdAt).toEqual(mockDate1);
       expect(sorted[1].createdAt).toEqual(mockDate2);
       expect(sorted[2].createdAt).toEqual(mockDate3);
@@ -104,12 +104,14 @@ describe('SortingService', () => {
 
     // null 값 처리 테스트
     it('should handle null counts and dates', () => {
-      const postsWithNull = [{
-        ...mockPosts[0],
-        post_like_count: null,
-        comments_count: null,
-        created_at: null
-      }] as Post[];
+      const postsWithNull = [
+        {
+          ...mockPosts[0],
+          post_like_count: null,
+          comments_count: null,
+          created_at: null,
+        },
+      ] as Post[];
 
       // null 값이 기본 값으로 대체되어 반환되는지 확인
       const sorted = service.sortPosts(postsWithNull, SortOption.LIKES);

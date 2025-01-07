@@ -1,8 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Brackets } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Post } from '../entities/post.entity';
-import { BusinessContact } from '../entities/business-contact.entity';
 import { FilterType } from '../types/feed.types';
 
 @Injectable()
@@ -13,20 +12,18 @@ export class FeedFilterService {
   constructor(
     @InjectRepository(Post)
     private readonly postRepository: Repository<Post>,
-    @InjectRepository(BusinessContact)
-    private readonly businessContactRepository: Repository<BusinessContact>,
   ) {}
 
   // 사용자 기준으로 게시물을 필터링하는 메서드
   async filterPostsByUser(
     userId: number,
     filterType: FilterType,
-    specificUserId?: number
+    specificUserId?: number,
   ): Promise<Post[]> {
     try {
-
       // 기본 쿼리 빌더 설정
-      const query = this.postRepository.createQueryBuilder('post')
+      const query = this.postRepository
+        .createQueryBuilder('post')
         .leftJoin('post.user', 'user')
         .where('post.deleted_at IS NULL');
 
@@ -38,9 +35,9 @@ export class FeedFilterService {
             'business_contact',
             'bc',
             '(bc.user_id = :userId AND bc.contact_user_id = user.user_id) OR ' +
-            '(bc.contact_user_id = :userId AND bc.user_id = user.user_id) OR ' +
-            'user.user_id = :userId',
-            { userId }
+              '(bc.contact_user_id = :userId AND bc.user_id = user.user_id) OR ' +
+              'user.user_id = :userId',
+            { userId },
           );
           break;
 
@@ -67,10 +64,9 @@ export class FeedFilterService {
           'post.post_like_count',
           'post.comments_count',
           'user.user_id',
-          'user.name'
+          'user.name',
         ])
         .getMany();
-
     } catch (error) {
       this.logger.error(`Error filtering posts: ${error.message}`);
       throw error;

@@ -54,14 +54,18 @@ describe('S3Service', () => {
       destroy: jest.fn().mockResolvedValue(undefined),
     };
 
-    (S3Client as jest.MockedClass<typeof S3Client>).mockImplementation(() => mockS3Client);
+    (S3Client as jest.MockedClass<typeof S3Client>).mockImplementation(
+      () => mockS3Client,
+    );
 
     // Upload 모킹
     mockUpload = {
       done: jest.fn().mockResolvedValue(undefined),
     };
 
-    (Upload as jest.MockedClass<typeof Upload>).mockImplementation(() => mockUpload);
+    (Upload as jest.MockedClass<typeof Upload>).mockImplementation(
+      () => mockUpload,
+    );
 
     // 테스트 모듈 설정
     const module: TestingModule = await Test.createTestingModule({
@@ -82,7 +86,7 @@ describe('S3Service', () => {
   afterEach(() => {
     jest.resetAllMocks();
   });
-  
+
   // 초기화 관련 테스트
   describe('initialization', () => {
     it('should properly initialize cloudFrontDomain', async () => {
@@ -91,14 +95,14 @@ describe('S3Service', () => {
 
     it('should throw error when AWS credentials are missing', async () => {
       configService.setMockValue('AWS_ACCESS_KEY_ID', null);
-      
+
       const newService = new S3Service(configService);
       await expect(newService.onModuleInit()).rejects.toThrow();
     });
 
     it('should throw error when AWS region is missing', async () => {
       configService.setMockValue('AWS_REGION', null);
-      
+
       const newService = new S3Service(configService);
       await expect(newService.onModuleInit()).rejects.toThrow();
     });
@@ -141,34 +145,44 @@ describe('S3Service', () => {
     it('should handle upload errors', async () => {
       mockUpload.done.mockRejectedValueOnce(new Error('Upload failed'));
 
-      await expect(service.uploadFile(mockFile, 'test.jpg'))
-        .rejects
-        .toThrow('Upload failed');
+      await expect(service.uploadFile(mockFile, 'test.jpg')).rejects.toThrow(
+        'Upload failed',
+      );
     });
 
     it('should throw error when file is null', async () => {
-      await expect(service.uploadFile(null, 'test.jpg'))
-        .rejects
-        .toThrow(BadRequestException);
+      await expect(service.uploadFile(null, 'test.jpg')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should handle missing mimetype', async () => {
       const fileWithoutMimetype = { ...mockFile, mimetype: undefined };
       const key = 'test/file';
-      
+
       await service.uploadFile(fileWithoutMimetype, key);
-      
-      expect(Upload).toHaveBeenCalledWith(expect.objectContaining({
-        params: expect.objectContaining({
-          ContentType: 'application/octet-stream'  // default content type
-        })
-      }));
+
+      expect(Upload).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: expect.objectContaining({
+            ContentType: 'application/octet-stream', // default content type
+          }),
+        }),
+      );
     });
 
     it('should handle various CloudFront domain formats', async () => {
       const testCases = [
-        ['https://cdn.example.com', 'test.jpg', 'https://cdn.example.com/test.jpg'],
-        ['http://cdn.example.com/', 'test.jpg', 'https://cdn.example.com/test.jpg'],
+        [
+          'https://cdn.example.com',
+          'test.jpg',
+          'https://cdn.example.com/test.jpg',
+        ],
+        [
+          'http://cdn.example.com/',
+          'test.jpg',
+          'https://cdn.example.com/test.jpg',
+        ],
         ['cdn.example.com', 'test.jpg', 'https://cdn.example.com/test.jpg'],
       ];
 
@@ -199,29 +213,25 @@ describe('S3Service', () => {
     it('should handle delete errors', async () => {
       mockS3Client.send.mockRejectedValueOnce(new Error('Delete failed'));
 
-      await expect(service.deleteFile('test.jpg'))
-        .rejects
-        .toThrow('Delete failed');
+      await expect(service.deleteFile('test.jpg')).rejects.toThrow(
+        'Delete failed',
+      );
     });
 
     it('should handle empty key', async () => {
-      await expect(service.deleteFile(''))
-        .rejects
-        .toThrow(BadRequestException);
+      await expect(service.deleteFile('')).rejects.toThrow(BadRequestException);
     });
 
     it('should handle deletion of non-existent file', async () => {
       mockS3Client.send.mockRejectedValueOnce({ name: 'NoSuchKey' });
 
-      await expect(service.deleteFile('non-existent.jpg'))
-        .rejects
-        .toThrow();
+      await expect(service.deleteFile('non-existent.jpg')).rejects.toThrow();
     });
 
     it('should handle invalid key format', async () => {
-      await expect(service.deleteFile('../invalid/path.jpg'))
-        .rejects
-        .toThrow(BadRequestException);
+      await expect(service.deleteFile('../invalid/path.jpg')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -242,7 +252,7 @@ describe('S3Service', () => {
     // 모듈 제거 시 S3 클라이언트가 정상적으로 해제되는지 테스트
     it('should destroy S3 client on module destroy', async () => {
       await service.onModuleDestroy();
-      
+
       expect(mockS3Client.destroy).toHaveBeenCalled();
     });
 

@@ -4,7 +4,6 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 const entitiesExtension = process.env.NODE_ENV === 'production' ? 'js' : 'ts';
-const migrationsExtension = process.env.NODE_ENV === 'production' ? 'js' : 'ts';
 
 export default new DataSource({
   type: 'mysql',
