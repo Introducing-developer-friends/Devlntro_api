@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, EntityManager } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Post } from '../entities/post.entity';
 import { PostLike } from '../entities/post-like.entity';
 import { S3Service } from '../s3/s3.service';
@@ -23,7 +23,6 @@ export class PostService {
     @InjectRepository(PostLike)
     private readonly postLikeRepository: Repository<PostLike>, // PostLike 엔티티에 대한 TypeORM 리포지토리 주입
     private readonly s3Service: S3Service,
-    private readonly entityManager: EntityManager,
   ) {}
 
   // 게시물을 생성하는 메서드

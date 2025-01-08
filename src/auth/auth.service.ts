@@ -21,8 +21,6 @@ export class AuthService {
   constructor(
     @InjectRepository(UserAccount) // UserAccount 리포지토리 의존성 주입
     private readonly userRepository: Repository<UserAccount>,
-    @InjectRepository(BusinessProfile)
-    private readonly profileRepository: Repository<BusinessProfile>,
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepository: Repository<RefreshToken>,
     private readonly jwtService: JwtService, // JWT 토큰 생성을 위한 JwtService 주입

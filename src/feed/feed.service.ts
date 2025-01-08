@@ -9,7 +9,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Post } from '../entities/post.entity';
 import { Comment } from '../entities/comment.entity';
 import { PostLike } from '../entities/post-like.entity';
-import { CommentLike } from '../entities/comment-like.entity'; // 댓글 좋아요 엔티티 추가
 import { FeedFilterService } from '../services/feed-filter.service';
 import { SortingService } from '../services/sorting-service';
 import {
@@ -28,12 +27,6 @@ export class FeedService {
     private readonly feedFilterService: FeedFilterService,
     private readonly sortingService: SortingService,
     @InjectRepository(Post) private readonly postRepository: Repository<Post>,
-    @InjectRepository(Comment)
-    private readonly commentRepository: Repository<Comment>,
-    @InjectRepository(PostLike)
-    private readonly likeRepository: Repository<PostLike>,
-    @InjectRepository(CommentLike)
-    private readonly commentLikeRepository: Repository<CommentLike>,
   ) {}
 
   // 피드 조회 메서드

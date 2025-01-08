@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
 import { CommentLike } from '../entities/comment-like.entity';
 import { Post } from '../entities/post.entity';
@@ -24,7 +24,6 @@ export class CommentService {
     private readonly commentLikeRepository: Repository<CommentLike>, // CommentLike 엔티티를 위한 TypeORM 리포지토리 주입
     @InjectRepository(Post)
     private readonly postRepository: Repository<Post>,
-    private readonly dataSource: DataSource,
   ) {}
 
   // 댓글 생성 메서드

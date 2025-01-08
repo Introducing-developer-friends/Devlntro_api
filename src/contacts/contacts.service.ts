@@ -8,7 +8,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { BusinessContact } from '../entities/business-contact.entity';
 import { UserAccount } from '../entities/user-account.entity';
-import { BusinessProfile } from '../entities/business-profile.entity';
 import { FriendRequest } from '../entities/friend-request.entity';
 import {
   ContactListResult,
@@ -25,8 +24,7 @@ export class ContactsService {
     private readonly contactRepository: Repository<BusinessContact>,
     @InjectRepository(UserAccount)
     private readonly userRepository: Repository<UserAccount>,
-    @InjectRepository(BusinessProfile)
-    private readonly profileRepository: Repository<BusinessProfile>,
+
     @InjectRepository(FriendRequest)
     private readonly friendRequestRepository: Repository<FriendRequest>,
     private readonly dataSource: DataSource,
