@@ -11,7 +11,7 @@ import { SortingService } from '../services/sorting-service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SortOption, FilterType, PostBasicInfo } from '../types/feed.types';
 
-const createMockQueryBuilder = (returnValue: any) => ({
+const createMockQueryBuilder = (returnValue) => ({
   leftJoin: jest.fn().mockReturnThis(),
   where: jest.fn().mockReturnThis(),
   andWhere: jest.fn().mockReturnThis(),
@@ -41,7 +41,7 @@ describe('FeedService', () => {
     comments_count: 5,
     comments: [],
     postLikes: [],
-  } as unknown as Post;
+  } as Post;
 
   const mockPostBasicInfo: PostBasicInfo = {
     postId: 1,
@@ -135,7 +135,7 @@ describe('FeedService', () => {
       const mockPosts = [
         { ...mockPostEntity, post_id: 1, post_like_count: 20 },
         { ...mockPostEntity, post_id: 2, post_like_count: 10 },
-      ] as unknown as Post[];
+      ] as Post[];
 
       const expectedPosts = [
         { ...mockPostBasicInfo, postId: 1, likesCount: 20 },
@@ -161,7 +161,7 @@ describe('FeedService', () => {
       const mockPosts = [
         { ...mockPostEntity, post_id: 1, comments_count: 15 },
         { ...mockPostEntity, post_id: 2, comments_count: 5 },
-      ] as unknown as Post[];
+      ] as Post[];
 
       const expectedPosts = [
         { ...mockPostBasicInfo, postId: 1, commentsCount: 15 },
@@ -267,7 +267,7 @@ describe('FeedService', () => {
             },
           },
         ],
-      } as unknown as Post;
+      };
 
       const queryBuilder = createMockQueryBuilder(mockDetailPost);
       jest
@@ -316,7 +316,7 @@ describe('FeedService', () => {
         ...mockPostEntity,
         comments: [],
         postLikes: [],
-      } as unknown as Post;
+      };
 
       const queryBuilder = {
         leftJoin: jest.fn().mockReturnThis(),
@@ -400,7 +400,7 @@ describe('FeedService', () => {
             },
           },
         ],
-      } as unknown as Post;
+      };
 
       const queryBuilder = {
         leftJoin: jest.fn().mockReturnThis(),
@@ -441,7 +441,7 @@ describe('FeedService', () => {
         ...mockPostEntity,
         comments: [],
         postLikes: [{ userAccount: { user_id: 1, name: 'Liker' } }],
-      } as unknown as Post;
+      };
 
       const queryBuilder = {
         leftJoin: jest.fn().mockReturnThis(),
@@ -474,7 +474,7 @@ describe('FeedService', () => {
           },
         ],
         postLikes: [],
-      } as unknown as Post;
+      };
 
       const queryBuilder = {
         leftJoin: jest.fn().mockReturnThis(),

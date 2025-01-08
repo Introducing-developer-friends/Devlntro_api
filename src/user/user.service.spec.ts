@@ -219,7 +219,9 @@ describe('UserService', () => {
 
       const queryBuilder = mockTransactionManager.createQueryBuilder();
       queryBuilder.getOne.mockResolvedValue(mockUser);
-      mockTransactionManager.save.mockImplementation(async (entity) => entity);
+      mockTransactionManager.save.mockImplementation(
+        async (entity: BusinessProfile | UserAccount) => entity,
+      );
 
       const result = await service.updateBusinessProfile(1, partialUpdate);
 
@@ -245,7 +247,9 @@ describe('UserService', () => {
 
       const queryBuilder = mockTransactionManager.createQueryBuilder();
       queryBuilder.getOne.mockResolvedValue(mockUser);
-      mockTransactionManager.save.mockImplementation(async (entity) => entity);
+      mockTransactionManager.save.mockImplementation(
+        async (entity: BusinessProfile | UserAccount) => entity,
+      );
 
       const result = await service.updateBusinessProfile(1, partialUpdate);
 

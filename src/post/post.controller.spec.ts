@@ -172,7 +172,7 @@ describe('PostController', () => {
       await controller.updatePost(
         { user: { userId: 1 } } as any,
         1,
-        { content: 'Updated content' } as UpdatePostDto,
+        { content: 'Updated content' },
         mockFile,
       );
 

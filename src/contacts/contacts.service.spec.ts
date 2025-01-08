@@ -64,7 +64,7 @@ describe('ContactsService', () => {
     PENDING: 'pending',
     ACCEPTED: 'accepted',
     REJECTED: 'rejected',
-  } as const;
+  };
 
   beforeEach(async () => {
     queryBuilder = {
