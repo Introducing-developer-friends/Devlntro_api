@@ -4,13 +4,13 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
-import { SampleController } from './controllers/sample.controller';  // SampleController 임포트
+import { SampleController } from './controllers/sample.controller'; // SampleController 임포트
 import { AuthModule } from './auth/auth.module';
 import { FeedModule } from './feed/feed.module';
-import { PostModule } from './post/post.module'
-import { CommentModule } from './comment/comment.module'
-import { ContactsModule } from './contacts/contacts.module'
-import { UserModule } from './user/user.module'
+import { PostModule } from './post/post.module';
+import { CommentModule } from './comment/comment.module';
+import { ContactsModule } from './contacts/contacts.module';
+import { UserModule } from './user/user.module';
 import { S3Module } from './s3/s3.module';
 import { NotificationsModule } from './notification/notifications.module';
 import { CacheModule } from '@nestjs/cache-manager';
@@ -57,7 +57,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 
   // 이 모듈에서 사용할 컨트롤러를 정의
   controllers: [AppController, SampleController],
-  
+
   // 이 모듈에서 사용할 프로바이더(서비스)를 정의
   providers: [AppService],
 })

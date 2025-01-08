@@ -1,4 +1,9 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Logger } from '@nestjs/common';
 
@@ -8,20 +13,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
   // 무시할 경로 목록 (자동화 요청 및 스캐닝 시도 방지)
   private readonly ignorePaths = [
-    '/favicon.ico',    // 브라우저 자동 요청
-    '/robots.txt',     // 검색엔진 봇 요청
-    '/.env',          // 환경설정 파일 스캔
-    '/.git',          // git 저장소 스캔
-    '.php',           // PHP 취약점 스캔
-    '.asp',           // ASP 취약점 스캔
-    '.aspx',          // ASPX 취약점 스캔
-    '/static/',       // 정적 파일 자동 요청
-    '/assets/',       // 정적 파일 자동 요청
-    '/public/',       // 정적 파일 자동 요청
-    '/css/',          // CSS 파일 자동 요청
-    '/images/',       // 이미지 파일 자동 요청
-    '/Core/Skin/',    // CMS 스캐닝
-    '/console'        // 콘솔 접근 시도
+    '/favicon.ico', // 브라우저 자동 요청
+    '/robots.txt', // 검색엔진 봇 요청
+    '/.env', // 환경설정 파일 스캔
+    '/.git', // git 저장소 스캔
+    '.php', // PHP 취약점 스캔
+    '.asp', // ASP 취약점 스캔
+    '.aspx', // ASPX 취약점 스캔
+    '/static/', // 정적 파일 자동 요청
+    '/assets/', // 정적 파일 자동 요청
+    '/public/', // 정적 파일 자동 요청
+    '/css/', // CSS 파일 자동 요청
+    '/images/', // 이미지 파일 자동 요청
+    '/Core/Skin/', // CMS 스캐닝
+    '/console', // 콘솔 접근 시도
   ];
 
   private shouldLogError(status: number, url: string): boolean {
@@ -32,7 +37,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (url.startsWith('/api/')) return true;
 
     // 3. 무시할 패턴에 해당하는 404는 로깅하지 않음
-    return !this.ignorePaths.some(path => url.includes(path));
+    return !this.ignorePaths.some((path) => url.includes(path));
   }
 
   catch(exception: HttpException, host: ArgumentsHost) {

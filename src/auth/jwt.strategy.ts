@@ -1,7 +1,6 @@
-import { Injectable, UnauthorizedException  } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { ConfigService } from '@nestjs/config';
 import { TokenPayload } from '../types/auth.type';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserAccount } from '../entities/user-account.entity';
@@ -10,14 +9,13 @@ import { Repository } from 'typeorm';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
-    private configService: ConfigService,
     @InjectRepository(UserAccount)
-    private userRepository: Repository<UserAccount>
+    private userRepository: Repository<UserAccount>,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET'),
+      secretOrKey: process.env.JWT_SECRET,
     });
   }
 
@@ -28,7 +26,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       }
 
       const user = await this.userRepository.findOne({
-        where: { user_id: payload.sub }
+        where: { user_id: payload.sub },
       });
 
       // 사용자가 존재하지 않으면 예외 발생
@@ -44,7 +42,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       // 사용자 ID와 사용자명을 반환 (Passport가 요청 객체에 추가)
       return {
         userId: payload.sub,
-        username: payload.username
+        username: payload.username,
       };
     } catch (error) {
       // UnauthorizedException 이외의 에러를 일반적인 인증 실패로 변환

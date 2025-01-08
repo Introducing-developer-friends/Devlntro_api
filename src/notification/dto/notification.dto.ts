@@ -1,15 +1,17 @@
 import { IsNotEmpty, IsNumber, IsString, IsArray } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { 
+import {
   NotificationType,
   FriendRequestNotificationDto,
   LikePostNotificationDto,
   CommentNotificationDto,
   LikeCommentNotificationDto,
-  DeleteNotificationsDto
- } from '../../types/notification.types';
+  DeleteNotificationsDto,
+} from '../../types/notification.types';
 // 친구 요청 알림 생성을 위한 DTO
-export class CreateFriendRequestNotificationDto implements FriendRequestNotificationDto {
+export class CreateFriendRequestNotificationDto
+  implements FriendRequestNotificationDto
+{
   @ApiProperty({
     example: 2,
     description: '친구 요청을 받은 사용자의 ID',
@@ -64,7 +66,6 @@ export class CreateLikePostNotificationDto implements LikePostNotificationDto {
 
 // 댓글 알림 생성을 위한 DTO
 export class CreateCommentNotificationDto implements CommentNotificationDto {
-
   @ApiProperty({
     example: 2,
     description: '게시물 작성자의 ID (알림을 받을 사용자)',
@@ -95,8 +96,9 @@ export class CreateCommentNotificationDto implements CommentNotificationDto {
 }
 
 // 댓글 좋아요 알림 생성을 위한 DTO
-export class CreateLikeCommentNotificationDto implements LikeCommentNotificationDto {
-
+export class CreateLikeCommentNotificationDto
+  implements LikeCommentNotificationDto
+{
   @ApiProperty({
     example: 2,
     description: '댓글 작성자의 ID (알림을 받을 사용자)',

@@ -86,9 +86,18 @@ describe('AuthService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        { provide: getRepositoryToken(UserAccount), useValue: mockUserRepository },
-        { provide: getRepositoryToken(BusinessProfile), useValue: mockProfileRepository },
-        { provide: getRepositoryToken(RefreshToken), useValue: mockRefreshTokenRepository },
+        {
+          provide: getRepositoryToken(UserAccount),
+          useValue: mockUserRepository,
+        },
+        {
+          provide: getRepositoryToken(BusinessProfile),
+          useValue: mockProfileRepository,
+        },
+        {
+          provide: getRepositoryToken(RefreshToken),
+          useValue: mockRefreshTokenRepository,
+        },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
       ],
@@ -108,7 +117,10 @@ describe('AuthService', () => {
       mockQueryBuilder.getCount.mockResolvedValue(0);
       const result = await service.checkIdAvailability('test_id');
       expect(result).toEqual({ available: true });
-      expect(mockQueryBuilder.where).toHaveBeenCalledWith('user.login_id = :login_id', { login_id: 'test_id' });
+      expect(mockQueryBuilder.where).toHaveBeenCalledWith(
+        'user.login_id = :login_id',
+        { login_id: 'test_id' },
+      );
     });
 
     // ID가 이미 사용 중일 때
@@ -158,17 +170,24 @@ describe('AuthService', () => {
 
     // 비밀번호가 일치하지 않을 때
     it('should throw BadRequestException if passwords do not match', async () => {
-      const invalidDto = { ...registerDto, confirm_password: 'different_password' };
+      const invalidDto = {
+        ...registerDto,
+        confirm_password: 'different_password',
+      };
 
-      await expect(service.register(invalidDto)).rejects.toThrow(BadRequestException);
+      await expect(service.register(invalidDto)).rejects.toThrow(
+        BadRequestException,
+      );
 
       expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
     });
-      // 유저가 이미 존재할 때
+    // 유저가 이미 존재할 때
     it('should throw BadRequestException if user already exists', async () => {
       mockQueryBuilder.getOne.mockResolvedValue({ user_id: 1 });
 
-      await expect(service.register(registerDto)).rejects.toThrow(BadRequestException);
+      await expect(service.register(registerDto)).rejects.toThrow(
+        BadRequestException,
+      );
 
       expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
     });
@@ -206,20 +225,19 @@ describe('AuthService', () => {
         email: 'invalid-email',
         phone: '01012345678',
       };
-  
+
       mockQueryBuilder.getOne.mockResolvedValue(null);
       // user 객체 생성 모의
       const mockUser = { user_id: 1, ...invalidEmailDto };
       mockQueryRunner.manager.create
         .mockImplementationOnce(() => mockUser)
         .mockImplementationOnce((entity, data) => ({ ...data }));
-      
-      mockQueryRunner.manager.save
-        .mockRejectedValueOnce(new Error('Invalid email format'));
-  
-      await expect(service.register(invalidEmailDto))
-        .rejects
-        .toThrow(Error);
+
+      mockQueryRunner.manager.save.mockRejectedValueOnce(
+        new Error('Invalid email format'),
+      );
+
+      await expect(service.register(invalidEmailDto)).rejects.toThrow(Error);
       expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
     });
   });
@@ -227,47 +245,55 @@ describe('AuthService', () => {
   // login 메서드 테스트
   describe('login', () => {
     const loginDto = { login_id: 'test', password: 'password' };
-  
+
     it('should return token and userId on successful login', async () => {
-      const mockUser = { user_id: 1, login_id: 'test', password: 'hashed_password' };
+      const mockUser = {
+        user_id: 1,
+        login_id: 'test',
+        password: 'hashed_password',
+      };
       mockQueryBuilder.getOne.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-  
+
       const result = await service.login(loginDto);
-  
+
       expect(result).toEqual({
         accessToken: 'test_token',
         refreshToken: 'test_token',
-        userId: 1
+        userId: 1,
       });
     });
-  
+
     it('should return null for invalid credentials', async () => {
       mockQueryBuilder.getOne.mockResolvedValue(null);
-  
+
       const result = await service.login(loginDto);
-  
+
       expect(result).toBeNull();
     });
-  
+
     it('should handle incorrect password', async () => {
-      const mockUser = { user_id: 1, login_id: 'test', password: 'hashed_password' };
+      const mockUser = {
+        user_id: 1,
+        login_id: 'test',
+        password: 'hashed_password',
+      };
       mockQueryBuilder.getOne.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
-  
+
       const result = await service.login(loginDto);
-      
+
       expect(result).toBeNull();
     });
 
     it('should handle case when user is not found', async () => {
       mockQueryBuilder.getOne.mockResolvedValue(null);
-  
+
       const result = await service.login({
         login_id: 'nonexistent',
-        password: 'password'
+        password: 'password',
       });
-  
+
       expect(result).toBeNull();
       expect(mockQueryBuilder.getOne).toHaveBeenCalled();
     });

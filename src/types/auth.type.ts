@@ -17,7 +17,7 @@ export interface BasePayload {
 
 export interface TokenPayload extends BasePayload {
   version: number;
-  type: 'access' | 'refresh'; 
+  type: 'access' | 'refresh';
 }
 
 export interface IdCheckResult {
@@ -35,13 +35,13 @@ export interface LoginResponse extends BaseResponse, AuthResult {}
 
 // 토큰 갱신 응답
 export interface RefreshTokenResponse extends BaseResponse {
-  accessToken: string;  
+  accessToken: string;
 }
 
-export interface CheckIdResponse extends BaseResponse {}
+export type CheckIdResponse = BaseResponse;
 
 export interface RegisterResponse extends BaseResponse {
-  userId: number;  
+  userId: number;
 }
 
-export interface LogoutResponse extends BaseResponse {}
+export type LogoutResponse = BaseResponse;

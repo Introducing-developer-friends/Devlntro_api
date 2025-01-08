@@ -8,14 +8,10 @@ import { CommentLike } from '../entities/comment-like.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { FeedFilterService } from '../services/feed-filter.service';
 import { SortingService } from '../services/sorting-service';
-import { BadRequestException, NotFoundException, InternalServerErrorException } from '@nestjs/common';
-import { 
-  SortOption,
-  FilterType,
-  PostBasicInfo
-} from '../types/feed.types';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { SortOption, FilterType, PostBasicInfo } from '../types/feed.types';
 
-const createMockQueryBuilder = (returnValue: any) => ({
+const createMockQueryBuilder = (returnValue) => ({
   leftJoin: jest.fn().mockReturnThis(),
   where: jest.fn().mockReturnThis(),
   andWhere: jest.fn().mockReturnThis(),
@@ -30,14 +26,13 @@ describe('FeedService', () => {
   let sortingService: SortingService;
 
   const mockDate = new Date('2024-01-01');
-  
 
   // Post 엔티티 mock
   const mockPostEntity = {
     post_id: 1,
     user: {
       user_id: 1,
-      name: 'User1'
+      name: 'User1',
     },
     content: 'Test content',
     created_at: mockDate,
@@ -45,8 +40,8 @@ describe('FeedService', () => {
     post_like_count: 10,
     comments_count: 5,
     comments: [],
-    postLikes: []
-  } as unknown as Post;
+    postLikes: [],
+  } as Post;
 
   const mockPostBasicInfo: PostBasicInfo = {
     postId: 1,
@@ -117,31 +112,47 @@ describe('FeedService', () => {
       const mockPosts = [mockPostEntity];
       const expectedPosts = [mockPostBasicInfo];
 
-      jest.spyOn(feedFilterService, 'filterPostsByUser').mockResolvedValue(mockPosts);
+      jest
+        .spyOn(feedFilterService, 'filterPostsByUser')
+        .mockResolvedValue(mockPosts);
       jest.spyOn(sortingService, 'sortPosts').mockReturnValue(expectedPosts);
 
-      const result = await feedService.getFeed(1, SortOption.LATEST, FilterType.ALL);
+      const result = await feedService.getFeed(
+        1,
+        SortOption.LATEST,
+        FilterType.ALL,
+      );
 
       expect(result).toEqual(expectedPosts);
-      expect(feedFilterService.filterPostsByUser).toHaveBeenCalledWith(1, FilterType.ALL, undefined);
+      expect(feedFilterService.filterPostsByUser).toHaveBeenCalledWith(
+        1,
+        FilterType.ALL,
+        undefined,
+      );
     });
 
     it('should return sorted feed posts by likes', async () => {
       const mockPosts = [
         { ...mockPostEntity, post_id: 1, post_like_count: 20 },
-        { ...mockPostEntity, post_id: 2, post_like_count: 10 }
-      ] as unknown as Post[];
+        { ...mockPostEntity, post_id: 2, post_like_count: 10 },
+      ] as Post[];
 
       const expectedPosts = [
         { ...mockPostBasicInfo, postId: 1, likesCount: 20 },
-        { ...mockPostBasicInfo, postId: 2, likesCount: 10 }
+        { ...mockPostBasicInfo, postId: 2, likesCount: 10 },
       ];
 
-      jest.spyOn(feedFilterService, 'filterPostsByUser').mockResolvedValue(mockPosts);
+      jest
+        .spyOn(feedFilterService, 'filterPostsByUser')
+        .mockResolvedValue(mockPosts);
       jest.spyOn(sortingService, 'sortPosts').mockReturnValue(expectedPosts);
 
-      const result = await feedService.getFeed(1, SortOption.LIKES, FilterType.ALL);
-      
+      const result = await feedService.getFeed(
+        1,
+        SortOption.LIKES,
+        FilterType.ALL,
+      );
+
       expect(result).toEqual(expectedPosts);
       expect(result[0].likesCount).toBeGreaterThan(result[1].likesCount);
     });
@@ -149,18 +160,24 @@ describe('FeedService', () => {
     it('should return sorted posts by comments count', async () => {
       const mockPosts = [
         { ...mockPostEntity, post_id: 1, comments_count: 15 },
-        { ...mockPostEntity, post_id: 2, comments_count: 5 }
-      ] as unknown as Post[];
+        { ...mockPostEntity, post_id: 2, comments_count: 5 },
+      ] as Post[];
 
       const expectedPosts = [
         { ...mockPostBasicInfo, postId: 1, commentsCount: 15 },
-        { ...mockPostBasicInfo, postId: 2, commentsCount: 5 }
+        { ...mockPostBasicInfo, postId: 2, commentsCount: 5 },
       ];
 
-      jest.spyOn(feedFilterService, 'filterPostsByUser').mockResolvedValue(mockPosts);
+      jest
+        .spyOn(feedFilterService, 'filterPostsByUser')
+        .mockResolvedValue(mockPosts);
       jest.spyOn(sortingService, 'sortPosts').mockReturnValue(expectedPosts);
 
-      const result = await feedService.getFeed(1, SortOption.COMMENTS, FilterType.ALL);
+      const result = await feedService.getFeed(
+        1,
+        SortOption.COMMENTS,
+        FilterType.ALL,
+      );
 
       expect(result).toEqual(expectedPosts);
       expect(result[0].commentsCount).toBeGreaterThan(result[1].commentsCount);
@@ -170,45 +187,59 @@ describe('FeedService', () => {
       jest.spyOn(feedFilterService, 'filterPostsByUser').mockResolvedValue([]);
       jest.spyOn(sortingService, 'sortPosts').mockReturnValue([]);
 
-      const result = await feedService.getFeed(1, SortOption.LATEST, FilterType.ALL);
+      const result = await feedService.getFeed(
+        1,
+        SortOption.LATEST,
+        FilterType.ALL,
+      );
       expect(result).toEqual([]);
     });
 
     it('should throw BadRequestException when specificUserId is required but missing', async () => {
       await expect(
-        feedService.getFeed(1, SortOption.LATEST, FilterType.SPECIFIC)
-      ).rejects.toThrow(new BadRequestException('특정 사용자의 게시물을 조회하기 위해서는 specificUserId가 필요합니다.'));
+        feedService.getFeed(1, SortOption.LATEST, FilterType.SPECIFIC),
+      ).rejects.toThrow(
+        new BadRequestException(
+          '특정 사용자의 게시물을 조회하기 위해서는 specificUserId가 필요합니다.',
+        ),
+      );
     });
 
     it('should handle feed filter service errors', async () => {
-      jest.spyOn(feedFilterService, 'filterPostsByUser')
+      jest
+        .spyOn(feedFilterService, 'filterPostsByUser')
         .mockRejectedValue(new Error('Filter service error'));
 
       await expect(
-        feedService.getFeed(1, SortOption.LATEST, FilterType.ALL)
+        feedService.getFeed(1, SortOption.LATEST, FilterType.ALL),
       ).rejects.toThrow(Error);
     });
 
     it('should handle feed filter service returning null', async () => {
-      jest.spyOn(feedFilterService, 'filterPostsByUser').mockRejectedValue(
-        new Error('Failed to filter posts')
-      );
-    
+      jest
+        .spyOn(feedFilterService, 'filterPostsByUser')
+        .mockRejectedValue(new Error('Failed to filter posts'));
+
       await expect(
-        feedService.getFeed(1, SortOption.LATEST, FilterType.ALL)
+        feedService.getFeed(1, SortOption.LATEST, FilterType.ALL),
       ).rejects.toThrow('Failed to filter posts');
-      
+
       expect(sortingService.sortPosts).not.toHaveBeenCalled();
     });
-  
+
     it('should pass correct parameters to sorting service', async () => {
       const mockPosts = [mockPostEntity];
-      jest.spyOn(feedFilterService, 'filterPostsByUser').mockResolvedValue(mockPosts);
+      jest
+        .spyOn(feedFilterService, 'filterPostsByUser')
+        .mockResolvedValue(mockPosts);
       jest.spyOn(sortingService, 'sortPosts');
-  
+
       await feedService.getFeed(1, SortOption.LIKES, FilterType.ALL);
-  
-      expect(sortingService.sortPosts).toHaveBeenCalledWith(mockPosts, SortOption.LIKES);
+
+      expect(sortingService.sortPosts).toHaveBeenCalledWith(
+        mockPosts,
+        SortOption.LIKES,
+      );
     });
   });
 
@@ -216,26 +247,32 @@ describe('FeedService', () => {
     it('should return post detail successfully', async () => {
       const mockDetailPost = {
         ...mockPostEntity,
-        comments: [{
-          comment_id: 1,
-          content: 'Test comment',
-          created_at: mockDate,
-          like_count: 5,
-          userAccount: {
-            user_id: 2,
-            name: 'Commenter'
-          }
-        }],
-        postLikes: [{
-          userAccount: {
-            user_id: 3,
-            name: 'Liker'
-          }
-        }]
-      } as unknown as Post;
+        comments: [
+          {
+            comment_id: 1,
+            content: 'Test comment',
+            created_at: mockDate,
+            like_count: 5,
+            userAccount: {
+              user_id: 2,
+              name: 'Commenter',
+            },
+          },
+        ],
+        postLikes: [
+          {
+            userAccount: {
+              user_id: 3,
+              name: 'Liker',
+            },
+          },
+        ],
+      };
 
       const queryBuilder = createMockQueryBuilder(mockDetailPost);
-      jest.spyOn(postRepository, 'createQueryBuilder').mockReturnValue(queryBuilder as any);
+      jest
+        .spyOn(postRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
 
       const result = await feedService.getPostDetail(1, 1);
 
@@ -247,10 +284,13 @@ describe('FeedService', () => {
     it('should throw NotFoundException when post does not exist', async () => {
       const queryBuilder = createMockQueryBuilder(null);
 
-      jest.spyOn(postRepository, 'createQueryBuilder').mockReturnValue(queryBuilder as any);
+      jest
+        .spyOn(postRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
 
-      await expect(feedService.getPostDetail(1, 999))
-        .rejects.toThrow(new NotFoundException('해당 게시물을 찾을 수 없습니다.'));
+      await expect(feedService.getPostDetail(1, 999)).rejects.toThrow(
+        new NotFoundException('해당 게시물을 찾을 수 없습니다.'),
+      );
     });
 
     it('should handle database query errors', async () => {
@@ -259,21 +299,24 @@ describe('FeedService', () => {
         where: jest.fn().mockReturnThis(),
         andWhere: jest.fn().mockReturnThis(),
         select: jest.fn().mockReturnThis(),
-        getOne: jest.fn().mockRejectedValue(new Error('Database connection error')),
+        getOne: jest
+          .fn()
+          .mockRejectedValue(new Error('Database connection error')),
       };
 
-      jest.spyOn(postRepository, 'createQueryBuilder').mockReturnValue(queryBuilder as any);
+      jest
+        .spyOn(postRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
 
-      await expect(feedService.getPostDetail(1, 1))
-        .rejects.toThrow(Error);
+      await expect(feedService.getPostDetail(1, 1)).rejects.toThrow(Error);
     });
 
     it('should handle post with no comments and likes', async () => {
       const mockEmptyPost = {
         ...mockPostEntity,
         comments: [],
-        postLikes: []
-      } as unknown as Post;
+        postLikes: [],
+      };
 
       const queryBuilder = {
         leftJoin: jest.fn().mockReturnThis(),
@@ -283,7 +326,9 @@ describe('FeedService', () => {
         getOne: jest.fn().mockResolvedValue(mockEmptyPost),
       };
 
-      jest.spyOn(postRepository, 'createQueryBuilder').mockReturnValue(queryBuilder as any);
+      jest
+        .spyOn(postRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
 
       const result = await feedService.getPostDetail(1, 1);
 
@@ -300,13 +345,20 @@ describe('FeedService', () => {
         getOne: jest.fn().mockResolvedValue(mockPostEntity),
       };
 
-      jest.spyOn(postRepository, 'createQueryBuilder').mockReturnValue(queryBuilder as any);
+      jest
+        .spyOn(postRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
 
       await feedService.getPostDetail(1, 1);
 
       expect(queryBuilder.leftJoin).toHaveBeenCalled();
-      expect(queryBuilder.where).toHaveBeenCalledWith('post.post_id = :postId', { postId: 1 });
-      expect(queryBuilder.andWhere).toHaveBeenCalledWith('post.deleted_at IS NULL');
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'post.post_id = :postId',
+        { postId: 1 },
+      );
+      expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+        'post.deleted_at IS NULL',
+      );
     });
 
     it('should map post detail info correctly', async () => {
@@ -315,41 +367,41 @@ describe('FeedService', () => {
         comments: [
           {
             comment_id: 1,
-            userAccount: { 
-              user_id: 2, 
-              name: 'Commenter' 
+            userAccount: {
+              user_id: 2,
+              name: 'Commenter',
             },
             content: 'Test comment',
             created_at: mockDate,
-            like_count: 5
+            like_count: 5,
           },
           {
             comment_id: 2,
-            userAccount: { 
-              user_id: 3, 
-              name: 'Commenter2' 
+            userAccount: {
+              user_id: 3,
+              name: 'Commenter2',
             },
             content: 'Another comment',
             created_at: mockDate,
-            like_count: 3
-          }
+            like_count: 3,
+          },
         ],
         postLikes: [
           {
-            userAccount: { 
-              user_id: 4, 
-              name: 'Liker1' 
-            }
+            userAccount: {
+              user_id: 4,
+              name: 'Liker1',
+            },
           },
           {
-            userAccount: { 
-              user_id: 5, 
-              name: 'Liker2' 
-            }
-          }
-        ]
-      } as unknown as Post;
-  
+            userAccount: {
+              user_id: 5,
+              name: 'Liker2',
+            },
+          },
+        ],
+      };
+
       const queryBuilder = {
         leftJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -357,11 +409,13 @@ describe('FeedService', () => {
         select: jest.fn().mockReturnThis(),
         getOne: jest.fn().mockResolvedValue(mockDetailPost),
       };
-  
-      jest.spyOn(postRepository, 'createQueryBuilder').mockReturnValue(queryBuilder as any);
-  
+
+      jest
+        .spyOn(postRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+
       const result = await feedService.getPostDetail(1, 1);
-  
+
       // Verify all mapped fields
       expect(result.postId).toBe(mockDetailPost.post_id);
       expect(result.createrId).toBe(mockDetailPost.user.user_id);
@@ -374,21 +428,21 @@ describe('FeedService', () => {
         authorName: 'Commenter',
         content: 'Test comment',
         createdAt: mockDate,
-        likeCount: 5
+        likeCount: 5,
       });
       expect(result.likes[0]).toEqual({
         userId: 4,
-        userName: 'Liker1'
+        userName: 'Liker1',
       });
     });
-  
+
     it('should handle empty comments array correctly', async () => {
       const mockPostWithEmptyComments = {
         ...mockPostEntity,
         comments: [],
-        postLikes: [{ userAccount: { user_id: 1, name: 'Liker' } }]
-      } as unknown as Post;
-  
+        postLikes: [{ userAccount: { user_id: 1, name: 'Liker' } }],
+      };
+
       const queryBuilder = {
         leftJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -396,28 +450,32 @@ describe('FeedService', () => {
         select: jest.fn().mockReturnThis(),
         getOne: jest.fn().mockResolvedValue(mockPostWithEmptyComments),
       };
-  
-      jest.spyOn(postRepository, 'createQueryBuilder').mockReturnValue(queryBuilder as any);
-  
+
+      jest
+        .spyOn(postRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+
       const result = await feedService.getPostDetail(1, 1);
-  
+
       expect(result.comments).toEqual([]);
       expect(result.likes).toHaveLength(1);
     });
-  
+
     it('should handle empty likes array correctly', async () => {
       const mockPostWithEmptyLikes = {
         ...mockPostEntity,
-        comments: [{ 
-          comment_id: 1, 
-          userAccount: { user_id: 2, name: 'Commenter' },
-          content: 'Test',
-          created_at: mockDate,
-          like_count: 0
-        }],
-        postLikes: []
-      } as unknown as Post;
-  
+        comments: [
+          {
+            comment_id: 1,
+            userAccount: { user_id: 2, name: 'Commenter' },
+            content: 'Test',
+            created_at: mockDate,
+            like_count: 0,
+          },
+        ],
+        postLikes: [],
+      };
+
       const queryBuilder = {
         leftJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -425,15 +483,17 @@ describe('FeedService', () => {
         select: jest.fn().mockReturnThis(),
         getOne: jest.fn().mockResolvedValue(mockPostWithEmptyLikes),
       };
-  
-      jest.spyOn(postRepository, 'createQueryBuilder').mockReturnValue(queryBuilder as any);
-  
+
+      jest
+        .spyOn(postRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+
       const result = await feedService.getPostDetail(1, 1);
-  
+
       expect(result.comments).toHaveLength(1);
       expect(result.likes).toEqual([]);
     });
-  
+
     it('should verify all required fields are selected in query', async () => {
       const queryBuilder = {
         leftJoin: jest.fn().mockReturnThis(),
@@ -442,11 +502,13 @@ describe('FeedService', () => {
         select: jest.fn().mockReturnThis(),
         getOne: jest.fn().mockResolvedValue(mockPostEntity),
       };
-  
-      jest.spyOn(postRepository, 'createQueryBuilder').mockReturnValue(queryBuilder as any);
-  
+
+      jest
+        .spyOn(postRepository, 'createQueryBuilder')
+        .mockReturnValue(queryBuilder as any);
+
       await feedService.getPostDetail(1, 1);
-  
+
       expect(queryBuilder.select).toHaveBeenCalledWith([
         'post.post_id',
         'post.content',
@@ -463,9 +525,9 @@ describe('FeedService', () => {
         'commentUser.user_id',
         'commentUser.name',
         'likes.post_like_id',
-        'likes.created_at',     
+        'likes.created_at',
         'likeUser.user_id',
-        'likeUser.name'
+        'likeUser.name',
       ]);
     });
   });

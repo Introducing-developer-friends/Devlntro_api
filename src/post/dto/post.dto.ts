@@ -20,7 +20,9 @@ export class CreatePostDto implements Omit<PostCreateData, 'imageUrl'> {
   image?: Express.Multer.File; // 이미지 파일 선택 입력
 }
 
-export class UpdatePostDto implements Partial<Omit<PostUpdateData, 'imageUrl'>> {
+export class UpdatePostDto
+  implements Partial<Omit<PostUpdateData, 'imageUrl'>>
+{
   @ApiPropertyOptional({
     description: '게시물 내용 (선택 입력)',
     example: '이것은 수정된 게시물의 내용입니다.',

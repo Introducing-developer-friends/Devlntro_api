@@ -16,16 +16,15 @@ import {
   NotificationDeleteResponse,
   NotificationType,
   UserIdResponse,
-  NotificationInfo
+  NotificationInfo,
 } from '../types/notification.types';
-
 
 describe('NotificationsController', () => {
   let controller: NotificationsController;
   let service: NotificationsService;
 
   const mockDate = new Date();
-  
+
   // mock 데이터 설정 (예시 알림 데이터)
   const mockNotification: NotificationInfo = {
     notificationId: 1,
@@ -72,13 +71,15 @@ describe('NotificationsController', () => {
     const mockResponse: NotificationListResponse = {
       statusCode: HttpStatus.OK,
       message: '알림 목록을 성공적으로 조회했습니다.',
-      notifications: [mockNotification]
+      notifications: [mockNotification],
     };
 
     // 알림 목록을 반환하는지 확인
     it('should return notifications list', async () => {
       const req = { user: { userId: 1 } };
-      jest.spyOn(service, 'getNotifications').mockResolvedValue([mockNotification]);
+      jest
+        .spyOn(service, 'getNotifications')
+        .mockResolvedValue([mockNotification]);
 
       const result = await controller.getNotifications(req as any);
       expect(result).toEqual(mockResponse);
@@ -90,7 +91,7 @@ describe('NotificationsController', () => {
   describe('markAsRead', () => {
     const mockResponse: NotificationUpdateResponse = {
       statusCode: HttpStatus.OK,
-      message: '알림이 성공적으로 읽음 처리되었습니다.'
+      message: '알림이 성공적으로 읽음 처리되었습니다.',
     };
 
     // 알림을 읽음으로 처리하는지 확인
@@ -111,25 +112,29 @@ describe('NotificationsController', () => {
       const dto: CreateFriendRequestNotificationDto = {
         receiverId: 2,
         message: 'You have a new friend request',
-        type: NotificationType.FRIEND_REQUEST
+        type: NotificationType.FRIEND_REQUEST,
       };
 
       const mockResponse: NotificationCreateResponse = {
         statusCode: HttpStatus.CREATED,
         message: '친구 요청 알림이 성공적으로 생성되었습니다.',
-        notificationId: 1
+        notificationId: 1,
       };
 
-      jest.spyOn(service, 'createNotification').mockResolvedValue({ notificationId: 1 });
+      jest
+        .spyOn(service, 'createNotification')
+        .mockResolvedValue({ notificationId: 1 });
 
-      const result = await controller.createFriendRequestNotification(req as any, dto);
+      const result = await controller.createFriendRequestNotification(
+        req as any,
+        dto,
+      );
       expect(result).toEqual(mockResponse);
     });
   });
 
   // createLikePostNotification 메서드 테스트
   describe('createLikePostNotification', () => {
-
     // 친구 요청 알림을 생성하는지 확인
     it('should create a like post notification', async () => {
       const req = { user: { userId: 1 } };
@@ -137,25 +142,29 @@ describe('NotificationsController', () => {
         receiverId: 2,
         postId: 123,
         message: 'Someone liked your post',
-        type: NotificationType.LIKE_POST
+        type: NotificationType.LIKE_POST,
       };
 
       const mockResponse: NotificationCreateResponse = {
         statusCode: HttpStatus.CREATED,
         message: '게시물 좋아요 알림이 성공적으로 생성되었습니다.',
-        notificationId: 1
+        notificationId: 1,
       };
 
-      jest.spyOn(service, 'createNotification').mockResolvedValue({ notificationId: 1 });
+      jest
+        .spyOn(service, 'createNotification')
+        .mockResolvedValue({ notificationId: 1 });
 
-      const result = await controller.createLikePostNotification(dto, req as any);
+      const result = await controller.createLikePostNotification(
+        dto,
+        req as any,
+      );
       expect(result).toEqual(mockResponse);
     });
   });
 
   // createCommentNotification 메서드 테스트
   describe('createCommentNotification', () => {
-
     // 게시물 좋아요 알림을 생성하는지 확인
     it('should create a comment notification', async () => {
       const req = { user: { userId: 1 } };
@@ -163,25 +172,29 @@ describe('NotificationsController', () => {
         receiverId: 2,
         postId: 123,
         message: 'Someone commented on your post',
-        type: NotificationType.COMMENT
+        type: NotificationType.COMMENT,
       };
 
       const mockResponse: NotificationCreateResponse = {
         statusCode: HttpStatus.CREATED,
         message: '댓글 알림이 성공적으로 생성되었습니다.',
-        notificationId: 1
+        notificationId: 1,
       };
 
-      jest.spyOn(service, 'createNotification').mockResolvedValue({ notificationId: 1 });
+      jest
+        .spyOn(service, 'createNotification')
+        .mockResolvedValue({ notificationId: 1 });
 
-      const result = await controller.createCommentNotification(dto, req as any);
+      const result = await controller.createCommentNotification(
+        dto,
+        req as any,
+      );
       expect(result).toEqual(mockResponse);
     });
   });
 
   // deleteNotification 메서드 테스트
   describe('createLikeCommentNotification', () => {
-
     // 댓글 알림을 생성하는지 확인
     it('should create a like comment notification', async () => {
       const req = { user: { userId: 1 } };
@@ -189,18 +202,23 @@ describe('NotificationsController', () => {
         receiverId: 2,
         commentId: 456,
         message: 'Someone liked your comment',
-        type: NotificationType.LIKE_COMMENT
+        type: NotificationType.LIKE_COMMENT,
       };
 
       const mockResponse: NotificationCreateResponse = {
         statusCode: HttpStatus.CREATED,
         message: '댓글 좋아요 알림이 성공적으로 생성되었습니다.',
-        notificationId: 1
+        notificationId: 1,
       };
 
-      jest.spyOn(service, 'createNotification').mockResolvedValue({ notificationId: 1 });
+      jest
+        .spyOn(service, 'createNotification')
+        .mockResolvedValue({ notificationId: 1 });
 
-      const result = await controller.createLikeCommentNotification(dto, req as any);
+      const result = await controller.createLikeCommentNotification(
+        dto,
+        req as any,
+      );
       expect(result).toEqual(mockResponse);
     });
   });
@@ -209,7 +227,7 @@ describe('NotificationsController', () => {
   describe('deleteNotification', () => {
     const mockResponse: NotificationDeleteResponse = {
       statusCode: HttpStatus.OK,
-      message: '알림이 성공적으로 삭제되었습니다.'
+      message: '알림이 성공적으로 삭제되었습니다.',
     };
 
     // 알림을 삭제하는지 확인
@@ -225,30 +243,34 @@ describe('NotificationsController', () => {
 
   // deleteMultipleNotifications 메서드 테스트
   describe('deleteMultipleNotifications', () => {
-
     // 여러 알림을 삭제하는지 확인
     it('should delete multiple notifications', async () => {
       const req = { user: { userId: 1 } };
       const dto: DeleteMultipleNotificationsDto = {
-        notificationIds: [1, 2, 3]
+        notificationIds: [1, 2, 3],
       };
 
       const mockResponse: NotificationDeleteResponse = {
         statusCode: HttpStatus.OK,
-        message: '3개의 알림이 성공적으로 삭제되었습니다.'
+        message: '3개의 알림이 성공적으로 삭제되었습니다.',
       };
 
       jest.spyOn(service, 'deleteMultipleNotifications').mockResolvedValue(3);
 
-      const result = await controller.deleteMultipleNotifications(dto, req as any);
+      const result = await controller.deleteMultipleNotifications(
+        dto,
+        req as any,
+      );
       expect(result).toEqual(mockResponse);
-      expect(service.deleteMultipleNotifications).toHaveBeenCalledWith([1, 2, 3], 1);
+      expect(service.deleteMultipleNotifications).toHaveBeenCalledWith(
+        [1, 2, 3],
+        1,
+      );
     });
   });
 
   // findUserIdByLoginId 메서드 테스트
   describe('findUserIdByLoginId', () => {
-
     // loginId에 해당하는 사용자 ID를 반환하는지 확인
     it('should return userId for a given loginId', async () => {
       const loginId = 'user123';
@@ -257,7 +279,7 @@ describe('NotificationsController', () => {
       const mockResponse: UserIdResponse = {
         statusCode: HttpStatus.OK,
         message: '사용자 ID를 성공적으로 조회했습니다.',
-        userId: 1
+        userId: 1,
       };
 
       const result = await controller.findUserIdByLoginId(loginId);

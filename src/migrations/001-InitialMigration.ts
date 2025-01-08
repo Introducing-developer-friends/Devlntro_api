@@ -1,10 +1,10 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class InitialMigration1700000000001 implements MigrationInterface {
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        try {
-            // UserAccount 테이블 생성
-            await queryRunner.query(`
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    try {
+      // UserAccount 테이블 생성
+      await queryRunner.query(`
                 CREATE TABLE user_account (
                     user_id INT AUTO_INCREMENT PRIMARY KEY,
                     login_id VARCHAR(50) NOT NULL,
@@ -18,8 +18,8 @@ export class InitialMigration1700000000001 implements MigrationInterface {
                 )
             `);
 
-            // BusinessProfile 테이블 생성
-            await queryRunner.query(`
+      // BusinessProfile 테이블 생성
+      await queryRunner.query(`
                 CREATE TABLE business_profile (
                     business_profile_id INT AUTO_INCREMENT PRIMARY KEY,
                     user_id INT NOT NULL,
@@ -36,8 +36,8 @@ export class InitialMigration1700000000001 implements MigrationInterface {
                 )
             `);
 
-            // BusinessContact 테이블 생성
-            await queryRunner.query(`
+      // BusinessContact 테이블 생성
+      await queryRunner.query(`
                 CREATE TABLE business_contact (
                     business_contact_id INT AUTO_INCREMENT PRIMARY KEY,
                     user_id INT NOT NULL,
@@ -51,8 +51,8 @@ export class InitialMigration1700000000001 implements MigrationInterface {
                 )
             `);
 
-            // Post 테이블 생성
-            await queryRunner.query(`
+      // Post 테이블 생성
+      await queryRunner.query(`
                 CREATE TABLE post (
                     post_id INT AUTO_INCREMENT PRIMARY KEY,
                     user_id INT NOT NULL,
@@ -67,8 +67,8 @@ export class InitialMigration1700000000001 implements MigrationInterface {
                 )
             `);
 
-            // Comment 테이블 생성
-            await queryRunner.query(`
+      // Comment 테이블 생성
+      await queryRunner.query(`
                 CREATE TABLE comment (
                     comment_id INT AUTO_INCREMENT PRIMARY KEY,
                     post_id INT NOT NULL,
@@ -84,8 +84,8 @@ export class InitialMigration1700000000001 implements MigrationInterface {
                 )
             `);
 
-            // PostLike 테이블 생성
-            await queryRunner.query(`
+      // PostLike 테이블 생성
+      await queryRunner.query(`
                 CREATE TABLE post_like (
                     post_like_id INT AUTO_INCREMENT PRIMARY KEY,
                     post_id INT NOT NULL,
@@ -99,8 +99,8 @@ export class InitialMigration1700000000001 implements MigrationInterface {
                 )
             `);
 
-            // CommentLike 테이블 생성
-            await queryRunner.query(`
+      // CommentLike 테이블 생성
+      await queryRunner.query(`
                 CREATE TABLE comment_like (
                     comment_like_id INT AUTO_INCREMENT PRIMARY KEY,
                     comment_id INT NOT NULL,
@@ -113,39 +113,37 @@ export class InitialMigration1700000000001 implements MigrationInterface {
                     CONSTRAINT UQ_comment_like_user_comment UNIQUE (user_id, comment_id)
                 )
             `);
-
-        } catch (error) {
-            console.error('Migration failed:', error);
-            throw error;
-        }
+    } catch (error) {
+      console.error('Migration failed:', error);
+      throw error;
     }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        try {
-            // 외래키 제약조건 비활성화
-            await queryRunner.query('SET FOREIGN_KEY_CHECKS = 0');
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    try {
+      // 외래키 제약조건 비활성화
+      await queryRunner.query('SET FOREIGN_KEY_CHECKS = 0');
 
-            // 테이블 삭제 (생성의 역순)
-            const tables = [
-                'comment_like',
-                'post_like',
-                'comment',
-                'post',
-                'business_contact',
-                'business_profile',
-                'user_account'
-            ];
+      // 테이블 삭제 (생성의 역순)
+      const tables = [
+        'comment_like',
+        'post_like',
+        'comment',
+        'post',
+        'business_contact',
+        'business_profile',
+        'user_account',
+      ];
 
-            for (const table of tables) {
-                await queryRunner.query(`DROP TABLE IF EXISTS ${table}`);
-            }
+      for (const table of tables) {
+        await queryRunner.query(`DROP TABLE IF EXISTS ${table}`);
+      }
 
-            // 외래키 제약조건 다시 활성화
-            await queryRunner.query('SET FOREIGN_KEY_CHECKS = 1');
-
-        } catch (error) {
-            console.error('Rollback failed:', error);
-            throw error;
-        }
+      // 외래키 제약조건 다시 활성화
+      await queryRunner.query('SET FOREIGN_KEY_CHECKS = 1');
+    } catch (error) {
+      console.error('Rollback failed:', error);
+      throw error;
     }
+  }
 }
