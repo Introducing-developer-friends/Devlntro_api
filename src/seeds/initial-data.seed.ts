@@ -12,7 +12,6 @@ import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
 import { S3Service } from '../s3/s3.service';
 import { ConfigService } from '@nestjs/config';
-import fetch from 'node-fetch';
 
 export const seedInitialData = async (dataSource: DataSource) => {
   const userRepository = dataSource.getRepository(UserAccount);

@@ -63,7 +63,7 @@ export class S3Service implements OnModuleInit, OnModuleDestroy {
   // 모듈 종료 시 S3 클라이언트 리소스 정리
   async onModuleDestroy() {
     if (this.s3Client) {
-      await this.s3Client.destroy();
+      this.s3Client.destroy();
     }
   }
 
