@@ -17,7 +17,12 @@ describe('JwtStrategy', () => {
   // 각 테스트 실행 전 모듈 초기화
   beforeEach(async () => {
     mockConfigService = {
-      get: jest.fn().mockReturnValue('test-secret'),
+      get: jest.fn((key: string) => {
+        if (key === 'JWT_SECRET') {
+          return 'test-secret';
+        }
+        return null;
+      }),
     };
 
     mockUserRepository = {
