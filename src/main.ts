@@ -17,6 +17,9 @@ async function bootstrap() {
     credentials: true,
   });
 
+  if (process.env.NODE_ENV === 'production') {
+    app.setGlobalPrefix('api');
+  }
   // 전역 유효성 검사 파이프 설정
   app.useGlobalPipes(new ValidationPipe());
 
