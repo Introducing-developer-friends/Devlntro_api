@@ -4,7 +4,8 @@ services:
   api:
     build:
       context: .
-      image: kimdoyeon3/dev_intro:${GITHUB_SHA}
+      dockerfile: Dockerfile
+    image: kimdoyeon3/dev_intro:${GITHUB_SHA}
     ports:
       - '3000:3000'
     environment:
@@ -27,8 +28,8 @@ services:
     networks:
       - app-network
     volumes:
-      - ./uploads:/app/uploads 
-      - ./dist:/app/dist 
+      - ./uploads:/app/uploads
+      - ./dist:/app/dist
 
   mysql:
     image: mysql:8.0
