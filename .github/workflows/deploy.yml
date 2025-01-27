@@ -10,17 +10,29 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      # 테스트를 위한 환경 설정이 추가됨
-      - name: Setup Node.js # 테스트 실행을 위해 Node.js 필요
+      - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
           node-version: '20.15.0'
 
-      - name: Install dependencies # 테스트에 필요한 의존성 설치
+      - name: Install dependencies
         run: npm install
+      - name: Setup MySQL for tests
+        uses: mirromutth/mysql-action@v1.1
+        with:
+          mysql version: '8.0'
+          mysql database: 'devintro_test'
+          mysql user: 'test_user'
+          mysql password: 'test_password'
 
-      - name: Run unit tests # 테스트 실행
+      - name: Run all tests
         run: npm run test
+        env:
+          DB_HOST: localhost
+          DB_PORT: 3306
+          DB_USERNAME: test_user
+          DB_PASSWORD: 'test_password'
+          DB_DATABASE: devintro_test
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
@@ -45,29 +57,25 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 새 이미지 pull
-            docker pull kimdoyeon3/dev_intro:${{ github.sha }}
+            cd /home/ubuntu/dev-intro
 
-            # 기존 컨테이너 중지 및 제거
-            docker stop dev_intro_container || true
-            docker rm dev_intro_container || true
+            cat > .env << EOL
+            DB_HOST=mysql
+            DB_PORT=3306
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_DATABASE=${{ secrets.DB_DATABASE }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }}
+            NODE_ENV=production
+            AWS_REGION=${{ secrets.AWS_REGION }}
+            AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
+            AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
+            CLOUDFRONT_DOMAIN=${{ secrets.CLOUDFRONT_DOMAIN }}
+            EOL
 
-            # 이전 이미지들 정리 (최신 2개만 남기고 삭제)
+            sed -i "s|kimdoyeon3/dev_intro:.*|kimdoyeon3/dev_intro:${GITHUB_SHA}|g" docker-compose.yml
+            docker-compose down
             docker images 'kimdoyeon3/dev_intro' --format '{{.ID}}' | head -n -2 | xargs -r docker rmi || true
-
-            # 새 컨테이너 실행
-            docker run -d -p 3000:3000 \
-            -e DB_HOST=${{ secrets.DB_HOST }} \
-            -e DB_PORT=${{ secrets.DB_PORT }} \
-            -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
-            -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-            -e DB_DATABASE=${{ secrets.DB_DATABASE }} \
-            -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-            -e JWT_EXPIRES_IN=${{ secrets.JWT_EXPIRES_IN }} \
-            -e NODE_ENV=production \
-            -e AWS_REGION=${{ secrets.AWS_REGION }} \
-            -e AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }} \
-            -e AWS_SECRET_ACCESS_KEY=${{ secrets.AWS_SECRET_ACCESS_KEY }} \
-            -e AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }} \
-            -e CLOUDFRONT_DOMAIN=${{ secrets.CLOUDFRONT_DOMAIN }} \
-            --name dev_intro_container kimdoyeon3/dev_intro:${{ github.sha }}
+            docker-compose up -d
