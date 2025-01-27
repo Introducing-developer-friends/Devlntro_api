@@ -57,6 +57,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            mkdir -p /home/ubuntu/dev-intro
             cd /home/ubuntu/dev-intro
 
             cat > .env << EOL
@@ -75,7 +76,6 @@ jobs:
             CLOUDFRONT_DOMAIN=${{ secrets.CLOUDFRONT_DOMAIN }}
             EOL
 
-            sed -i "s|kimdoyeon3/dev_intro:.*|kimdoyeon3/dev_intro:${GITHUB_SHA}|g" docker-compose.yml
             docker-compose down
             docker images 'kimdoyeon3/dev_intro' --format '{{.ID}}' | head -n -2 | xargs -r docker rmi || true
             docker-compose up -d
