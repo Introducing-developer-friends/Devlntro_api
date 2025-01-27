@@ -20,7 +20,7 @@ async function bootstrap() {
   if (process.env.NODE_ENV === 'production') {
     app.setGlobalPrefix('api');
   }
-  // 전역 유효성 검사 파이프 설정
+  // 전역 유효성 검사 파이프 설
   app.useGlobalPipes(new ValidationPipe());
 
   // 전역 에러 필터 설정
