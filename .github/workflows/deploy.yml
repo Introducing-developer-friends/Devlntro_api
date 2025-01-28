@@ -61,12 +61,11 @@ jobs:
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
-        env:
-          GITHUB_SHA: ${{ github.sha }} 
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          envs: github_sha
           script: |
             mkdir -p /home/ubuntu/dev-intro
             cd /home/ubuntu/dev-intro
@@ -87,6 +86,7 @@ jobs:
             CLOUDFRONT_DOMAIN=${{ secrets.CLOUDFRONT_DOMAIN }}
             EOL
 
+            export GITHUB_SHA=${{ github.sha }}
             docker-compose down
             docker images 'kimdoyeon3/dev_intro' --format '{{.ID}}' | head -n -2 | xargs -r docker rmi || true
             docker-compose up -d
