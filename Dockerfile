@@ -19,8 +19,4 @@ RUN npm run build
 # 포트 설정 (NestJS 기본 포트는 3000입니다)
 EXPOSE 3000
 
-# 마이그레이션 실행
-RUN npx typeorm-ts-node-commonjs migration:run -d /app/dist/ormconfig.js
-
-# 애플리케이션 시작
-CMD node /app/dist/main.js
+CMD sh -c "NODE_ENV=production npm run migration:run:prod && node dist/main.js"
