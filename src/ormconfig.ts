@@ -3,6 +3,7 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+const srcOrDist = process.env.NODE_ENV === 'production' ? 'dist' : 'src';
 const entitiesExtension = process.env.NODE_ENV === 'production' ? 'js' : 'ts';
 
 export default new DataSource({
@@ -12,7 +13,7 @@ export default new DataSource({
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
-  entities: [`src/**/*.entity.${entitiesExtension}`],
-  migrations: [`${__dirname}/migrations/*{.ts,.js}`],
+  entities: [`${srcOrDist}/**/*.entity.${entitiesExtension}`],
+  migrations: [`${srcOrDist}/migrations/*{.ts,.js}`],
   synchronize: false,
 });
