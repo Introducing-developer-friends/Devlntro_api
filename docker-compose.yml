@@ -2,9 +2,6 @@ version: '3.8'
 
 services:
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
     image: kimdoyeon3/dev_intro:${GITHUB_SHA}
     ports:
       - '3000:3000'
