@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-const srcOrDist = process.env.NODE_ENV === 'production' ? 'dist' : 'src';
+const srcOrDist = process.env.NODE_ENV === 'production' ? '/app/dist' : 'src';
 const entitiesExtension = process.env.NODE_ENV === 'production' ? 'js' : 'ts';
 
 export default new DataSource({
