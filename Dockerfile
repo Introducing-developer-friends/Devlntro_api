@@ -13,8 +13,7 @@ RUN npm install
 # 소스 코드 복사
 COPY . .
 
-# TypeScript 컴파일 (빌드 과정 로그 출력)
-RUN npm run build && cp src/ormconfig.ts dist/ormconfig.js
+RUN npm run build
 
 # 포트 설정 (NestJS 기본 포트는 3000입니다)
 EXPOSE 3000
