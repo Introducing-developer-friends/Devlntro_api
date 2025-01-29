@@ -34,7 +34,7 @@ interface CustomRequest extends Request {
     userId: number;
   };
 }
-// 알림 관련 API 컨트롤러@ApiTags('notifications')
+
 @ApiBearerAuth()
 @Controller('notifications')
 @UseGuards(JwtAuthGuard)
