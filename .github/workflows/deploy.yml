@@ -70,6 +70,10 @@ jobs:
             mkdir -p /home/ubuntu/dev-intro
             cd /home/ubuntu/dev-intro
 
+            docker-compose down
+            docker images 'kimdoyeon3/dev_intro' --format '{{.ID}}' | head -n -2 | xargs -r docker rmi || true
+            docker system prune -f
+
             cat > .env << EOL
             DB_HOST=mysql
             DB_PORT=3306
@@ -87,6 +91,5 @@ jobs:
             EOL
 
             export GITHUB_SHA=${{ github.sha }}
-            docker-compose down
-            docker images 'kimdoyeon3/dev_intro' --format '{{.ID}}' | head -n -2 | xargs -r docker rmi || true
+            sleep 10
             docker-compose up -d
