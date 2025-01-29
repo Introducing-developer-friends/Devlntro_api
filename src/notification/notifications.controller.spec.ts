@@ -25,7 +25,6 @@ describe('NotificationsController', () => {
 
   const mockDate = new Date();
 
-  // mock 데이터 설정 (예시 알림 데이터)
   const mockNotification: NotificationInfo = {
     notificationId: 1,
     type: NotificationType.COMMENT,
