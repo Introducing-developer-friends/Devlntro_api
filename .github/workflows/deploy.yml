@@ -91,5 +91,5 @@ jobs:
             EOL
 
             export GITHUB_SHA=${{ github.sha }}
-            sleep 10
+            sleep 20
             docker-compose up -d
