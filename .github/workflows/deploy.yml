@@ -73,7 +73,7 @@ jobs:
             cat > .env << EOL
             DB_HOST=mysql
             DB_PORT=3306
-            DB_USERNAME=devintro_user 
+            DB_USERNAME=${{ secrets.DB_USERNAME}}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             DB_DATABASE=${{ secrets.DB_DATABASE }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
