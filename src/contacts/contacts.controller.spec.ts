@@ -232,7 +232,6 @@ describe('ContactsController', () => {
     });
   });
 
-  // getReceivedRequests 메서드에 대한 테스트
   describe('getReceivedRequests', () => {
     const mockRequests = [
       {
