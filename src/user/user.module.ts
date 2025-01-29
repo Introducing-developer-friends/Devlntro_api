@@ -8,7 +8,10 @@ import { BusinessProfile } from '../entities/business-profile.entity';
 import { AuthModule } from 'src/auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserAccount, BusinessProfile]), AuthModule],
+  imports: [
+    TypeOrmModule.forFeature([UserAccount, BusinessProfile]),
+    AuthModule,
+  ],
   controllers: [UserController],
   providers: [UserService],
   exports: [UserService],

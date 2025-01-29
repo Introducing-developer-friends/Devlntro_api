@@ -5,29 +5,25 @@ import { Post } from 'src/entities/post.entity';
 @Injectable()
 export class SortingService {
   sortPosts(posts: Post[], sortOption: SortOption): PostBasicInfo[] {
-
     // 게시물 정렬 메서드
     const sortedPosts = [...posts].sort((a, b) => {
       switch (sortOption) {
         case SortOption.LIKES:
-
           // 좋아요 수 기준 내림차순 정렬
           return (b.post_like_count || 0) - (a.post_like_count || 0);
 
         case SortOption.COMMENTS:
-
           // 댓글 수 기준 내림차순 정렬
           return (b.comments_count || 0) - (a.comments_count || 0);
 
         case SortOption.LATEST:
         default:
-
           // 생성일 기준 내림차순 정렬
           return this.compareDates(b.created_at, a.created_at);
       }
     });
 
-    return sortedPosts.map(post => ({
+    return sortedPosts.map((post) => ({
       postId: post.post_id,
       createrId: post.user?.user_id,
       createrName: post.user?.name,

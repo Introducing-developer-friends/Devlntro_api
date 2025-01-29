@@ -5,10 +5,10 @@ import { UserService } from './user.service';
 import { UpdateBusinessProfileDto } from './dto/update-business-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
-import { 
+import {
   BusinessProfileResponse,
   PasswordChangeResponse,
-  AccountDeleteResponse 
+  AccountDeleteResponse,
 } from '../types/user.types';
 
 // UserController 테스트 스위트
@@ -25,7 +25,7 @@ describe('UserController', () => {
       department: 'IT',
       position: 'Developer',
       email: 'test@test.com',
-      phone: '010-1234-5678'
+      phone: '010-1234-5678',
     };
 
     // UserService의 메서드를 모의로 정의하여 가짜 응답을 반환
@@ -60,25 +60,25 @@ describe('UserController', () => {
         department: 'IT',
         position: 'Developer',
         email: 'test@test.com',
-        phone: '010-1234-5678'
+        phone: '010-1234-5678',
       };
 
       const result = await controller.updateBusinessProfile(
         mockRequest as any,
-        updateProfileDto
+        updateProfileDto,
       );
 
       // 서비스에 올바른 데이터가 전달되었는지 검증
       expect(mockUserService.updateBusinessProfile).toHaveBeenCalledWith(
         mockRequest.user.userId,
-        updateProfileDto
+        updateProfileDto,
       );
 
       // 응답이 예상한 형식을 따르는지 검증
       expect(result).toEqual<BusinessProfileResponse>({
         statusCode: HttpStatus.OK,
         message: '프로필 정보가 성공적으로 수정되었습니다.',
-        profile: expect.objectContaining(updateProfileDto)
+        profile: expect.objectContaining(updateProfileDto),
       });
     });
   });
@@ -95,17 +95,17 @@ describe('UserController', () => {
 
       const result = await controller.changePassword(
         mockRequest as any,
-        changePasswordDto
+        changePasswordDto,
       );
 
       expect(mockUserService.changePassword).toHaveBeenCalledWith(
         mockRequest.user.userId,
-        changePasswordDto
+        changePasswordDto,
       );
 
       expect(result).toEqual<PasswordChangeResponse>({
         statusCode: HttpStatus.OK,
-        message: '비밀번호가 성공적으로 변경되었습니다.'
+        message: '비밀번호가 성공적으로 변경되었습니다.',
       });
     });
   });
@@ -115,23 +115,23 @@ describe('UserController', () => {
     it('should properly pass data to service and return formatted response', async () => {
       const mockRequest = { user: { userId: 1 } };
       const deleteAccountDto: DeleteAccountDto = {
-        password: 'password123'
+        password: 'password123',
       };
 
       const result = await controller.deleteAccount(
         mockRequest as any,
-        deleteAccountDto
+        deleteAccountDto,
       );
 
       expect(mockUserService.deleteAccount).toHaveBeenCalledWith(
         mockRequest.user.userId,
-        deleteAccountDto
+        deleteAccountDto,
       );
-      
+
       // 기대하는 응답 및 mock 호출 확인
       expect(result).toEqual<AccountDeleteResponse>({
         statusCode: HttpStatus.OK,
-        message: '회원 탈퇴가 성공적으로 처리되었습니다.'
+        message: '회원 탈퇴가 성공적으로 처리되었습니다.',
       });
     });
   });

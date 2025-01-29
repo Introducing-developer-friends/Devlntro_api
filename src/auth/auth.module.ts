@@ -19,10 +19,12 @@ import { RefreshToken } from 'src/entities/refresh-token.entity';
       inject: [ConfigService], // ConfigService를 주입
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'), // .env 파일에서 JWT_SECRET을 가져옴
-        signOptions: { expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1h' }, // 토큰 만료 시간 설정
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1h',
+        }, // 토큰 만료 시간 설정
       }),
     }),
-    TypeOrmModule.forFeature([UserAccount, BusinessProfile, RefreshToken])
+    TypeOrmModule.forFeature([UserAccount, BusinessProfile, RefreshToken]),
   ],
   providers: [AuthService, JwtStrategy], // AuthService와 JwtStrategy를 주입
   controllers: [AuthController], // AuthController를 모듈에 연결

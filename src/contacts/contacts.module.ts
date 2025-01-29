@@ -8,7 +8,14 @@ import { BusinessProfile } from '../entities/business-profile.entity';
 import { FriendRequest } from '../entities/friend-request.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([BusinessContact, UserAccount, BusinessProfile, FriendRequest])],
+  imports: [
+    TypeOrmModule.forFeature([
+      BusinessContact,
+      UserAccount,
+      BusinessProfile,
+      FriendRequest,
+    ]),
+  ],
   controllers: [ContactsController],
   providers: [ContactsService],
 })

@@ -1,11 +1,12 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateNotificationTable1700000000003 implements MigrationInterface {
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        try {
-
-            // notification 테이블 생성
-            await queryRunner.query(`
+export class CreateNotificationTable1700000000003
+  implements MigrationInterface
+{
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    try {
+      // notification 테이블 생성
+      await queryRunner.query(`
                 CREATE TABLE notification (
                     notification_id INT AUTO_INCREMENT PRIMARY KEY,
                     sender_id INT NOT NULL,
@@ -28,27 +29,24 @@ export class CreateNotificationTable1700000000003 implements MigrationInterface 
                 )
             `);
 
-            console.log('Notification table created successfully');
-
-        } catch (error) {
-            console.error('Migration failed:', error);
-            throw error;
-        }
+      console.log('Notification table created successfully');
+    } catch (error) {
+      console.error('Migration failed:', error);
+      throw error;
     }
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        try {
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    try {
+      // 외래 키 제약 조건을 비활성화한 후 테이블 삭제
+      await queryRunner.query('SET FOREIGN_KEY_CHECKS = 0');
+      await queryRunner.query('DROP TABLE IF EXISTS notification');
+      await queryRunner.query('SET FOREIGN_KEY_CHECKS = 1');
 
-            // 외래 키 제약 조건을 비활성화한 후 테이블 삭제
-            await queryRunner.query('SET FOREIGN_KEY_CHECKS = 0');
-            await queryRunner.query('DROP TABLE IF EXISTS notification');
-            await queryRunner.query('SET FOREIGN_KEY_CHECKS = 1');
-            
-            console.log('Notification table dropped successfully');
-
-        } catch (error) {
-            console.error('Rollback failed:', error);
-            throw error;
-        }
+      console.log('Notification table dropped successfully');
+    } catch (error) {
+      console.error('Rollback failed:', error);
+      throw error;
     }
+  }
 }
