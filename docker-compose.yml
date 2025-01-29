@@ -38,7 +38,7 @@ services:
         limits:
           memory: 256M
         reservations:
-          memory: 256M
+          memory: 128M
     environment:
       - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
       - MYSQL_DATABASE=${DB_DATABASE}
@@ -53,8 +53,8 @@ services:
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
-      - --max_allowed_packet=32M
-      - --innodb_buffer_pool_size=128M
+      - --max_allowed_packet=16M
+      - --innodb_buffer_pool_size=64M
     healthcheck:
       test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
       interval: 10s
