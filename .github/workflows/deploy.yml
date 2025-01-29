@@ -71,7 +71,12 @@ jobs:
             cd /home/ubuntu/dev-intro
 
             docker-compose down
-            docker images 'kimdoyeon3/dev_intro' --format '{{.ID}}' | head -n -2 | xargs -r docker rmi || true
+
+            export GITHUB_SHA=${{ github.sha }}
+            docker-compose up -d
+
+            docker images 'kimdoyeon3/dev_intro' --format '{{.ID}}' | tail -n +2 | xargs -r docker rmi
+
             docker system prune -f
 
             cat > .env << EOL
@@ -89,7 +94,3 @@ jobs:
             AWS_S3_BUCKET_NAME=${{ secrets.AWS_S3_BUCKET_NAME }}
             CLOUDFRONT_DOMAIN=${{ secrets.CLOUDFRONT_DOMAIN }}
             EOL
-
-            export GITHUB_SHA=${{ github.sha }}
-            sleep 20
-            docker-compose up -d
