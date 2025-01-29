@@ -31,26 +31,24 @@ import {
   PostLikeResponse,
 } from '../types/post.types';
 
-// JWT로부터 추출된 사용자 정보를 포함하는 요청 인터페이스
 interface CustomRequest extends Request {
   user: {
-    userId: number; // userId 타입을 명시적으로 정의
+    userId: number;
   };
 }
 
-@ApiTags('posts') // Swagger에서 그룹화
-@ApiBearerAuth() // JWT 토큰을 사용함을 명시
+@ApiTags('posts')
+@ApiBearerAuth() //
 @Controller('posts')
-@UseGuards(JwtAuthGuard) // JWT 인증 가드 적용
+@UseGuards(JwtAuthGuard)
 export class PostController {
   constructor(
     private readonly postService: PostService,
     private readonly s3Service: S3Service,
   ) {}
 
-  // 게시물 작성 엔드포인트 (POST 요청)
   @Post()
-  @UseInterceptors(FileInterceptor('image')) // 파일 업로드 인터셉터 적용
+  @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: '게시물 작성' })
   @ApiResponse({
@@ -68,7 +66,6 @@ export class PostController {
   ): Promise<PostCreateResponse> {
     let imageUrl = null;
 
-    // 파일이 존재할 경우 이미지 업로드 처리
     if (file && file.size > 0) {
       const sanitizedFileName = file.originalname
         .replace(/\s+/g, '-')
@@ -77,13 +74,11 @@ export class PostController {
       imageUrl = await this.s3Service.uploadFile(file, key);
     }
 
-    // 게시물 생성 서비스 호출
     const post = await this.postService.createPost(req.user.userId, {
       content: createPostDto.content,
       imageUrl,
     });
 
-    // 성공 응답 반환
     return {
       statusCode: HttpStatus.CREATED,
       message: '게시물이 성공적으로 작성되었습니다.',
@@ -92,7 +87,6 @@ export class PostController {
     };
   }
 
-  // 게시물 수정 엔드포인트 (PUT 요청)
   @Put(':postId')
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
@@ -117,7 +111,6 @@ export class PostController {
   ): Promise<PostUpdateResponse> {
     let imageUrl = null;
 
-    // 파일이 존재할 경우 이미지 업로드 처리
     if (file) {
       const sanitizedFileName = file.originalname
         .replace(/\s+/g, '-')
@@ -137,7 +130,6 @@ export class PostController {
     };
   }
 
-  // 게시물 좋아요/취소 엔드포인트 (POST 요청)
   @Delete(':postId')
   @ApiOperation({ summary: '게시물 삭제' })
   @ApiResponse({
@@ -154,7 +146,6 @@ export class PostController {
   ): Promise<PostDeleteResponse> {
     await this.postService.deletePost(req.user.userId, postId);
 
-    // 성공 응답 반환
     return {
       statusCode: HttpStatus.OK,
       message: '게시물이 성공적으로 삭제되었습니다.',
