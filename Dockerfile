@@ -18,4 +18,4 @@ RUN npm run build
 # 포트 설정 (NestJS 기본 포트는 3000입니다)
 EXPOSE 3000
 
-CMD sh -c "NODE_ENV=production npm run migration:run:prod && node dist/main.js"
+CMD sh -c "sleep 20 &&NODE_ENV=production npm run migration:run:prod && node dist/main.js"
