@@ -25,7 +25,6 @@ export class PostService {
     private readonly s3Service: S3Service,
   ) {}
 
-  // 게시물을 생성하는 메서드
   async createPost(
     userId: number,
     createPostData: PostCreateData,
