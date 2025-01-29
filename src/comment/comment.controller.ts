@@ -29,7 +29,7 @@ interface CustomRequest extends Request {
   };
 }
 
-@ApiTags('Comments') // Swagger에서 이 컨트롤러를 'Comments' 태그로 그룹화
+@ApiTags('Comments')
 @ApiBearerAuth()
 @Controller('posts/:postId/comments')
 @UseGuards(JwtAuthGuard)
