@@ -5,7 +5,6 @@ export class CreateRefreshTokenTable1700000000004
 {
   public async up(queryRunner: QueryRunner): Promise<void> {
     try {
-      // refresh_token 테이블 생성
       await queryRunner.query(`
                 CREATE TABLE refresh_token (
                     refresh_token_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -29,7 +28,6 @@ export class CreateRefreshTokenTable1700000000004
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     try {
-      // 외래 키 제약 조건을 비활성화한 후 테이블 삭제
       await queryRunner.query('SET FOREIGN_KEY_CHECKS = 0');
       await queryRunner.query('DROP TABLE IF EXISTS refresh_token');
       await queryRunner.query('SET FOREIGN_KEY_CHECKS = 1');

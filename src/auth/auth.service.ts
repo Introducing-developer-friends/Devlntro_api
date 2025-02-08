@@ -1,11 +1,11 @@
-import { Injectable, BadRequestException } from '@nestjs/common'; // 의존성 주입을 위해 Injectable 사용
-import { JwtService } from '@nestjs/jwt'; // JWT 토큰 생성을 위한 JwtService
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, QueryRunner, MoreThan } from 'typeorm';
 import { UserAccount } from '../entities/user-account.entity';
 import { BusinessProfile } from '../entities/business-profile.entity';
 import { CreateUserDto } from './dto/create-user.dto';
-import { LoginDto } from './dto/login.dto'; // 로그인 요청을 위한 DTO
+import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import {
   AuthResult,
@@ -16,18 +16,17 @@ import {
 import { RefreshToken } from '../entities/refresh-token.entity';
 import { ConfigService } from '@nestjs/config';
 
-@Injectable() // NestJS의 의존성 주입 데코레이터
+@Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(UserAccount) // UserAccount 리포지토리 의존성 주입
+    @InjectRepository(UserAccount)
     private readonly userRepository: Repository<UserAccount>,
     @InjectRepository(RefreshToken)
     private readonly refreshTokenRepository: Repository<RefreshToken>,
-    private readonly jwtService: JwtService, // JWT 토큰 생성을 위한 JwtService 주입
+    private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
 
-  // 아이디 중복 확인
   async checkIdAvailability(login_id: string): Promise<IdCheckResult> {
     const user = await this.userRepository
       .createQueryBuilder('user')
@@ -59,7 +58,6 @@ export class AuthService {
     }
   }
 
-  // 회원가입 로직
   async register(createUserDto: CreateUserDto): Promise<RegisterResult> {
     const queryRunner =
       this.userRepository.manager.connection.createQueryRunner();
@@ -97,9 +95,7 @@ export class AuthService {
     }
   }
 
-  // 로그인 로직
   async login(loginDto: LoginDto): Promise<AuthResult | null> {
-    // 사용자 조회
     const user = await this.userRepository
       .createQueryBuilder('user')
       .select(['user.user_id', 'user.login_id', 'user.password'])
@@ -135,7 +131,6 @@ export class AuthService {
       this.jwtService.signAsync(refreshPayload, { expiresIn: '7d' }),
     ]);
 
-    // 토큰 버전 업데이트
     await this.userRepository.update(
       { user_id: user.user_id },
       { currentTokenVersion: tokenVersion },
@@ -144,7 +139,7 @@ export class AuthService {
     await this.refreshTokenRepository.save({
       user,
       token: refreshToken,
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7일 후
+      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     });
 
     return {
@@ -179,7 +174,6 @@ export class AuthService {
         return null;
       }
 
-      // 버전 또는 시퀀스 번호 추가
       const tokenVersion = Math.floor(Date.now() / 1000);
 
       const newAccessToken = await this.jwtService.signAsync(
@@ -192,7 +186,6 @@ export class AuthService {
         { expiresIn: '1h' },
       );
 
-      // 사용자의 현재 토큰 버전 저장
       await this.userRepository.update(
         { user_id: tokenEntity.user.user_id },
         { currentTokenVersion: tokenVersion },
@@ -209,7 +202,6 @@ export class AuthService {
     try {
       const now = new Date();
 
-      // 먼저 이미 로그아웃 된 상태인지 확인
       const hasActiveTokens = await this.refreshTokenRepository
         .createQueryBuilder('refreshToken')
         .where('refreshToken.user_id = :userId', { userId })
@@ -220,7 +212,6 @@ export class AuthService {
         throw new BadRequestException('이미 로그아웃된 상태입니다.');
       }
 
-      // 로그아웃 처리
       const result = await this.refreshTokenRepository
         .createQueryBuilder()
         .update(RefreshToken)
@@ -229,7 +220,6 @@ export class AuthService {
         .andWhere('deleted_at IS NULL')
         .execute();
 
-      // 업데이트 결과 확인 추가
       if (!result.affected) {
         throw new BadRequestException('로그아웃 처리에 실패했습니다.');
       }

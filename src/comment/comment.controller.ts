@@ -19,13 +19,12 @@ import {
   ApiBearerAuth,
   ApiParam,
 } from '@nestjs/swagger';
-import { Request } from 'express'; // Express Request 타입 임포트
+import { Request } from 'express';
 import { CommentResponse } from '../types/comment.types';
 
-// JWT로부터 추출된 사용자 정보를 포함하는 요청 인터페이스
 interface CustomRequest extends Request {
   user: {
-    userId: number; // userId 타입을 명시적으로 정의
+    userId: number;
   };
 }
 
@@ -36,7 +35,6 @@ interface CustomRequest extends Request {
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
-  // 댓글 작성 엔드포인트
   @Post()
   @ApiOperation({
     summary: '댓글 작성',
@@ -69,7 +67,6 @@ export class CommentController {
     };
   }
 
-  // 댓글 수정 엔드포인트
   @Put(':commentId')
   @ApiOperation({
     summary: '댓글 수정',
@@ -108,7 +105,6 @@ export class CommentController {
     };
   }
 
-  // 댓글 삭제 엔드포인트
   @Delete(':commentId')
   @ApiOperation({ summary: '댓글 삭제', description: '댓글을 삭제합니다.' })
   @ApiParam({ name: 'postId', description: '삭제할 댓글이 속한 게시물의 ID' })
@@ -134,7 +130,6 @@ export class CommentController {
     };
   }
 
-  // 댓글 좋아요 엔드포인트
   @Post(':commentId/like')
   @ApiOperation({
     summary: '댓글 좋아요',

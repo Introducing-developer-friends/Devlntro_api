@@ -10,7 +10,7 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { FeedService } from './feed.service';
 import { FeedQueryDto } from '../dto/feed-query.dto';
-import { Request } from 'express'; // Express Request 타입 임포트
+import { Request } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -26,17 +26,16 @@ import {
   PostDetailResponse,
 } from '../types/feed.types';
 
-// JWT로부터 추출된 사용자 정보를 포함하는 요청 인터페이스
 interface CustomRequest extends Request {
   user: {
-    userId: number; // userId 타입을 명시적으로 정의
+    userId: number;
   };
 }
 
-@ApiTags('Feed') // Swagger 태그 추가
-@ApiBearerAuth() // JWT 인증 사용 명시
+@ApiTags('Feed')
+@ApiBearerAuth()
 @Controller('posts')
-@UseGuards(JwtAuthGuard) // JWT 인증을 사용하는 Guard
+@UseGuards(JwtAuthGuard)
 export class FeedController {
   constructor(private readonly feedService: FeedService) {}
 
@@ -111,19 +110,18 @@ export class FeedController {
       },
     },
   })
-  @Get() // 피드 조회 핸들러 메서드
+  @Get()
   async getFeed(
     @Req() req: CustomRequest,
     @Query() query: FeedQueryDto,
   ): Promise<FeedResponse> {
-    const { userId } = req.user; // JWT에서 추출된 사용자 ID 가져오기
+    const { userId } = req.user;
     const {
       sort = SortOption.LATEST,
       filter = FilterType.ALL,
       specificUserId,
     } = query;
 
-    // FeedService를 통해 피드 조회
     const posts = await this.feedService.getFeed(
       userId,
       sort,
@@ -131,7 +129,6 @@ export class FeedController {
       specificUserId,
     );
 
-    // 응답 데이터 반환
     return {
       statusCode: HttpStatus.OK,
       message: '피드를 성공적으로 조회했습니다.',
@@ -211,7 +208,7 @@ export class FeedController {
       },
     },
   })
-  @Get(':postId') // 게시물 상세 조회 핸들러 메서드
+  @Get(':postId')
   async getPostDetail(
     @Req() req: CustomRequest,
     @Param('postId') postId: number,
@@ -219,11 +216,10 @@ export class FeedController {
     const { userId } = req.user;
     const post = await this.feedService.getPostDetail(userId, postId);
 
-    // 응답 데이터 반환
     return {
       statusCode: HttpStatus.OK,
       message: '게시물을 성공적으로 조회했습니다.',
-      ...post, // 게시물 상세 정보 반환
+      ...post,
     };
   }
 }

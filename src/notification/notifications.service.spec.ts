@@ -20,7 +20,7 @@ describe('NotificationsService', () => {
   let commentRepository: Repository<Comment>;
 
   const mockDate = new Date();
-  // 모의 UserAccount 데이터 설정
+
   const mockUser: Partial<UserAccount> = {
     user_id: 1,
     login_id: 'test',
@@ -38,7 +38,6 @@ describe('NotificationsService', () => {
     notifications: [],
   };
 
-  // QueryBuilder 모킹 함수
   const createMockQueryBuilder = () => ({
     leftJoin: jest.fn().mockReturnThis(),
     innerJoin: jest.fn().mockReturnThis(),
@@ -103,12 +102,10 @@ describe('NotificationsService', () => {
     );
   });
 
-  // 서비스 정의 테스트
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  // getNotifications 메서드 테스트
   describe('getNotifications', () => {
     const mockNotification = {
       notification_id: 1,
@@ -158,9 +155,7 @@ describe('NotificationsService', () => {
     });
   });
 
-  // markAsRead 메서드 테스트
   describe('markAsRead', () => {
-    // 알림을 읽음 처리하는지 테스트
     it('should mark notification as read', async () => {
       const queryBuilder = createMockQueryBuilder();
       queryBuilder.execute.mockResolvedValue({ affected: 1 });
@@ -173,7 +168,6 @@ describe('NotificationsService', () => {
       expect(queryBuilder.set).toHaveBeenCalledWith({ isRead: true });
     });
 
-    // 알림이 없을 경우 NotFoundException을 던지는지 테스트
     it('should throw NotFoundException if notification not found', async () => {
       const queryBuilder = createMockQueryBuilder();
       queryBuilder.execute.mockResolvedValue({ affected: 0 });
@@ -205,7 +199,6 @@ describe('NotificationsService', () => {
     });
   });
 
-  // createNotification 메서드 테스트
   describe('createNotification', () => {
     const createData: NotificationCreateData = {
       senderId: 1,
@@ -215,10 +208,9 @@ describe('NotificationsService', () => {
       postId: 1,
     };
 
-    // 알림을 성공적으로 생성하는지 테스트
     it('should create notification successfully', async () => {
-      const mockReceiver = { ...mockUser, user_id: 2 }; // 수신자
-      const mockSender = { ...mockUser, user_id: 1 }; // 발신자
+      const mockReceiver = { ...mockUser, user_id: 2 };
+      const mockSender = { ...mockUser, user_id: 1 };
 
       const queryBuilder = createMockQueryBuilder();
       queryBuilder.getMany.mockResolvedValue([mockSender, mockReceiver]);
@@ -321,9 +313,7 @@ describe('NotificationsService', () => {
     });
   });
 
-  // deleteNotification 메서드 테스트
   describe('deleteNotification', () => {
-    // 알림을 성공적으로 삭제하는지 테스트
     it('should delete notification', async () => {
       jest
         .spyOn(notificationRepository, 'softDelete')
@@ -336,7 +326,6 @@ describe('NotificationsService', () => {
       });
     });
 
-    // 알림이 없을 경우 NotFoundException을 던지는지 테스트
     it('should throw NotFoundException if notification not found', async () => {
       jest
         .spyOn(notificationRepository, 'softDelete')
@@ -356,7 +345,6 @@ describe('NotificationsService', () => {
     });
   });
 
-  // deleteMultipleNotifications 메서드 테스트
   describe('deleteMultipleNotifications', () => {
     it('should delete multiple notifications', async () => {
       const mockNotifications = [
@@ -442,7 +430,6 @@ describe('NotificationsService', () => {
     });
   });
 
-  // findUserIdByLoginId 메서드 테스트
   describe('findUserIdByLoginId', () => {
     it('should return user id when user found', async () => {
       const queryBuilder = createMockQueryBuilder();
@@ -456,7 +443,6 @@ describe('NotificationsService', () => {
       expect(result).toBe(mockUser.user_id);
     });
 
-    // 사용자가 존재하지 않을 경우 NotFoundException을 던지는지 테스트
     it('should throw NotFoundException when user not found', async () => {
       const queryBuilder = createMockQueryBuilder();
       queryBuilder.getOne.mockResolvedValue(null);

@@ -241,7 +241,7 @@ export class ContactsController {
   })
   async deleteContact(
     @Request() req: CustomRequest,
-    @Param('contactUserId') contactUserId: number,
+    @Param('contactId') contactUserId: number,
   ): Promise<ContactResponse> {
     await this.contactsService.deleteContact(req.user.userId, contactUserId);
 

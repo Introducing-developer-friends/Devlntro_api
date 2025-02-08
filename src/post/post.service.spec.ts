@@ -11,13 +11,11 @@ import {
 } from '@nestjs/common';
 import { PostCreateData, PostUpdateData } from '../types/post.types';
 
-// Mock Repository 타입 정의
 type MockRepository<T> = {
   createQueryBuilder: jest.Mock;
   findOne: jest.Mock<Promise<Partial<T> | null>, [FindOneOptions<T>?]>;
 };
 
-// Mock PostLike Repository 타입 정의
 type MockPostLikeRepository = MockRepository<PostLike> & {
   delete: jest.Mock;
 };
@@ -29,9 +27,7 @@ describe('PostService', () => {
   let mockEntityManager: { findOne: jest.Mock };
   let mockS3Service: { deleteFile: jest.Mock };
 
-  // Mock 객체들을 설정하고 테스트 모듈을 구성하는 beforeEach 블록
   beforeEach(async () => {
-    // QueryBuilder에 대한 모킹 설정
     const mockInsertQueryBuilder = {
       insert: jest.fn().mockReturnThis(),
       into: jest.fn().mockReturnThis(),
@@ -61,7 +57,6 @@ describe('PostService', () => {
       execute: jest.fn(),
     };
 
-    // Mock Repository 설정
     mockPostRepository = {
       createQueryBuilder: jest.fn().mockReturnValue({
         ...mockInsertQueryBuilder,
@@ -89,7 +84,6 @@ describe('PostService', () => {
       deleteFile: jest.fn(),
     };
 
-    // PostService 테스트 모듈 설정
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PostService,
@@ -106,21 +100,17 @@ describe('PostService', () => {
     service = module.get<PostService>(PostService);
   });
 
-  // 게시물 생성 관련 테스트
   describe('createPost', () => {
-    // 게시물 생성 성공 시 로직 테스트
     it('should create a post successfully', async () => {
       const createPostData: PostCreateData = {
         content: 'Test Content',
         imageUrl: 'test-url',
       };
 
-      // QueryBuilder의 execute 결과 모킹
       mockPostRepository.createQueryBuilder().execute.mockResolvedValueOnce({
         identifiers: [{ post_id: 1 }],
       });
 
-      // 서비스 호출
       const result = await service.createPost(1, createPostData);
 
       expect(result).toEqual({
@@ -158,9 +148,7 @@ describe('PostService', () => {
     });
   });
 
-  // 게시물 업데이트 관련 테스트
   describe('updatePost', () => {
-    // 게시물 업데이트 성공 시 로직 테스트
     it('should update a post successfully', async () => {
       const updateData: PostUpdateData = {
         content: 'Updated',
@@ -181,7 +169,6 @@ describe('PostService', () => {
     });
 
     it('should handle image update with S3 deletion', async () => {
-      // 기존 이미지 URL 모킹
       mockPostRepository.createQueryBuilder().getOne.mockResolvedValueOnce({
         image_url: 'https://amazonaws.com/old-key',
       });
@@ -196,7 +183,6 @@ describe('PostService', () => {
     });
 
     it('should handle S3 deletion failure gracefully', async () => {
-      // S3 삭제 실패 모킹
       mockPostRepository.createQueryBuilder().getOne.mockResolvedValueOnce({
         image_url: 'https://amazonaws.com/old-key',
       });
@@ -207,7 +193,6 @@ describe('PostService', () => {
 
       mockS3Service.deleteFile.mockRejectedValueOnce(new Error('S3 Error'));
 
-      // Should not throw error even if S3 deletion fails
       await expect(
         service.updatePost(1, 1, { imageUrl: 'new-url' }),
       ).resolves.not.toThrow();
@@ -222,7 +207,6 @@ describe('PostService', () => {
 
       await service.updatePost(1, 1, updateData);
 
-      // image_url 관련 쿼리가 실행되지 않았는지 확인
       expect(
         mockPostRepository.createQueryBuilder().select,
       ).not.toHaveBeenCalled();
@@ -270,12 +254,10 @@ describe('PostService', () => {
     });
 
     it('should throw NotFoundException when trying to update with wrong userId', async () => {
-      // getOne에서 null을 반환하도록 설정
       mockPostRepository
         .createQueryBuilder()
         .getOne.mockResolvedValueOnce(null);
 
-      // execute는 호출되지 않아야 함
       mockPostRepository
         .createQueryBuilder()
         .execute.mockResolvedValueOnce(undefined);
@@ -284,25 +266,20 @@ describe('PostService', () => {
         service.updatePost(2, 1, { imageUrl: 'new-url' }),
       ).rejects.toThrow(NotFoundException);
 
-      // getOne이 호출되었는지 확인
       expect(mockPostRepository.createQueryBuilder().getOne).toHaveBeenCalled();
     });
 
     it('should handle null values in update data', async () => {
-      // Post 조회 결과 설정 (이미지 URL 포함)
       mockPostRepository.createQueryBuilder().getOne.mockResolvedValueOnce({
         image_url: 'old-url',
       });
 
-      // update 실행 결과 설정
       mockPostRepository.createQueryBuilder().execute.mockResolvedValueOnce({
         affected: 1,
       });
 
-      // content가 null인 업데이트 실행
       await service.updatePost(1, 1, { content: null });
 
-      // update 쿼리가 호출되었는지 확인
       expect(mockPostRepository.createQueryBuilder().update).toHaveBeenCalled();
       expect(mockPostRepository.createQueryBuilder().set).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -314,7 +291,6 @@ describe('PostService', () => {
 
   describe('deletePost', () => {
     it('should delete a post and its image successfully', async () => {
-      // 게시물 데이터와 이미지 URL 모킹
       mockPostRepository.createQueryBuilder().getOne.mockResolvedValueOnce({
         image_url: 'https://amazonaws.com/test-key',
       });
@@ -323,15 +299,12 @@ describe('PostService', () => {
         affected: 1,
       });
 
-      // 서비스 호출
       await service.deletePost(1, 1);
 
-      // S3 삭제 호출 확인
       expect(mockS3Service.deleteFile).toHaveBeenCalledWith('test-key');
     });
 
     it('should handle invalid image URL during deletion', async () => {
-      // 잘못된 이미지 URL
       mockPostRepository.createQueryBuilder().getOne.mockResolvedValueOnce({
         image_url: 'invalid-url',
       });
@@ -344,7 +317,6 @@ describe('PostService', () => {
     });
 
     it('should handle post deletion without image', async () => {
-      // 이미지 URL이 없는 게시물 데이터 모킹
       mockPostRepository.createQueryBuilder().getOne.mockResolvedValueOnce({
         image_url: null,
       });
@@ -353,7 +325,6 @@ describe('PostService', () => {
         affected: 1,
       });
 
-      // 서비스 호출
       await service.deletePost(1, 1);
       expect(mockS3Service.deleteFile).not.toHaveBeenCalled();
     });
@@ -367,12 +338,10 @@ describe('PostService', () => {
         affected: 0,
       });
 
-      // 실제 로직에서는 getOne에서 post를 찾지 못할 때만 NotFoundException을 던짐
       await expect(service.deletePost(1, 1)).resolves.not.toThrow();
     });
   });
 
-  // 게시물 좋아요 관련 테스트
   describe('likePost', () => {
     it('should handle case when affected rows is 0 during unlike', async () => {
       mockPostLikeRepository
@@ -428,7 +397,6 @@ describe('PostService', () => {
     });
 
     it('should handle consecutive like/unlike operations by same user', async () => {
-      // 첫 번째: 좋아요 성공
       mockPostLikeRepository
         .createQueryBuilder()
         .execute.mockResolvedValueOnce({});
@@ -443,7 +411,6 @@ describe('PostService', () => {
         likeCount: 1,
       });
 
-      // 두 번째: 좋아요 취소 (ER_DUP_ENTRY 발생)
       mockPostLikeRepository
         .createQueryBuilder()
         .execute.mockRejectedValueOnce({ code: 'ER_DUP_ENTRY' });
@@ -481,15 +448,12 @@ describe('PostService', () => {
     });
 
     it('should handle concurrent like operations correctly', async () => {
-      // 첫 번째 시도: 좋아요 추가 실패 (이미 존재)
       mockPostLikeRepository
         .createQueryBuilder()
         .execute.mockRejectedValueOnce({ code: 'ER_DUP_ENTRY' });
 
-      // 두 번째 시도: 좋아요 삭제
       mockPostLikeRepository.delete.mockResolvedValueOnce({ affected: 1 });
 
-      // 최종 좋아요 수 조회
       mockPostRepository.findOne.mockResolvedValueOnce({ post_like_count: 0 });
 
       const result = await service.likePost(1, 1);

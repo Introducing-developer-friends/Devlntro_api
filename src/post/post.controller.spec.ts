@@ -17,7 +17,6 @@ describe('PostController', () => {
   let mockS3Service: Partial<S3Service>;
 
   beforeEach(async () => {
-    // PostService와 S3Service에 대한 모의 객체 생성
     mockPostService = {
       createPost: jest.fn(),
       updatePost: jest.fn(),
@@ -30,7 +29,6 @@ describe('PostController', () => {
       deleteFile: jest.fn(),
     };
 
-    // 테스트 모듈 설정
     const module: TestingModule = await Test.createTestingModule({
       controllers: [PostController],
       providers: [
@@ -39,18 +37,15 @@ describe('PostController', () => {
       ],
     }).compile();
 
-    // PostController 인스턴스 가져오기
     controller = module.get<PostController>(PostController);
   });
 
   it('should be defined', () => {
-    // 컨트롤러가 정의되었는지 확인
     expect(controller).toBeDefined();
   });
 
   describe('createPost', () => {
     it('should create a post successfully', async () => {
-      // 모의 응답 설정
       const mockServiceResponse = {
         postId: 1,
         imageUrl: null,
@@ -63,22 +58,18 @@ describe('PostController', () => {
         imageUrl: null,
       };
 
-      // PostService의 createPost 함수가 mockServiceResponse를 반환하도록 설정
       (mockPostService.createPost as jest.Mock).mockResolvedValue(
         mockServiceResponse,
       );
 
-      // createPost 함수 호출
       const result = await controller.createPost(
         { user: { userId: 1 } } as any,
         { content: 'Test content' } as CreatePostDto,
         null,
       );
 
-      // 결과가 예상 응답과 동일한지 확인
       expect(result).toEqual(expectedResponse);
 
-      // createPost 함수가 올바른 인수로 호출되었는지 확인
       expect(mockPostService.createPost).toHaveBeenCalledWith(1, {
         content: 'Test content',
         imageUrl: null,
@@ -86,7 +77,6 @@ describe('PostController', () => {
     });
 
     it('should handle image upload when file is provided', async () => {
-      // 파일 업로드 테스트용 모의 파일
       const mockFile = {
         originalname: 'test image.jpg',
         size: 1024,
@@ -94,31 +84,25 @@ describe('PostController', () => {
 
       const mockImageUrl = 'https://example.com/image.jpg';
 
-      // S3Service의 uploadFile 함수가 mockImageUrl을 반환하도록 설정
       (mockS3Service.uploadFile as jest.Mock).mockResolvedValue(mockImageUrl);
 
-      // PostService의 createPost 함수가 모의 응답을 반환하도록 설정
       (mockPostService.createPost as jest.Mock).mockResolvedValue({
         postId: 1,
         imageUrl: mockImageUrl,
       });
 
-      // createPost 함수 호출
       const result = await controller.createPost(
         { user: { userId: 1 } } as any,
         { content: 'Test content' } as CreatePostDto,
         mockFile,
       );
 
-      // 결과가 예상대로 파일 URL을 포함하는지 확인
       expect(result.imageUrl).toBe(mockImageUrl);
 
-      // S3Service의 uploadFile 함수가 호출되었는지 확인
       expect(mockS3Service.uploadFile).toHaveBeenCalled();
     });
 
     it('should handle service errors', async () => {
-      // PostService의 createPost 함수가 에러를 던지도록 설정
       (mockPostService.createPost as jest.Mock).mockRejectedValue(
         new Error('Service error'),
       );
@@ -142,7 +126,6 @@ describe('PostController', () => {
 
       (mockPostService.updatePost as jest.Mock).mockResolvedValue(undefined);
 
-      // updatePost 함수 호출
       const result = await controller.updatePost(
         { user: { userId: 1 } } as any,
         1,
@@ -150,7 +133,6 @@ describe('PostController', () => {
         null,
       );
 
-      // 결과가 예상 응답과 동일한지 확인
       expect(result).toEqual(expectedResponse);
     });
 
@@ -162,13 +144,10 @@ describe('PostController', () => {
 
       const mockImageUrl = 'https://example.com/updated-image.jpg';
 
-      // S3Service의 uploadFile 함수가 mockImageUrl을 반환하도록 설정
       (mockS3Service.uploadFile as jest.Mock).mockResolvedValue(mockImageUrl);
 
-      // PostService의 updatePost 함수가 성공적으로 호출되도록 설정
       (mockPostService.updatePost as jest.Mock).mockResolvedValue(undefined);
 
-      // updatePost 함수 호출
       await controller.updatePost(
         { user: { userId: 1 } } as any,
         1,

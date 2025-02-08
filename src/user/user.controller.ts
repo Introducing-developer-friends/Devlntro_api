@@ -1,4 +1,3 @@
-// user.controller.ts
 import {
   Controller,
   Put,
@@ -33,7 +32,7 @@ interface CustomRequest extends ExpressRequest {
 @ApiTags('users')
 @ApiBearerAuth()
 @Controller('users')
-@UseGuards(JwtAuthGuard) // 이 컨트롤러의 모든 엔드포인트에 JWT 인증 가드를 적용
+@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 

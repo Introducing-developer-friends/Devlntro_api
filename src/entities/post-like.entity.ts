@@ -20,7 +20,7 @@ export class PostLike {
   @ManyToOne(() => UserAccount, (userAccount) => userAccount.postLikes, {
     nullable: false,
   })
-  @JoinColumn({ name: 'user_id' }) // 외래 키 user_id로 연결
+  @JoinColumn({ name: 'user_id' })
   userAccount: UserAccount;
 
   @CreateDateColumn({

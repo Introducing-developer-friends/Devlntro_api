@@ -23,7 +23,7 @@ export class Comment {
 
   @ManyToOne(() => UserAccount, (userAccount) => userAccount.comments, {
     nullable: false,
-  }) // 댓글 작성자와의 다대일 관계
+  })
   @JoinColumn({ name: 'user_id' })
   userAccount: UserAccount;
 
@@ -44,10 +44,10 @@ export class Comment {
     type: 'int',
     default: 0,
     nullable: true,
-  }) // 좋아요 수, 기본값은 0
+  })
   like_count: number;
 
-  @OneToMany(() => CommentLike, (commentLike) => commentLike.comment) // 댓글에 달린 좋아요와의 1:N 관계
+  @OneToMany(() => CommentLike, (commentLike) => commentLike.comment)
   commentLike: CommentLike[];
 
   @DeleteDateColumn({

@@ -5,11 +5,9 @@ import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { BadRequestException } from '@nestjs/common';
 
-// AWS SDK와 관련된 모듈들을 모킹 처리
 jest.mock('@aws-sdk/client-s3');
 jest.mock('@aws-sdk/lib-storage');
 
-// ConfigService를 모킹하여 테스트 환경에서 사용
 class MockConfigService extends ConfigService {
   private mockValues: { [key: string]: string } = {
     AWS_REGION: 'us-east-1',
@@ -23,12 +21,10 @@ class MockConfigService extends ConfigService {
     super();
   }
 
-  // 설정 값 반환 메서드
   get(key: string): any {
     return this.mockValues[key];
   }
 
-  // 테스트용 설정 값 변경 메서드
   setMockValue(key: string, value: string | null) {
     if (value === null) {
       delete this.mockValues[key];
@@ -38,7 +34,6 @@ class MockConfigService extends ConfigService {
   }
 }
 
-// S3Service 유닛 테스트
 describe('S3Service', () => {
   let service: S3Service;
   let mockS3Client;
@@ -48,7 +43,6 @@ describe('S3Service', () => {
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    // S3Client 모킹
     mockS3Client = {
       send: jest.fn().mockResolvedValue({}),
       destroy: jest.fn().mockResolvedValue(undefined),
@@ -58,7 +52,6 @@ describe('S3Service', () => {
       () => mockS3Client,
     );
 
-    // Upload 모킹
     mockUpload = {
       done: jest.fn().mockResolvedValue(undefined),
     };
@@ -67,7 +60,6 @@ describe('S3Service', () => {
       () => mockUpload,
     );
 
-    // 테스트 모듈 설정
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         S3Service,
@@ -87,7 +79,6 @@ describe('S3Service', () => {
     jest.resetAllMocks();
   });
 
-  // 초기화 관련 테스트
   describe('initialization', () => {
     it('should properly initialize cloudFrontDomain', async () => {
       expect(service['cloudFrontDomain']).toBe('https://mock.cloudfront.net');
@@ -108,7 +99,6 @@ describe('S3Service', () => {
     });
   });
 
-  // 업로드 테스트
   describe('uploadFile', () => {
     const mockFile: Express.Multer.File = {
       fieldname: 'file',
@@ -165,7 +155,7 @@ describe('S3Service', () => {
       expect(Upload).toHaveBeenCalledWith(
         expect.objectContaining({
           params: expect.objectContaining({
-            ContentType: 'application/octet-stream', // default content type
+            ContentType: 'application/octet-stream',
           }),
         }),
       );
@@ -196,7 +186,6 @@ describe('S3Service', () => {
     });
   });
 
-  // 삭제 테스트
   describe('deleteFile', () => {
     it('should successfully delete a file', async () => {
       const key = 'test/image.jpg';
@@ -235,7 +224,6 @@ describe('S3Service', () => {
     });
   });
 
-  // 라이프사이클 훅 테스트
   describe('lifecycle hooks', () => {
     it('should initialize S3 client on module init', async () => {
       await service.onModuleInit();
@@ -249,14 +237,12 @@ describe('S3Service', () => {
       });
     });
 
-    // 모듈 제거 시 S3 클라이언트가 정상적으로 해제되는지 테스트
     it('should destroy S3 client on module destroy', async () => {
       await service.onModuleDestroy();
 
       expect(mockS3Client.destroy).toHaveBeenCalled();
     });
 
-    // 클라이언트가 초기화되지 않은 경우에도 모듈 제거가 처리되는지 테스트
     it('should handle module destroy when client is not initialized', async () => {
       service['s3Client'] = null;
       await expect(service.onModuleDestroy()).resolves.not.toThrow();

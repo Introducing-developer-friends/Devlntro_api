@@ -1,4 +1,3 @@
-// update-business-profile.dto.ts
 import { IsString, IsEmail, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { BusinessProfileInfo } from '../../types/user.types';
@@ -9,7 +8,6 @@ export class UpdateBusinessProfileDto implements Partial<BusinessProfileInfo> {
   @IsOptional()
   name?: string;
 
-  // 회사 이름을 나타내며, 선택적 필드로 값이 제공되면 문자열이어야 함
   @ApiProperty({
     description: '회사명',
     required: false,
@@ -38,7 +36,6 @@ export class UpdateBusinessProfileDto implements Partial<BusinessProfileInfo> {
     description: '이메일',
     required: false,
   })
-  // 이메일 주소를 나타내며, 선택적 필드로 값이 제공되면 이메일 형식이어야 함
   @IsEmail()
   @IsOptional()
   email?: string;

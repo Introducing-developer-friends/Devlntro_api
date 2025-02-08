@@ -5,7 +5,6 @@ export class CreateFriendRequestTable1700000000002
 {
   public async up(queryRunner: QueryRunner): Promise<void> {
     try {
-      // friend_request 테이블 생성
       await queryRunner.query(`
                 CREATE TABLE friend_request (
                     request_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -30,7 +29,6 @@ export class CreateFriendRequestTable1700000000002
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     try {
-      // 외래 키 제약 조건을 비활성화한 후 테이블 삭제
       await queryRunner.query('SET FOREIGN_KEY_CHECKS = 0');
       await queryRunner.query('DROP TABLE IF EXISTS friend_request');
       await queryRunner.query('SET FOREIGN_KEY_CHECKS = 1');

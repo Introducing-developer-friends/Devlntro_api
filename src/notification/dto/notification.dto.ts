@@ -8,7 +8,7 @@ import {
   LikeCommentNotificationDto,
   DeleteNotificationsDto,
 } from '../../types/notification.types';
-// 친구 요청 알림 생성을 위한 DTO
+
 export class CreateFriendRequestNotificationDto
   implements FriendRequestNotificationDto
 {
@@ -31,8 +31,6 @@ export class CreateFriendRequestNotificationDto
 
   type: NotificationType.FRIEND_REQUEST = NotificationType.FRIEND_REQUEST;
 }
-
-// 게시물 좋아요 알림 생성을 위한 DTO
 
 export class CreateLikePostNotificationDto implements LikePostNotificationDto {
   @ApiProperty({
@@ -64,7 +62,6 @@ export class CreateLikePostNotificationDto implements LikePostNotificationDto {
   type: NotificationType.LIKE_POST = NotificationType.LIKE_POST;
 }
 
-// 댓글 알림 생성을 위한 DTO
 export class CreateCommentNotificationDto implements CommentNotificationDto {
   @ApiProperty({
     example: 2,
@@ -95,7 +92,6 @@ export class CreateCommentNotificationDto implements CommentNotificationDto {
   type: NotificationType.COMMENT = NotificationType.COMMENT;
 }
 
-// 댓글 좋아요 알림 생성을 위한 DTO
 export class CreateLikeCommentNotificationDto
   implements LikeCommentNotificationDto
 {
@@ -128,7 +124,6 @@ export class CreateLikeCommentNotificationDto
   type: NotificationType.LIKE_COMMENT = NotificationType.LIKE_COMMENT;
 }
 
-// 다수의 알림 삭제를 위한 DTO
 export class DeleteMultipleNotificationsDto implements DeleteNotificationsDto {
   @ApiProperty({
     example: [1, 2, 3],
