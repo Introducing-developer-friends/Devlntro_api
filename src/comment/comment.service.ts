@@ -19,20 +19,18 @@ import {
 export class CommentService {
   constructor(
     @InjectRepository(Comment)
-    private readonly commentRepository: Repository<Comment>, // Comment 엔티티를 위한 TypeORM 리포지토리 주입
+    private readonly commentRepository: Repository<Comment>,
     @InjectRepository(CommentLike)
-    private readonly commentLikeRepository: Repository<CommentLike>, // CommentLike 엔티티를 위한 TypeORM 리포지토리 주입
+    private readonly commentLikeRepository: Repository<CommentLike>,
     @InjectRepository(Post)
     private readonly postRepository: Repository<Post>,
   ) {}
 
-  // 댓글 생성 메서드
   async createComment(
     userId: number,
     postId: number,
     createCommentDto: CreateCommentDto,
   ): Promise<CommentCreateResult> {
-    // 게시물 존재 확인 및 댓글 수 확인
     const [post, currentCount] = await Promise.all([
       this.postRepository.findOne({
         select: ['post_id'],
@@ -47,7 +45,6 @@ export class CommentService {
       throw new NotFoundException('게시물을 찾을 수 없습니다.');
     }
 
-    // 댓글 생성
     const result = await this.commentRepository
       .createQueryBuilder()
       .insert()
@@ -59,7 +56,6 @@ export class CommentService {
       })
       .execute();
 
-    // 정확한 카운트 업데이트
     await this.postRepository
       .createQueryBuilder()
       .update(Post)
@@ -70,14 +66,12 @@ export class CommentService {
     return { commentId: result.identifiers[0].comment_id };
   }
 
-  // 댓글 수정 메서드
   async updateComment(
     userId: number,
     postId: number,
     commentId: number,
     updateCommentDto: UpdateCommentDto,
   ): Promise<CommentUpdateResult> {
-    // 단일 쿼리로 업데이트
     const result = await this.commentRepository
       .createQueryBuilder()
       .update(Comment)

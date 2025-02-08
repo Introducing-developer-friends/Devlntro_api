@@ -10,14 +10,14 @@ export class CreatePostDto implements Omit<PostCreateData, 'imageUrl'> {
   })
   @IsNotEmpty()
   @IsString()
-  content: string; // 게시물 내용 필수 입력
+  content: string;
 
   @ApiPropertyOptional({
     description: '업로드할 이미지 파일',
     type: 'string',
     format: 'binary',
   })
-  image?: Express.Multer.File; // 이미지 파일 선택 입력
+  image?: Express.Multer.File;
 }
 
 export class UpdatePostDto
@@ -30,12 +30,12 @@ export class UpdatePostDto
   })
   @IsOptional()
   @IsString()
-  content?: string; // 게시물 내용 선택 입력
+  content?: string;
 
   @ApiPropertyOptional({
     description: '새로 업로드할 이미지 파일 (선택)',
     type: 'string',
     format: 'binary',
   })
-  image?: Express.Multer.File; // 새 이미지 파일 선택 입력
+  image?: Express.Multer.File;
 }

@@ -6,7 +6,6 @@ import { UserAccount } from '../entities/user-account.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { TokenPayload } from '../types/auth.type';
 
-// JWT 인증 전략(JwtStrategy) 테스트 스위트
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
   let mockConfigService: { get: jest.Mock };
@@ -14,7 +13,6 @@ describe('JwtStrategy', () => {
     findOne: jest.Mock<Promise<Partial<UserAccount> | null>>;
   };
 
-  // 각 테스트 실행 전 모듈 초기화
   beforeEach(async () => {
     mockConfigService = {
       get: jest.fn((key: string) => {
@@ -29,7 +27,6 @@ describe('JwtStrategy', () => {
       findOne: jest.fn(),
     };
 
-    // TestingModule 생성 및 JwtStrategy, ConfigService, UserRepository 주입
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         JwtStrategy,
@@ -44,11 +41,9 @@ describe('JwtStrategy', () => {
       ],
     }).compile();
 
-    // JwtStrategy 인스턴스 가져오기
     strategy = module.get<JwtStrategy>(JwtStrategy);
   });
 
-  // validate 메서드 테스트
   describe('validate', () => {
     const validPayload: TokenPayload = {
       sub: 1,
@@ -57,7 +52,6 @@ describe('JwtStrategy', () => {
       version: 1,
     };
 
-    // 정상적인 액세스 토큰 검증 테스트
     it('should successfully validate an access token', async () => {
       const mockUser = {
         user_id: validPayload.sub,
@@ -78,7 +72,6 @@ describe('JwtStrategy', () => {
       });
     });
 
-    // refresh 토큰 타입이 거부되는지 테스트
     it('should reject refresh token type', async () => {
       const refreshTokenPayload: TokenPayload = {
         ...validPayload,
@@ -92,7 +85,6 @@ describe('JwtStrategy', () => {
       expect(mockUserRepository.findOne).not.toHaveBeenCalled();
     });
 
-    // 구 버전 토큰이 거부되는지 테스트
     it('should reject outdated token version', async () => {
       const mockUser = {
         user_id: validPayload.sub,
@@ -107,7 +99,6 @@ describe('JwtStrategy', () => {
       );
     });
 
-    // 존재하지 않는 사용자에 대한 토큰 거부 테스트
     it('should reject non-existent user', async () => {
       mockUserRepository.findOne.mockResolvedValueOnce(null);
 

@@ -21,7 +21,6 @@ describe('ContactsService', () => {
   let dataSource: DataSource;
   let queryBuilder: jest.Mocked<SelectQueryBuilder<any>>;
 
-  // Mock 데이터 정의
   const mockProfiles = [
     {
       profile_id: 1,
@@ -173,7 +172,7 @@ describe('ContactsService', () => {
       queryBuilder.where.mockReturnThis();
       queryBuilder.andWhere.mockReturnThis();
       queryBuilder.leftJoin.mockReturnThis();
-      queryBuilder.getMany.mockResolvedValue([]); // 빈 배열 반환하도록 수정
+      queryBuilder.getMany.mockResolvedValue([]);
 
       await service.getContactList(1);
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
@@ -185,7 +184,6 @@ describe('ContactsService', () => {
     });
 
     it('should handle bidirectional contacts correctly', async () => {
-      // 양방향 관계에서 자신이 userAccount인 경우만 필터링하도록 수정
       const mockBidirectionalContacts = [
         {
           userAccount: mockUsers[0],
@@ -206,7 +204,6 @@ describe('ContactsService', () => {
     });
 
     it('should handle profile with partial information', async () => {
-      // 프로필 정보가 부분적으로만 있는 경우
       const mockContactWithPartialProfile = [
         {
           userAccount: mockUsers[0],
@@ -239,7 +236,7 @@ describe('ContactsService', () => {
         NotFoundException,
       );
     });
-    // getContactDetail에 추가
+
     it('should handle deleted user access attempt', async () => {
       queryBuilder.where.mockReturnThis();
       queryBuilder.andWhere.mockReturnThis();
@@ -251,7 +248,6 @@ describe('ContactsService', () => {
     });
   });
 
-  // addContactRequest 메서드 테스트
   describe('addContactRequest', () => {
     it('should create request successfully', async () => {
       mockUserRepository.findOne
@@ -307,7 +303,7 @@ describe('ContactsService', () => {
     it('should handle request to deleted user', async () => {
       mockUserRepository.findOne
         .mockResolvedValueOnce(mockUsers[0])
-        .mockResolvedValueOnce(null); // deleted user는 null로 반환되도록
+        .mockResolvedValueOnce(null);
 
       await expect(
         service.addContactRequest(1, 'deleted-user'),
@@ -325,7 +321,6 @@ describe('ContactsService', () => {
     });
   });
 
-  // acceptContactRequest 메서드 테스트
   describe('acceptContactRequest', () => {
     it('should accept request successfully', async () => {
       const mockRequest = {
@@ -352,9 +347,6 @@ describe('ContactsService', () => {
     });
 
     it('should handle non-pending request', async () => {
-      // FriendRequest 형식으로 수정
-
-      // transaction mock 수정
       (dataSource.transaction as jest.Mock).mockRejectedValue(
         new NotFoundException(),
       );
@@ -385,7 +377,7 @@ describe('ContactsService', () => {
         request_id: 1,
         sender: mockUsers[0],
         receiver: mockUsers[1],
-        status: FriendRequestStatus.PENDING, // pending 상태로 변경
+        status: FriendRequestStatus.PENDING,
       } as FriendRequest;
 
       const mockEntityManager = {
@@ -394,7 +386,7 @@ describe('ContactsService', () => {
             return Promise.resolve(mockRequest);
           }
           if (entity === BusinessContact) {
-            return Promise.resolve({ contact_id: 1 }); // 이미 존재하는 연락처
+            return Promise.resolve({ contact_id: 1 });
           }
           return Promise.resolve(null);
         }),
@@ -406,7 +398,6 @@ describe('ContactsService', () => {
         async (cb) => await cb(mockEntityManager),
       );
 
-      // 정상적으로 처리되어야 함
       await service.acceptContactRequest(2, 1);
       expect(mockEntityManager.save).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'accepted' }),
@@ -414,7 +405,6 @@ describe('ContactsService', () => {
     });
 
     it('should handle concurrent accept requests', async () => {
-      // 동시에 여러 요청이 처리되는 경우
       const mockRequest = {
         request_id: 1,
         sender: mockUsers[0],
@@ -453,9 +443,8 @@ describe('ContactsService', () => {
       expect(mockFriendRequestRepository.save).toHaveBeenCalled();
     });
 
-    // rejectContactRequest에 추가
     it('should handle wrong receiver rejection attempt', async () => {
-      mockFriendRequestRepository.findOne.mockResolvedValue(null); // null 반환하도록 수정
+      mockFriendRequestRepository.findOne.mockResolvedValue(null);
 
       await expect(service.rejectContactRequest(1, 1)).rejects.toThrow(
         NotFoundException,
@@ -463,7 +452,6 @@ describe('ContactsService', () => {
     });
   });
 
-  // getReceivedRequests 메서드 테스트
   describe('getReceivedRequests', () => {
     it('should return received requests', async () => {
       const mockRequest = [
@@ -501,7 +489,6 @@ describe('ContactsService', () => {
   });
 
   describe('getSentRequests', () => {
-    // 사용자가 받은 친구 요청을 성공적으로 반환하는 경우를 테스트
     it('should return sent requests', async () => {
       const mockRequest = [
         {
@@ -517,7 +504,6 @@ describe('ContactsService', () => {
       expect(result[0].receiverLoginId).toBe('user2');
     });
 
-    // PENDING 상태의 요청만 반환하는지 테스트
     it('should return requests in correct order', async () => {
       const date1 = new Date('2024-01-01');
       const date2 = new Date('2024-01-02');
@@ -543,9 +529,7 @@ describe('ContactsService', () => {
     });
   });
 
-  // deleteContact 메서드 테스트
   describe('deleteContact', () => {
-    // 연락처를 성공적으로 삭제하는 경우를 테스트
     it('should delete contact successfully', async () => {
       const mockContact = {
         contact_id: 1,
@@ -559,7 +543,6 @@ describe('ContactsService', () => {
       expect(mockContactRepository.softRemove).toHaveBeenCalled();
     });
 
-    // 삭제하려는 연락처를 찾을 수 없는 경우 NotFoundException이 발생하는지 테스
     it('should throw NotFoundException', async () => {
       mockContactRepository.findOne.mockResolvedValue(null);
       await expect(service.deleteContact(1, 999)).rejects.toThrow(
@@ -567,20 +550,18 @@ describe('ContactsService', () => {
       );
     });
 
-    // 이미 삭제된 연락처를 처리하는 경우 NotFoundException이 발생하는지 테스트
     it('should handle already deleted contact', async () => {
-      mockContactRepository.findOne.mockResolvedValue(null); // 삭제된 연락처는 null로 처리
+      mockContactRepository.findOne.mockResolvedValue(null);
 
       await expect(service.deleteContact(1, 2)).rejects.toThrow(
         NotFoundException,
       );
     });
 
-    // 양방향 연락처를 올바르게 삭제하는지 테스트
     it('should find and delete bidirectional contact', async () => {
       const contact = {
         contact_id: 1,
-        userAccount: mockUsers[1], // 순서를 바꿔서 테스트
+        userAccount: mockUsers[1],
         contact_user: mockUsers[0],
         deleted_at: null,
       } as BusinessContact;
@@ -591,7 +572,6 @@ describe('ContactsService', () => {
       expect(mockContactRepository.softRemove).toHaveBeenCalledWith(contact);
     });
 
-    // softRemove 호출 중 오류가 발생했을 때 예외를 처리하는지 테스트
     it('should handle soft delete error gracefully', async () => {
       const mockContact = {
         contact_id: 1,

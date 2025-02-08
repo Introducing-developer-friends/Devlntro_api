@@ -13,7 +13,6 @@ import { ContactResponse } from '../types/contacts.types';
 describe('ContactsController', () => {
   let controller: ContactsController;
 
-  // ContactsService의 메서드를 모킹한 객체를 생성
   const mockContactsService = {
     getContactList: jest.fn(),
     getContactDetail: jest.fn(),
@@ -25,10 +24,9 @@ describe('ContactsController', () => {
     deleteContact: jest.fn(),
   };
 
-  // 각 테스트 전 모듈을 설정하고 ContactsController와 ContactsService 인스턴스를 가져옴
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      controllers: [ContactsController], // ContactsController 설정
+      controllers: [ContactsController],
       providers: [{ provide: ContactsService, useValue: mockContactsService }],
     })
       .overrideGuard(JwtAuthGuard)
@@ -38,17 +36,14 @@ describe('ContactsController', () => {
     controller = module.get<ContactsController>(ContactsController);
   });
 
-  // 각 테스트 후에 모킹된 모든 함수 초기화
   afterEach(() => {
     jest.clearAllMocks();
   });
 
-  // ContactsController가 제대로 정의되었는지 확인하는 테스트
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  // getContactList 메서드에 대한 테스트
   describe('getContactList', () => {
     const mockContacts = [
       {
@@ -91,7 +86,6 @@ describe('ContactsController', () => {
     });
   });
 
-  // getContactDetail 메서드에 대한 테스트
   describe('getContactDetail', () => {
     const mockContact = {
       userId: 1,
@@ -130,7 +124,6 @@ describe('ContactsController', () => {
     });
   });
 
-  // addContactRequest 메서드에 대한 테스트
   describe('addContactRequest', () => {
     it('should add a new contact request', async () => {
       const mockResult = { requestId: 1 };
@@ -179,7 +172,6 @@ describe('ContactsController', () => {
     });
   });
 
-  // acceptContactRequest 메서드에 대한 테스트
   describe('acceptContactRequest', () => {
     it('should accept a contact request', async () => {
       mockContactsService.acceptContactRequest.mockResolvedValue(undefined);
@@ -210,7 +202,6 @@ describe('ContactsController', () => {
     });
   });
 
-  // rejectContactRequest 메서드에 대한 테스트
   describe('rejectContactRequest', () => {
     it('should reject a contact request', async () => {
       mockContactsService.rejectContactRequest.mockResolvedValue(undefined);
@@ -259,7 +250,6 @@ describe('ContactsController', () => {
     });
   });
 
-  // getSentRequests 메서드에 대한 테스트
   describe('getSentRequests', () => {
     const mockRequests = [
       {
@@ -287,7 +277,6 @@ describe('ContactsController', () => {
     });
   });
 
-  // deleteContact 메서드에 대한 테스트
   describe('deleteContact', () => {
     it('should delete a contact', async () => {
       mockContactsService.deleteContact.mockResolvedValue(undefined);

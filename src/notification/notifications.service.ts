@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notification } from '../entities/notification.entity';
-import { UserAccount } from '../entities/user-account.entity'; // UserAccount 엔티티 추가
+import { UserAccount } from '../entities/user-account.entity';
 import { Post } from '../entities/post.entity';
 import { Comment } from '../entities/comment.entity';
 import {
@@ -30,14 +30,12 @@ export class NotificationsService {
     private readonly commentRepository: Repository<Comment>,
   ) {}
 
-  // 사용자의 알림 목록을 조회하는 메서드
   async getNotifications(userId: number): Promise<NotificationInfo[]> {
     try {
-      // 사용자 ID에 해당하는 알림을 최신순으로 조회
       const notifications = await this.notificationRepository
         .createQueryBuilder('notification')
         .leftJoin('notification.sender', 'sender')
-        // post와 comment는 조건부로 조인
+
         .leftJoin(
           'notification.post',
           'post',
@@ -95,7 +93,6 @@ export class NotificationsService {
     }
   }
 
-  // 알림을 읽음 처리하는 메서드
   async markAsRead(notificationId: number, userId: number): Promise<void> {
     const result = await this.notificationRepository
       .createQueryBuilder()
@@ -110,7 +107,6 @@ export class NotificationsService {
     }
   }
 
-  // 새로운 알림을 생성하는 메서드
   async createNotification(
     data: NotificationCreateData,
   ): Promise<{ notificationId: number }> {
@@ -120,7 +116,6 @@ export class NotificationsService {
       );
     }
 
-    // 알림을 받을 사용자 확인
     const users = await this.userRepository
       .createQueryBuilder('user')
       .where('user.user_id IN (:...userIds)', {
@@ -136,7 +131,6 @@ export class NotificationsService {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
     }
 
-    // post와 comment 순차적 처리
     let post = null;
     let comment = null;
 
@@ -160,7 +154,6 @@ export class NotificationsService {
       }
     }
 
-    // 알림 생성 및 저장
     const notification = this.notificationRepository.create({
       receiver,
       sender,
@@ -175,12 +168,10 @@ export class NotificationsService {
     return { notificationId: savedNotification.notification_id };
   }
 
-  // 단일 알림을 삭제하는 메서드
   async deleteNotification(
     notificationId: number,
     userId: number,
   ): Promise<void> {
-    // 소프트 삭제 수행
     const result = await this.notificationRepository.softDelete({
       notification_id: notificationId,
       receiver: { user_id: userId },
@@ -191,12 +182,10 @@ export class NotificationsService {
     }
   }
 
-  // 여러 알림을 한 번에 삭제하는 메서드
   async deleteMultipleNotifications(
     notificationIds: number[],
     userId: number,
   ): Promise<number> {
-    // 먼저 삭제할 알림들을 조회
     const notifications = await this.notificationRepository
       .createQueryBuilder('notification')
       .innerJoin('notification.receiver', 'receiver')
@@ -211,10 +200,8 @@ export class NotificationsService {
       throw new NotFoundException('삭제할 알림을 찾을 수 없습니다.');
     }
 
-    // 실제 존재하는 알림 ID만 추출
     const validNotificationIds = notifications.map((n) => n.notification_id);
 
-    // softDelete를 한 번의 쿼리로 실행
     const result = await this.notificationRepository
       .createQueryBuilder()
       .softDelete()
@@ -225,12 +212,11 @@ export class NotificationsService {
     return result.affected || 0;
   }
 
-  // 로그인 ID로 사용자 ID를 조회하는 로직
   async findUserIdByLoginId(loginId: string): Promise<number> {
     const user = await this.userRepository
       .createQueryBuilder('user')
       .where('user.login_id = :loginId', { loginId })
-      .select('user.user_id') // user_id만 필요하므로 select로 지정
+      .select('user.user_id')
       .getOne();
 
     if (!user) {

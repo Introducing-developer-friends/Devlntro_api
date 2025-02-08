@@ -29,7 +29,6 @@ export const seedInitialData = async (dataSource: DataSource) => {
 
   const hashedPassword = await bcrypt.hash('password123', 10);
 
-  // 알림 생성 함수
   const createNotification = async (
     receiver: UserAccount,
     sender: UserAccount,
@@ -52,7 +51,6 @@ export const seedInitialData = async (dataSource: DataSource) => {
     );
   };
 
-  // S3에 이미지 업로드 함수
   const uploadImageToS3 = async () => {
     const response = await fetch('https://picsum.photos/640/480');
     const buffer = await response.arrayBuffer();
@@ -76,7 +74,6 @@ export const seedInitialData = async (dataSource: DataSource) => {
     }
   };
 
-  // 3명의 사용자 생성
   const users: UserAccount[] = [];
   for (let i = 0; i < 3; i++) {
     const user = userRepository.create({
@@ -101,7 +98,6 @@ export const seedInitialData = async (dataSource: DataSource) => {
     console.log(`User ${user.login_id} created`);
   }
 
-  // A와 B 사이의 인맥 관계 생성
   const businessContactAB = businessContactRepository.create({
     userAccount: users[0],
     contact_user: users[1],
@@ -111,7 +107,6 @@ export const seedInitialData = async (dataSource: DataSource) => {
     `Business contact created: ${users[0].name} <-> ${users[1].name}`,
   );
 
-  // B와 C 사이의 인맥 관계 생성
   const businessContactBC = businessContactRepository.create({
     userAccount: users[1],
     contact_user: users[2],
@@ -121,7 +116,6 @@ export const seedInitialData = async (dataSource: DataSource) => {
     `Business contact created: ${users[1].name} <-> ${users[2].name}`,
   );
 
-  // A가 C에게 친구 요청 보내기
   const friendRequest = friendRequestRepository.create({
     sender: users[0],
     receiver: users[2],
@@ -133,7 +127,6 @@ export const seedInitialData = async (dataSource: DataSource) => {
     `Friend request sent from ${users[0].login_id} to ${users[2].login_id}`,
   );
 
-  // 친구 요청 알림 생성
   await createNotification(
     users[2],
     users[0],
@@ -141,7 +134,6 @@ export const seedInitialData = async (dataSource: DataSource) => {
     `${users[0].name}님이 친구 요청을 보냈습니다.`,
   );
 
-  // 각 사용자에 대해 1개의 게시물 생성
   for (const user of users) {
     const imageUrl = await uploadImageToS3();
 
@@ -158,12 +150,9 @@ export const seedInitialData = async (dataSource: DataSource) => {
       `Post for user ${user.login_id} created with image: ${imageUrl}`,
     );
 
-    // B가 C의 게시물에 상호작용
     if (user.user_id === users[2].user_id) {
-      // C의 게시물인 경우
-      const bUser = users[1]; // B 사용자
+      const bUser = users[1];
 
-      // 댓글 추가
       const comment = commentRepository.create({
         post,
         userAccount: bUser,
@@ -175,7 +164,6 @@ export const seedInitialData = async (dataSource: DataSource) => {
       post.comments_count += 1;
       console.log(`Comment added by ${bUser.login_id} to post ${post.post_id}`);
 
-      // 댓글 알림 생성
       await createNotification(
         user,
         bUser,
@@ -185,7 +173,6 @@ export const seedInitialData = async (dataSource: DataSource) => {
         comment,
       );
 
-      // 게시물 좋아요 추가
       const postLike = postLikeRepository.create({
         post,
         userAccount: bUser,
@@ -195,7 +182,6 @@ export const seedInitialData = async (dataSource: DataSource) => {
       post.post_like_count += 1;
       console.log(`Like added by ${bUser.login_id} to post ${post.post_id}`);
 
-      // 게시물 좋아요 알림 생성
       await createNotification(
         user,
         bUser,
@@ -204,7 +190,6 @@ export const seedInitialData = async (dataSource: DataSource) => {
         post,
       );
 
-      // 댓글 좋아요 추가
       const commentLike = commentLikeRepository.create({
         comment: comment,
         user: bUser,
@@ -216,7 +201,6 @@ export const seedInitialData = async (dataSource: DataSource) => {
         `Comment like added by ${bUser.login_id} to comment ${comment.comment_id}`,
       );
 
-      // 댓글 좋아요 알림 생성
       await createNotification(
         user,
         bUser,
@@ -227,7 +211,6 @@ export const seedInitialData = async (dataSource: DataSource) => {
       );
     }
 
-    // 게시물의 댓글 수와 좋아요 수 업데이트
     await postRepository.save(post);
   }
 

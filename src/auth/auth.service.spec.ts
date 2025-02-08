@@ -9,10 +9,8 @@ import { RefreshToken } from '../entities/refresh-token.entity';
 import { BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
-// bcrypt 모듈을 Mock 처리
 jest.mock('bcrypt');
 
-// 테스트 시작 전에 실행되는 초기화 블록
 describe('AuthService', () => {
   let service: AuthService;
   let mockUserRepository: any;
@@ -23,7 +21,6 @@ describe('AuthService', () => {
   let mockQueryBuilder: any;
   let mockQueryRunner: any;
 
-  // 각 테스트 전에 Mock 초기화
   beforeEach(async () => {
     mockQueryBuilder = {
       where: jest.fn().mockReturnThis(),
@@ -36,7 +33,6 @@ describe('AuthService', () => {
       execute: jest.fn(),
     };
 
-    // QueryRunner Mock 설정
     mockQueryRunner = {
       connect: jest.fn(),
       startTransaction: jest.fn(),
@@ -50,7 +46,6 @@ describe('AuthService', () => {
       },
     };
 
-    // 유저 레포지토리 Mock 설정
     mockUserRepository = {
       createQueryBuilder: jest.fn(() => mockQueryBuilder),
       manager: {
@@ -61,7 +56,6 @@ describe('AuthService', () => {
       update: jest.fn(),
     };
 
-    // 프로필 레포지토리 Mock 설정
     mockProfileRepository = {
       create: jest.fn(),
       save: jest.fn(),
@@ -82,7 +76,6 @@ describe('AuthService', () => {
       get: jest.fn().mockReturnValue('test_secret'),
     };
 
-    // NestJS 테스트 모듈 생성 및 컴파일
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -106,12 +99,10 @@ describe('AuthService', () => {
     service = module.get<AuthService>(AuthService);
   });
 
-  // AuthService가 정의되었는지 테스트
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  // checkIdAvailability 메서드 테스트
   describe('checkIdAvailability', () => {
     it('should return true if ID is available', async () => {
       mockQueryBuilder.getCount.mockResolvedValue(0);
@@ -123,7 +114,6 @@ describe('AuthService', () => {
       );
     });
 
-    // ID가 이미 사용 중일 때
     it('should return false if ID is not available', async () => {
       mockQueryBuilder.getCount.mockResolvedValue(1);
 
@@ -132,7 +122,6 @@ describe('AuthService', () => {
     });
   });
 
-  // register 메서드 테스트
   describe('register', () => {
     const registerDto = {
       login_id: 'test',
@@ -146,7 +135,6 @@ describe('AuthService', () => {
       phone: '01012345678',
     };
 
-    // 유저 등록 성공 시
     it('should register a new user', async () => {
       mockQueryBuilder.getOne.mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
@@ -168,7 +156,6 @@ describe('AuthService', () => {
       expect(result).toEqual({ userId: 1 });
     });
 
-    // 비밀번호가 일치하지 않을 때
     it('should throw BadRequestException if passwords do not match', async () => {
       const invalidDto = {
         ...registerDto,
@@ -181,7 +168,7 @@ describe('AuthService', () => {
 
       expect(mockQueryRunner.rollbackTransaction).toHaveBeenCalled();
     });
-    // 유저가 이미 존재할 때
+
     it('should throw BadRequestException if user already exists', async () => {
       mockQueryBuilder.getOne.mockResolvedValue({ user_id: 1 });
 
@@ -227,7 +214,7 @@ describe('AuthService', () => {
       };
 
       mockQueryBuilder.getOne.mockResolvedValue(null);
-      // user 객체 생성 모의
+
       const mockUser = { user_id: 1, ...invalidEmailDto };
       mockQueryRunner.manager.create
         .mockImplementationOnce(() => mockUser)
@@ -242,7 +229,6 @@ describe('AuthService', () => {
     });
   });
 
-  // login 메서드 테스트
   describe('login', () => {
     const loginDto = { login_id: 'test', password: 'password' };
 
@@ -299,7 +285,6 @@ describe('AuthService', () => {
     });
   });
 
-  // refreshAccessToken 메서드 테스트
   describe('refreshAccessToken', () => {
     it('should successfully refresh access token', async () => {
       const mockTokenEntity = {
@@ -335,7 +320,6 @@ describe('AuthService', () => {
     });
   });
 
-  // logout 메서드 테스트
   describe('logout', () => {
     it('should successfully logout user', async () => {
       mockQueryBuilder.getCount.mockResolvedValueOnce(1);

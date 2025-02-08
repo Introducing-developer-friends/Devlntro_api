@@ -36,7 +36,6 @@ describe('NotificationsController', () => {
     senderId: 2,
   };
 
-  // 각 테스트 전 모듈 및 서비스 설정
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [NotificationsController],
@@ -60,12 +59,10 @@ describe('NotificationsController', () => {
     service = module.get<NotificationsService>(NotificationsService);
   });
 
-  // 컨트롤러 정의 확인
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  // getNotifications 메서드 테스트
   describe('getNotifications', () => {
     const mockResponse: NotificationListResponse = {
       statusCode: HttpStatus.OK,
@@ -73,7 +70,6 @@ describe('NotificationsController', () => {
       notifications: [mockNotification],
     };
 
-    // 알림 목록을 반환하는지 확인
     it('should return notifications list', async () => {
       const req = { user: { userId: 1 } };
       jest
@@ -86,14 +82,12 @@ describe('NotificationsController', () => {
     });
   });
 
-  // markAsRead 메서드 테스트
   describe('markAsRead', () => {
     const mockResponse: NotificationUpdateResponse = {
       statusCode: HttpStatus.OK,
       message: '알림이 성공적으로 읽음 처리되었습니다.',
     };
 
-    // 알림을 읽음으로 처리하는지 확인
     it('should mark a notification as read', async () => {
       const req = { user: { userId: 1 } };
       jest.spyOn(service, 'markAsRead').mockResolvedValue();
@@ -104,7 +98,6 @@ describe('NotificationsController', () => {
     });
   });
 
-  // createFriendRequestNotification 메서드 테스트
   describe('createFriendRequestNotification', () => {
     it('should create a friend request notification', async () => {
       const req = { user: { userId: 1 } };
@@ -132,9 +125,7 @@ describe('NotificationsController', () => {
     });
   });
 
-  // createLikePostNotification 메서드 테스트
   describe('createLikePostNotification', () => {
-    // 친구 요청 알림을 생성하는지 확인
     it('should create a like post notification', async () => {
       const req = { user: { userId: 1 } };
       const dto: CreateLikePostNotificationDto = {
@@ -162,9 +153,7 @@ describe('NotificationsController', () => {
     });
   });
 
-  // createCommentNotification 메서드 테스트
   describe('createCommentNotification', () => {
-    // 게시물 좋아요 알림을 생성하는지 확인
     it('should create a comment notification', async () => {
       const req = { user: { userId: 1 } };
       const dto: CreateCommentNotificationDto = {
@@ -192,9 +181,7 @@ describe('NotificationsController', () => {
     });
   });
 
-  // deleteNotification 메서드 테스트
   describe('createLikeCommentNotification', () => {
-    // 댓글 알림을 생성하는지 확인
     it('should create a like comment notification', async () => {
       const req = { user: { userId: 1 } };
       const dto: CreateLikeCommentNotificationDto = {
@@ -222,14 +209,12 @@ describe('NotificationsController', () => {
     });
   });
 
-  // deleteNotification 메서드 테스트
   describe('deleteNotification', () => {
     const mockResponse: NotificationDeleteResponse = {
       statusCode: HttpStatus.OK,
       message: '알림이 성공적으로 삭제되었습니다.',
     };
 
-    // 알림을 삭제하는지 확인
     it('should delete a notification', async () => {
       const req = { user: { userId: 1 } };
       jest.spyOn(service, 'deleteNotification').mockResolvedValue();
@@ -240,9 +225,7 @@ describe('NotificationsController', () => {
     });
   });
 
-  // deleteMultipleNotifications 메서드 테스트
   describe('deleteMultipleNotifications', () => {
-    // 여러 알림을 삭제하는지 확인
     it('should delete multiple notifications', async () => {
       const req = { user: { userId: 1 } };
       const dto: DeleteMultipleNotificationsDto = {
@@ -268,9 +251,7 @@ describe('NotificationsController', () => {
     });
   });
 
-  // findUserIdByLoginId 메서드 테스트
   describe('findUserIdByLoginId', () => {
-    // loginId에 해당하는 사용자 ID를 반환하는지 확인
     it('should return userId for a given loginId', async () => {
       const loginId = 'user123';
       jest.spyOn(service, 'findUserIdByLoginId').mockResolvedValue(1);
@@ -282,7 +263,7 @@ describe('NotificationsController', () => {
       };
 
       const result = await controller.findUserIdByLoginId(loginId);
-      expect(result).toEqual(mockResponse); // 반환값 확인
+      expect(result).toEqual(mockResponse);
       expect(service.findUserIdByLoginId).toHaveBeenCalledWith(loginId);
     });
   });

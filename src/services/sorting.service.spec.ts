@@ -6,7 +6,6 @@ import { Post } from '../entities/post.entity';
 describe('SortingService', () => {
   let service: SortingService;
 
-  // Mock된 게시물 데이터 생성
   const mockDate1 = new Date('2024-09-19T12:00:00.000Z');
   const mockDate2 = new Date('2024-09-18T12:00:00.000Z');
   const mockDate3 = new Date('2024-09-17T12:00:00.000Z');
@@ -101,7 +100,6 @@ describe('SortingService', () => {
     },
   ];
 
-  // 서비스 초기화
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [SortingService],
@@ -110,7 +108,6 @@ describe('SortingService', () => {
     service = module.get<SortingService>(SortingService);
   });
 
-  // sortPosts 메서드 테스트
   describe('sortPosts', () => {
     it('should sort posts by likes in descending order', () => {
       const sorted = service.sortPosts(mockPosts, SortOption.LIKES);
@@ -119,7 +116,6 @@ describe('SortingService', () => {
       expect(sorted[1].likesCount).toBe(10);
       expect(sorted[2].likesCount).toBe(3);
 
-      // 데이터 변환 검증
       expect(sorted[0]).toEqual({
         postId: 3,
         createrId: 3,
@@ -132,7 +128,6 @@ describe('SortingService', () => {
       });
     });
 
-    // 댓글 수 순 정렬 테스트
     it('should sort posts by comments in descending order', () => {
       const sorted = service.sortPosts(mockPosts, SortOption.COMMENTS);
 
@@ -141,7 +136,6 @@ describe('SortingService', () => {
       expect(sorted[2].commentsCount).toBe(2);
     });
 
-    // 최신순 정렬 테스트
     it('should sort posts by latest in descending order', () => {
       const sorted = service.sortPosts(mockPosts, SortOption.LATEST);
 
@@ -150,13 +144,11 @@ describe('SortingService', () => {
       expect(sorted[2].createdAt).toEqual(mockDate3);
     });
 
-    // 빈 입력 처리 테스트
     it('should handle empty input', () => {
       const sorted = service.sortPosts([], SortOption.LATEST);
       expect(sorted).toEqual([]);
     });
 
-    // null 값 처리 테스트
     it('should handle null counts and dates', () => {
       const postsWithNull = [
         {
@@ -167,7 +159,6 @@ describe('SortingService', () => {
         },
       ];
 
-      // null 값이 기본 값으로 대체되어 반환되는지 확인
       const sorted = service.sortPosts(postsWithNull, SortOption.LIKES);
       expect(sorted[0].likesCount).toBe(0);
       expect(sorted[0].commentsCount).toBe(0);

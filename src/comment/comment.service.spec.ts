@@ -18,7 +18,6 @@ describe('CommentService', () => {
   let queryBuilder: jest.Mocked<SelectQueryBuilder<Comment>>;
 
   beforeEach(async () => {
-    // QueryBuilder를 모킹하여 메서드 체이닝 동작 설정
     queryBuilder = {
       insert: jest.fn().mockReturnThis(),
       into: jest.fn().mockReturnThis(),
@@ -32,7 +31,6 @@ describe('CommentService', () => {
       select: jest.fn().mockReturnThis(),
     } as unknown as jest.Mocked<SelectQueryBuilder<Comment>>;
 
-    // 각 Repository를 Mock 객체로 생성
     mockCommentRepository = {
       createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
       findOne: jest.fn(),
@@ -77,46 +75,37 @@ describe('CommentService', () => {
   });
 
   describe('createComment', () => {
-    // 댓글을 성공적으로 생성하는 경우
     it('should create comment successfully', async () => {
-      // Post가 존재한다고 Mock 설정
       mockPostRepository.findOne.mockResolvedValue({ post_id: 1 } as Post);
 
-      // 현재 댓글 개수 Mock 설정
       mockCommentRepository.count.mockResolvedValue(5);
 
-      // QueryBuilder 실행 Mock 설정
       queryBuilder.execute.mockResolvedValueOnce({
         identifiers: [{ comment_id: 1 }],
         raw: [],
         affected: 1,
       });
 
-      // 댓글 개수 업데이트 성공 Mock 설정
       queryBuilder.execute.mockResolvedValueOnce({
         raw: [],
         affected: 1,
       });
 
-      // 서비스 메서드 실행 및 결과 확인
       const result = await service.createComment(1, 1, {
         content: 'Test comment',
       });
       expect(result).toEqual({ commentId: 1 });
     });
 
-    // Post를 찾지 못한 경우 예외 처리
     it('should throw NotFoundException when post not found', async () => {
       mockPostRepository.findOne.mockResolvedValue(null);
       mockCommentRepository.count.mockResolvedValue(0);
 
-      // Post가 없을 때 예외 발생 확인
       await expect(
         service.createComment(1, 1, { content: 'Test comment' }),
       ).rejects.toThrow(NotFoundException);
     });
 
-    // 댓글 개수 조회 중 오류 발생 시 처리
     it('should handle count query failure', async () => {
       mockPostRepository.findOne.mockResolvedValue({ post_id: 1 } as Post);
       const error = new Error('Count failed');
@@ -127,7 +116,6 @@ describe('CommentService', () => {
       ).rejects.toThrow(Error);
     });
 
-    // 유효하지 않은 댓글 내용 처리
     it('should validate comment content', async () => {
       await expect(
         service.createComment(1, 1, { content: '' }),
@@ -136,7 +124,6 @@ describe('CommentService', () => {
   });
 
   describe('updateComment', () => {
-    // 댓글을 성공적으로 업데이트하는 경우
     it('should update comment successfully', async () => {
       queryBuilder.execute.mockResolvedValue({ affected: 1 });
 
@@ -150,7 +137,6 @@ describe('CommentService', () => {
       });
     });
 
-    // 업데이트 쿼리 실패 시 처리
     it('should handle update query failure', async () => {
       const error = new Error('Update failed');
       queryBuilder.execute.mockRejectedValue(error);
@@ -162,7 +148,6 @@ describe('CommentService', () => {
   });
 
   describe('deleteComment', () => {
-    // 댓글을 성공적으로 삭제하는 경우
     it('should delete comment successfully', async () => {
       mockCommentRepository.count.mockResolvedValue(5);
 
@@ -183,7 +168,6 @@ describe('CommentService', () => {
       });
     });
 
-    // 삭제하려는 댓글이 존재하지 않을 때 예외 처리
     it('should throw NotFoundException when comment not found', async () => {
       mockCommentRepository.count.mockResolvedValue(5);
       queryBuilder.execute.mockResolvedValueOnce({ affected: 0 });
@@ -193,7 +177,6 @@ describe('CommentService', () => {
       );
     });
 
-    // 삭제 실패 시 예외 처리
     it('should handle count query failure', async () => {
       const error = new Error('Count failed');
       mockCommentRepository.count.mockRejectedValue(error);
@@ -207,7 +190,6 @@ describe('CommentService', () => {
         .mockResolvedValueOnce({ affected: 1 })
         .mockRejectedValueOnce(new Error('Update count failed'));
 
-      // 삭제 후 업데이트에서 예외가 발생하면 처리하는지 확인
       await expect(service.deleteComment(1, 1, 1)).rejects.toThrow(Error);
     });
 
@@ -216,13 +198,11 @@ describe('CommentService', () => {
       const error = new Error('Soft delete failed');
       queryBuilder.execute.mockRejectedValue(error);
 
-      // Soft delete 실패 시 예외가 발생하는지 확인
       await expect(service.deleteComment(1, 1, 1)).rejects.toThrow(Error);
     });
   });
 
   describe('likeComment', () => {
-    // 좋아요를 성공적으로 추가하는 경우
     it('should like comment successfully', async () => {
       const mockComment = { comment_id: 1 } as Comment;
       mockCommentRepository.findOne.mockResolvedValue(mockComment);
@@ -245,7 +225,6 @@ describe('CommentService', () => {
       });
     });
 
-    // 좋아요 취소를 처리하는 경우
     it('should unlike comment when already liked', async () => {
       const mockComment = { comment_id: 1 } as Comment;
       mockCommentRepository.findOne.mockResolvedValue(mockComment);
@@ -272,7 +251,6 @@ describe('CommentService', () => {
       });
     });
 
-    // 댓글이 없을 때 예외 처리
     it('should throw NotFoundException when comment not found', async () => {
       mockCommentRepository.findOne.mockResolvedValue(null);
       mockCommentLikeRepository.count.mockResolvedValue(0);
@@ -282,7 +260,6 @@ describe('CommentService', () => {
       );
     });
 
-    // 데이터베이스 오류 처리
     it('should handle database errors properly', async () => {
       mockCommentRepository.findOne.mockResolvedValue({
         comment_id: 1,
@@ -305,7 +282,6 @@ describe('CommentService', () => {
         new Error('Delete failed'),
       );
 
-      // 좋아요 처리 중 예외가 발생하면 InternalServerErrorException인지 확인
       await expect(service.likeComment(1, 1, 1)).rejects.toThrow(
         new InternalServerErrorException('좋아요 처리 중 오류가 발생했습니다.'),
       );

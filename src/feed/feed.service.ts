@@ -29,7 +29,6 @@ export class FeedService {
     @InjectRepository(Post) private readonly postRepository: Repository<Post>,
   ) {}
 
-  // 피드 조회 메서드
   async getFeed(
     userId: number,
     sortOption: SortOption,
@@ -41,14 +40,12 @@ export class FeedService {
         `Fetching feed for user ${userId} with filter ${filterType}`,
       );
 
-      // SPECIFIC 필터 타입일 때 specificUserId가 없으면 예외 발생
       if (filterType === FilterType.SPECIFIC && !specificUserId) {
         throw new BadRequestException(
           '특정 사용자의 게시물을 조회하기 위해서는 specificUserId가 필요합니다.',
         );
       }
 
-      // 필터링된 게시물 조회 후 정렬하여 반환
       const posts = await this.feedFilterService.filterPostsByUser(
         userId,
         filterType,
@@ -61,12 +58,10 @@ export class FeedService {
     }
   }
 
-  // 게시물 상세 정보 조회 메서드
   async getPostDetail(userId: number, postId: number): Promise<PostDetailInfo> {
     try {
       this.logger.log(`Fetching post detail for post ${postId}`);
 
-      // 게시물과 연관된 데이터를 한 번의 쿼리로 조회
       const post = await this.postRepository
         .createQueryBuilder('post')
         .leftJoin('post.user', 'user')
@@ -77,7 +72,6 @@ export class FeedService {
         .where('post.post_id = :postId', { postId })
         .andWhere('post.deleted_at IS NULL')
         .select([
-          // 필요한 필드만 선택하여 조회
           'post.post_id',
           'post.content',
           'post.created_at',
@@ -99,7 +93,6 @@ export class FeedService {
         ])
         .getOne();
 
-      // 게시물이 없으면 예외 발생
       if (!post) {
         throw new NotFoundException('해당 게시물을 찾을 수 없습니다.');
       }
@@ -111,7 +104,6 @@ export class FeedService {
     }
   }
 
-  // 게시물 상세 정보를 클라이언트 응답 형식으로 변환하는 private 메서드
   private mapToPostDetailInfo(post: Post, userId: number): PostDetailInfo {
     return {
       postId: post.post_id,
@@ -128,7 +120,6 @@ export class FeedService {
     };
   }
 
-  // 댓글 정보를 클라이언트 응답 형식으로 변환하는 private 메서드
   private mapToCommentInfo(comments: Comment[]): CommentInfo[] {
     return comments.map((comment) => ({
       commentId: comment.comment_id,
@@ -140,7 +131,6 @@ export class FeedService {
     }));
   }
 
-  // 좋아요 정보를 클라이언트 응답 형식으로 변환하는 private 메서드
   private mapToLikeInfo(likes: PostLike[]): LikeInfo[] {
     return likes.map((like) => ({
       userId: like.userAccount?.user_id,

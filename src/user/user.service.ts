@@ -20,21 +20,17 @@ import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class UserService {
-  // Logger 인스턴스 생성
   private readonly logger = new Logger(UserService.name);
   constructor(
-    // UserAccount 리포지토리를 주입
     @InjectRepository(UserAccount)
     private readonly userAccountRepository: Repository<UserAccount>,
 
-    // BusinessProfile 리포지토리를 주입
     @InjectRepository(BusinessProfile)
     private readonly businessProfileRepository: Repository<BusinessProfile>,
     private readonly dataSource: DataSource,
     private readonly authService: AuthService,
   ) {}
 
-  // 비밀번호 검증 공통 로직
   private async validateUserPassword(
     userId: number,
     password: string,
@@ -57,7 +53,6 @@ export class UserService {
     return user;
   }
 
-  // 비즈니스 프로필 업데이트 메서드
   async updateBusinessProfile(
     userId: number,
     updateProfileDto: UpdateBusinessProfileDto,
@@ -65,7 +60,6 @@ export class UserService {
     return this.dataSource.manager.transaction(
       async (transactionalEntityManager) => {
         try {
-          // 필요한 필드만 조회
           const user = await transactionalEntityManager
             .createQueryBuilder(UserAccount, 'user')
             .leftJoinAndSelect('user.profile', 'profile')
@@ -86,10 +80,8 @@ export class UserService {
             throw new NotFoundException('사용자를 찾을 수 없습니다.');
           }
 
-          // 프로필 업데이트 또는 생성
           const { name, ...profileData } = updateProfileDto;
 
-          // 이름과 프로필 정보 동시 업데이트
           const updates = [];
 
           if (name) {
@@ -108,7 +100,6 @@ export class UserService {
             transactionalEntityManager.save(BusinessProfile, profile),
           );
 
-          // 모든 업데이트를 병렬로 처리
           await Promise.all(updates);
 
           return this.mapToBusinessProfileInfo(profile);
@@ -121,7 +112,7 @@ export class UserService {
       },
     );
   }
-  // 비밀번호 변경 메서드
+
   async changePassword(
     userId: number,
     changePasswordDto: ChangePasswordDto,
@@ -135,10 +126,8 @@ export class UserService {
       );
     }
 
-    // 공통 비밀번호 검증 로직 사용
     await this.validateUserPassword(userId, currentPassword);
 
-    // 비밀번호 업데이트
     await this.userAccountRepository
       .createQueryBuilder()
       .update(UserAccount)
@@ -151,21 +140,17 @@ export class UserService {
     userId: number,
     deleteAccountDto: DeleteAccountDto,
   ): Promise<void> {
-    // 비밀번호 검증
     await this.validateUserPassword(userId, deleteAccountDto.password);
 
     try {
-      // 1. 로그아웃 처리 (리프레시 토큰 삭제)
       await this.authService.logout(userId);
 
-      // 2. 비즈니스 프로필 소프트 삭제
       await this.businessProfileRepository
         .createQueryBuilder()
         .softDelete()
         .where('user_id = :userId', { userId })
         .execute();
 
-      // 3. 유저 계정 소프트 삭제
       await this.userAccountRepository
         .createQueryBuilder()
         .softDelete()
@@ -179,7 +164,6 @@ export class UserService {
     }
   }
 
-  // 비즈니스 프로필 정보를 BusinessProfileInfo 타입으로 변환하는 메서드
   private mapToBusinessProfileInfo(
     profile: BusinessProfile,
   ): BusinessProfileInfo {

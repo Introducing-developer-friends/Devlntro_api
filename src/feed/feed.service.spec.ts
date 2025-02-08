@@ -27,7 +27,6 @@ describe('FeedService', () => {
 
   const mockDate = new Date('2024-01-01');
 
-  // Post 엔티티 mock
   const mockPostEntity = {
     post_id: 1,
     user: {

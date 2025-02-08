@@ -58,7 +58,6 @@ export class NotificationsController {
       req.user.userId,
     );
 
-    // 응답 반환
     return {
       statusCode: HttpStatus.OK,
       message: '알림 목록을 성공적으로 조회했습니다.',
@@ -66,7 +65,6 @@ export class NotificationsController {
     };
   }
 
-  // 알림 읽음 처리 API
   @Patch(':id/read')
   @ApiOperation({ summary: '알림 읽음 처리' })
   @ApiResponse({
@@ -89,7 +87,6 @@ export class NotificationsController {
     };
   }
 
-  // 친구 요청 알림 생성 API
   @Post('friend-request')
   @ApiOperation({ summary: '친구 요청 알림 생성' })
   @ApiResponse({
@@ -156,7 +153,6 @@ export class NotificationsController {
     };
   }
 
-  // 댓글 알림 생성 API
   @Post('comment')
   @ApiOperation({ summary: '댓글 알림 생성' })
   @ApiResponse({
@@ -194,7 +190,6 @@ export class NotificationsController {
     };
   }
 
-  // 댓글 좋아요 알림 생성 API
   @Post('like-comment')
   @ApiOperation({ summary: '댓글 좋아요 알림 생성' })
   @ApiResponse({
@@ -288,7 +283,6 @@ export class NotificationsController {
     };
   }
 
-  // 로그인 ID로 userId 조회
   @Post('find-user-id')
   @ApiOperation({ summary: '로그인 ID로 사용자 ID 조회' })
   @ApiResponse({

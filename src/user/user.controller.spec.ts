@@ -11,14 +11,11 @@ import {
   AccountDeleteResponse,
 } from '../types/user.types';
 
-// UserController 테스트 스위트
 describe('UserController', () => {
   let controller: UserController;
   let mockUserService: Partial<UserService>;
 
-  // 테스트 시작 전 각 테스트 환경을 설정하는 beforeEach 블록
   beforeEach(async () => {
-    // Mock 프로필 데이터
     const mockProfile = {
       name: 'Test User',
       company: 'Test Company',
@@ -28,29 +25,24 @@ describe('UserController', () => {
       phone: '010-1234-5678',
     };
 
-    // UserService의 메서드를 모의로 정의하여 가짜 응답을 반환
     mockUserService = {
       updateBusinessProfile: jest.fn().mockResolvedValue(mockProfile),
       changePassword: jest.fn().mockResolvedValue(undefined),
       deleteAccount: jest.fn().mockResolvedValue(undefined),
     };
 
-    // TestingModule을 생성하여 UserController와 모의 UserService를 주입
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
       providers: [{ provide: UserService, useValue: mockUserService }],
     }).compile();
 
-    // 생성된 모듈에서 UserController를 가져옴
     controller = module.get<UserController>(UserController);
   });
 
-  // 컨트롤러가 정의되었는지 확인하는 기본 테스트
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  // 비즈니스 프로필 업데이트 기능 테스트
   describe('updateBusinessProfile', () => {
     it('should properly pass data to service and return formatted response', async () => {
       const mockRequest = { user: { userId: 1 } };
@@ -68,13 +60,11 @@ describe('UserController', () => {
         updateProfileDto,
       );
 
-      // 서비스에 올바른 데이터가 전달되었는지 검증
       expect(mockUserService.updateBusinessProfile).toHaveBeenCalledWith(
         mockRequest.user.userId,
         updateProfileDto,
       );
 
-      // 응답이 예상한 형식을 따르는지 검증
       expect(result).toEqual<BusinessProfileResponse>({
         statusCode: HttpStatus.OK,
         message: '프로필 정보가 성공적으로 수정되었습니다.',
@@ -83,7 +73,6 @@ describe('UserController', () => {
     });
   });
 
-  // 비밀번호 변경 기능 테스트
   describe('changePassword', () => {
     it('should properly pass data to service and return formatted response', async () => {
       const mockRequest = { user: { userId: 1 } };
@@ -110,7 +99,6 @@ describe('UserController', () => {
     });
   });
 
-  // 계정 삭제 기능 테스트
   describe('deleteAccount', () => {
     it('should properly pass data to service and return formatted response', async () => {
       const mockRequest = { user: { userId: 1 } };
@@ -128,7 +116,6 @@ describe('UserController', () => {
         deleteAccountDto,
       );
 
-      // 기대하는 응답 및 mock 호출 확인
       expect(result).toEqual<AccountDeleteResponse>({
         statusCode: HttpStatus.OK,
         message: '회원 탈퇴가 성공적으로 처리되었습니다.',

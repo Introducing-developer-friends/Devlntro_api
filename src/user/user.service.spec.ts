@@ -43,7 +43,6 @@ describe('UserService', () => {
   let mockQueryBuilder: MockQueryBuilder;
   let mockTransactionManager: any;
 
-  // BusinessProfile 정보 모킹 데이터
   const mockProfileInfo: BusinessProfileInfo = {
     name: 'Test User',
     company: 'Test Company',
@@ -54,7 +53,6 @@ describe('UserService', () => {
   };
 
   beforeEach(async () => {
-    // QueryBuilder Mock 초기화
     mockQueryBuilder = {
       select: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
@@ -68,7 +66,6 @@ describe('UserService', () => {
       create: jest.fn(),
     };
 
-    // TransactionManager mock 초기화
     const createMockQueryBuilder = () => ({
       leftJoinAndSelect: jest.fn().mockReturnThis(),
       select: jest.fn().mockReturnThis(),
@@ -79,14 +76,12 @@ describe('UserService', () => {
       execute: jest.fn().mockResolvedValue({ affected: 1 }),
     });
 
-    // TransactionManager mock 추가
     mockTransactionManager = {
       createQueryBuilder: jest.fn().mockReturnValue(createMockQueryBuilder()),
       save: jest.fn(),
       create: jest.fn(),
     };
 
-    // Mock Repository 초기화
     mockUserRepository = {
       createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
       findOne: jest.fn(),
@@ -98,7 +93,6 @@ describe('UserService', () => {
       save: jest.fn(),
     };
 
-    // DataSource Mock 초기화
     mockDataSource = {
       createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
       manager: {
@@ -110,7 +104,6 @@ describe('UserService', () => {
       logout: jest.fn(),
     };
 
-    // TestingModule 생성
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
@@ -137,7 +130,6 @@ describe('UserService', () => {
   });
 
   describe('updateBusinessProfile', () => {
-    // 성공적으로 프로필 업데이트 테스트
     it('should update business profile successfully', async () => {
       const mockUser = {
         user_id: 1,
@@ -164,7 +156,6 @@ describe('UserService', () => {
       expect(result).toEqual(expect.objectContaining(mockProfileInfo));
     });
 
-    // 프로필이 없는 사용자의 새 프로필 생성 테스트
     it('should create new profile if user does not have one', async () => {
       const mockUser = {
         user_id: 1,
@@ -191,7 +182,6 @@ describe('UserService', () => {
       expect(result).toEqual(expect.objectContaining(mockProfileInfo));
     });
 
-    // 사용자가 없을 경우 NotFoundException 발생 테스트
     it('should throw NotFoundException if user is not found', async () => {
       const queryBuilder = mockTransactionManager.createQueryBuilder();
       queryBuilder.getOne.mockResolvedValue(null);
@@ -201,7 +191,6 @@ describe('UserService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    // 제공된 필드만 업데이트 되는지 테스트
     it('should update only provided fields', async () => {
       const partialUpdate = {
         company: 'New Company',
@@ -298,10 +287,10 @@ describe('UserService', () => {
       const result = await service.updateBusinessProfile(1, updateData);
 
       expect(mockTransactionManager.save).toHaveBeenCalledTimes(2);
-      // 실제 서비스 동작에 맞춰 기대값 수정
+
       expect(result).toEqual({
-        name: 'Test User', // 현재 서비스에서는 name이 업데이트되지 않음
-        company: 'New Company', // company만 업데이트됨
+        name: 'Test User',
+        company: 'New Company',
         department: mockProfileInfo.department,
         position: mockProfileInfo.position,
         email: mockProfileInfo.email,
@@ -344,7 +333,6 @@ describe('UserService', () => {
         password: 'hashedPassword',
       };
 
-      // 현재 비밀번호 확인 및 새 비밀번호 암호화 Mock
       mockQueryBuilder.getOne.mockResolvedValueOnce(mockUser);
       jest
         .spyOn(bcrypt, 'compare')
@@ -359,7 +347,6 @@ describe('UserService', () => {
       expect(mockQueryBuilder.execute).toHaveBeenCalled();
     });
 
-    // 현재 비밀번호가 틀렸을 경우 UnauthorizedException 발생 테스트
     it('should throw UnauthorizedException if current password is incorrect', async () => {
       const mockUser = {
         user_id: 1,
@@ -376,7 +363,6 @@ describe('UserService', () => {
       );
     });
 
-    // 새로운 비밀번호와 확인 비밀번호가 일치하지 않을 경우 BadRequestException 발생 테스트
     it('should throw BadRequestException when passwords do not match', async () => {
       const invalidPasswords: UserPasswordInfo = {
         currentPassword: 'oldPassword',
@@ -389,7 +375,6 @@ describe('UserService', () => {
       );
     });
 
-    // 사용자를 찾지 못했을 경우 NotFoundException 발생 테스트
     it('should throw NotFoundException if user not found', async () => {
       mockQueryBuilder.getOne.mockResolvedValueOnce(null);
 
@@ -401,17 +386,15 @@ describe('UserService', () => {
     it('should validate password complexity', async () => {
       const weakPasswordDto: UserPasswordInfo = {
         currentPassword: 'oldPassword',
-        newPassword: 'weak', // 너무 짧은 비밀번호
+        newPassword: 'weak',
         confirmNewPassword: 'weak',
       };
 
-      // 현재 비밀번호 검증을 위한 mock
       const mockUser = {
         user_id: 1,
         password: 'hashedPassword',
       };
 
-      // validateUserPassword를 위한 mock
       const validateQueryBuilder = {
         select: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -431,7 +414,6 @@ describe('UserService', () => {
       );
     });
 
-    // 새로운 비밀번호가 현재 비밀번호와 동일한 경우 BadRequestException 발생 테스트
     it('should not allow same password as current', async () => {
       const mockUser = {
         user_id: 1,
@@ -455,7 +437,6 @@ describe('UserService', () => {
       );
     });
 
-    // 데이터베이스 오류 발생 시 InternalServerErrorException 발생 테스트
     it('should handle database error during password update', async () => {
       const mockUser = {
         user_id: 1,
@@ -481,7 +462,6 @@ describe('UserService', () => {
       password: 'password123',
     };
 
-    // 계정 삭제 성공 테스트
     it('should delete account successfully', async () => {
       const mockUser = {
         user_id: 1,
@@ -500,7 +480,6 @@ describe('UserService', () => {
       expect(mockQueryBuilder.execute).toHaveBeenCalled();
     });
 
-    // 비밀번호가 틀렸을 경우 UnauthorizedException 발생 테스트
     it('should throw UnauthorizedException if password is incorrect', async () => {
       const mockUser = {
         user_id: 1,
@@ -517,7 +496,6 @@ describe('UserService', () => {
       );
     });
 
-    // 사용자를 찾지 못했을 경우 NotFoundException 발생 테스트
     it('should throw NotFoundException if user not found', async () => {
       mockQueryBuilder.getOne.mockResolvedValueOnce(null);
 
@@ -526,7 +504,6 @@ describe('UserService', () => {
       );
     });
 
-    // 로그아웃 실패 시 InternalServerErrorException 발생 테스트
     it('should handle logout failure gracefully', async () => {
       const mockUser = {
         user_id: 1,
@@ -546,7 +523,6 @@ describe('UserService', () => {
       );
     });
 
-    // 프로필 삭제 실패 시 InternalServerErrorException 발생 테스트
     it('should handle profile deletion error', async () => {
       const mockUser = {
         user_id: 1,
@@ -578,7 +554,6 @@ describe('UserService', () => {
         password: 'hashedPassword',
       };
 
-      // validateUserPassword에서 사용하는 queryBuilder 설정
       const validateQueryBuilder = {
         select: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -593,14 +568,12 @@ describe('UserService', () => {
         .mockImplementation(() => Promise.resolve(true));
       mockAuthService.logout.mockResolvedValueOnce(undefined);
 
-      // profile 삭제 성공
       mockProfileRepository.createQueryBuilder = jest.fn().mockReturnValue({
         softDelete: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
         execute: jest.fn().mockResolvedValue(undefined),
       });
 
-      // user account 삭제 실패
       const deleteQueryBuilder = {
         softDelete: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
@@ -618,7 +591,6 @@ describe('UserService', () => {
       ).rejects.toThrow(InternalServerErrorException);
     });
 
-    // 프로필 삭제 실패 시 InternalServerErrorException 발생 테스트
     it('should validate password length', async () => {
       const validateQueryBuilder = {
         select: jest.fn().mockReturnThis(),
@@ -630,8 +602,6 @@ describe('UserService', () => {
         validateQueryBuilder,
       );
 
-      // 현재 서비스 로직에서는 빈 비밀번호도 validateUserPassword로 전달되어
-      // NotFoundException이 발생
       await expect(service.deleteAccount(1, { password: '' })).rejects.toThrow(
         NotFoundException,
       );

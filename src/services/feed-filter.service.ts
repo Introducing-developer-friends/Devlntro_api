@@ -6,7 +6,6 @@ import { FilterType } from '../types/feed.types';
 
 @Injectable()
 export class FeedFilterService {
-  // FeedFilterService 클래스에서 사용할 로거 인스턴스 생성
   private readonly logger = new Logger(FeedFilterService.name);
 
   constructor(
@@ -14,23 +13,19 @@ export class FeedFilterService {
     private readonly postRepository: Repository<Post>,
   ) {}
 
-  // 사용자 기준으로 게시물을 필터링하는 메서드
   async filterPostsByUser(
     userId: number,
     filterType: FilterType,
     specificUserId?: number,
   ): Promise<Post[]> {
     try {
-      // 기본 쿼리 빌더 설정
       const query = this.postRepository
         .createQueryBuilder('post')
         .leftJoin('post.user', 'user')
         .where('post.deleted_at IS NULL');
 
-      // 필터 타입에 따른 조건 추가
       switch (filterType) {
         case FilterType.ALL:
-          // 비즈니스 연락처 조회를 Join으로 변경
           query.innerJoin(
             'business_contact',
             'bc',
@@ -42,12 +37,10 @@ export class FeedFilterService {
           break;
 
         case FilterType.OWN:
-          // 사용자 자신의 게시물만 조회
           query.andWhere('user.user_id = :userId', { userId });
           break;
 
         case FilterType.SPECIFIC:
-          // 특정 사용자의 게시물만 조회
           if (!specificUserId) {
             throw new BadRequestException('특정 사용자 ID가 필요합니다.');
           }
@@ -55,7 +48,6 @@ export class FeedFilterService {
           break;
       }
 
-      // 필요한 필드만 선택하여 조회
       return await query
         .select([
           'post.post_id',

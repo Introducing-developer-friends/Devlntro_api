@@ -26,7 +26,7 @@ export class Notification {
 
   @ManyToOne(() => Post, { nullable: true })
   @JoinColumn({ name: 'post_id' })
-  post: Post; // 관련 게시물 (있는 경우)
+  post: Post;
 
   @ManyToOne(() => Comment, { nullable: true })
   @JoinColumn({ name: 'comment_id' })
@@ -52,19 +52,19 @@ export class Notification {
     default: false,
     nullable: false,
   })
-  isRead: boolean; // 알림 읽음 여부
+  isRead: boolean;
 
   @CreateDateColumn({
     name: `created_at`,
     type: 'timestamp',
   })
-  createdAt: Date; // 알림 생성 시간
+  createdAt: Date;
 
   @DeleteDateColumn({
     name: 'deleted_at',
     type: 'timestamp',
     nullable: true,
   })
-  deletedAt: Date; // 소프트 삭제를 위한 삭제 시간 (null이면 삭제되지 않은 상태)
+  deletedAt: Date;
   user: any;
 }

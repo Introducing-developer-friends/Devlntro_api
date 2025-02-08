@@ -5,7 +5,6 @@ export class CreateNotificationTable1700000000003
 {
   public async up(queryRunner: QueryRunner): Promise<void> {
     try {
-      // notification 테이블 생성
       await queryRunner.query(`
                 CREATE TABLE notification (
                     notification_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -38,7 +37,6 @@ export class CreateNotificationTable1700000000003
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     try {
-      // 외래 키 제약 조건을 비활성화한 후 테이블 삭제
       await queryRunner.query('SET FOREIGN_KEY_CHECKS = 0');
       await queryRunner.query('DROP TABLE IF EXISTS notification');
       await queryRunner.query('SET FOREIGN_KEY_CHECKS = 1');
