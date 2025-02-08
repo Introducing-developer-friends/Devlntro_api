@@ -45,6 +45,16 @@ jobs:
             FLUSH PRIVILEGES;
           "
 
+      - name: Setup Test Database
+        run: |
+          npm run typeorm migration:run
+        env:
+          DB_HOST: localhost
+          DB_PORT: 3306
+          DB_USERNAME: test_user
+          DB_PASSWORD: test_password
+          DB_DATABASE: devintro_test
+
       - name: Run all tests
         run: npm run test
         env:
