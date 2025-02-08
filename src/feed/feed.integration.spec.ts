@@ -76,7 +76,10 @@ describe('Feed Integration Tests', () => {
           useValue: mockS3Service,
         },
       ],
-    }).compile();
+    })
+      .overrideProvider(S3Service)
+      .useValue(mockS3Service)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     dataSource = moduleFixture.get<DataSource>(DataSource);

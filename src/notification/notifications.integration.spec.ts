@@ -7,6 +7,7 @@ import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from './notifications.module';
 import { DataSource } from 'typeorm';
 import { PostModule } from '../post/post.module';
+import { S3Service } from '../s3/s3.service';
 
 describe('NotificationsService (Integration)', () => {
   let app: INestApplication;
@@ -16,6 +17,12 @@ describe('NotificationsService (Integration)', () => {
   let senderId: number;
   let testPostId: number;
   let receiverLoginId: string;
+
+  const mockS3Service = {
+    uploadFile: jest.fn().mockResolvedValue('https://fake-s3-url.com/test.jpg'),
+    deleteFile: jest.fn().mockResolvedValue(undefined),
+    extractKeyFromUrl: jest.fn().mockReturnValue('test-key'),
+  };
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -44,7 +51,10 @@ describe('NotificationsService (Integration)', () => {
         NotificationsModule,
         PostModule,
       ],
-    }).compile();
+    })
+      .overrideProvider(S3Service)
+      .useValue(mockS3Service)
+      .compile();
 
     app = moduleFixture.createNestApplication();
     dataSource = moduleFixture.get<DataSource>(DataSource);
