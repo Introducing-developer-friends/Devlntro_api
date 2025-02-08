@@ -71,6 +71,7 @@ jobs:
           AWS_ACCESS_KEY_ID: test
           AWS_SECRET_ACCESS_KEY: test
           AWS_S3_BUCKET_NAME: test-bucket
+          AWS_ENDPOINT: s3.ap-northeast-2.amazonaws.com
           CLOUDFRONT_DOMAIN: test.cloudfront.net
 
       - name: Set up Docker Buildx
