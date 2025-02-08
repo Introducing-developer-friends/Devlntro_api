@@ -16,7 +16,9 @@ jobs:
           node-version: '20.15.0'
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm install
+          npm install mysql2@^3.6.0
       - name: Setup MySQL for tests
         uses: mirromutth/mysql-action@v1.1
         with:
@@ -24,6 +26,7 @@ jobs:
           mysql database: 'devintro_test'
           mysql user: 'test_user'
           mysql password: 'test_password'
+          mysql root password: 'root'
 
       - name: Run all tests
         run: npm run test
