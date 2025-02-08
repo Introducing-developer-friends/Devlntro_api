@@ -27,6 +27,15 @@ jobs:
           mysql user: 'test_user'
           mysql password: 'test_password'
           mysql root password: 'root'
+          character set server: 'utf8mb4'
+          collation server: 'utf8mb4_unicode_ci'
+
+      - name: Wait for MySQL
+        run: |
+          while ! mysqladmin ping -h"127.0.0.1" --silent; do
+            sleep 1
+            echo "Waiting for MySQL..."
+          done
 
       - name: Run all tests
         run: npm run test
