@@ -39,7 +39,7 @@ jobs:
       - name: Grant MySQL privileges
         run: |
           mysql -h127.0.0.1 -uroot -proot -e "
-            ALTER USER 'test_user'@'%' IDENTIFIED WITH mysql_native_password BY 'test_password';
+            CREATE USER IF NOT EXISTS 'test_user'@'%' IDENTIFIED WITH mysql_native_password BY 'test_password';
             GRANT ALL PRIVILEGES ON devintro_test.* TO 'test_user'@'%';
             FLUSH PRIVILEGES;
           "
