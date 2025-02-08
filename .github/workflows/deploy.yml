@@ -36,6 +36,13 @@ jobs:
             sleep 1
             echo "Waiting for MySQL..."
           done
+      - name: Grant MySQL privileges
+        run: |
+          mysql -h127.0.0.1 -uroot -proot -e "
+            ALTER USER 'test_user'@'%' IDENTIFIED WITH mysql_native_password BY 'test_password';
+            GRANT ALL PRIVILEGES ON devintro_test.* TO 'test_user'@'%';
+            FLUSH PRIVILEGES;
+          "
 
       - name: Run all tests
         run: npm run test
