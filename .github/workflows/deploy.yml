@@ -47,7 +47,7 @@ jobs:
 
       - name: Setup Test Database
         run: |
-          npm run typeorm migration:run
+          npm run migration:run
         env:
           DB_HOST: localhost
           DB_PORT: 3306
