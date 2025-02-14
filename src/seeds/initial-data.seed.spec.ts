@@ -1,6 +1,6 @@
 import { DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { S3Service } from '../s3/s3.service';
+import { S3Service } from '../s3/service/s3.service';
 import { UserAccount } from '../user/entity/user-account.entity';
 import { Post } from '../post/entity/post.entity';
 import { Comment } from '../comment/entity/comment.entity';
@@ -13,7 +13,7 @@ import { FriendRequest } from '../contacts/entity/friend-request.entity';
 import { seedInitialData } from './initial-data.seed';
 
 jest.mock('@nestjs/config');
-jest.mock('../s3/s3.service');
+jest.mock('../s3/service/s3.service');
 jest.mock('bcrypt', () => ({
   hash: jest.fn().mockResolvedValue('hashedPassword123'),
 }));

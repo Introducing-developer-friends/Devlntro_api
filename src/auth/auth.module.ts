@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
+import { AuthService } from './service/auth.service';
+import { AuthController } from './controller/auth.controller';
 import { UserAccount } from '../user/entity/user-account.entity';
 import { BusinessProfile } from '../user/entity/business-profile.entity';
-import { JwtStrategy } from './jwt.strategy';
+import { JwtStrategy } from '../jwt/jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { RefreshToken } from './entity/refresh-token.entity';
 

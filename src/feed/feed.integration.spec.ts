@@ -11,7 +11,7 @@ import { PostLike } from '../post/entity/post-like.entity';
 import { Comment } from '../comment/entity/comment.entity';
 import { BusinessContact } from '../contacts/entity/business-contact.entity';
 import { UserAccount } from '../user/entity/user-account.entity';
-import { S3Service } from '../s3/s3.service';
+import { S3Service } from '../s3/service/s3.service';
 import { DataSource } from 'typeorm';
 import { PostModule } from '../post/post.module';
 import { FeedFilterService } from '../services/feed-filter.service';

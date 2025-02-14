@@ -10,7 +10,7 @@ import { Notification } from '../notification/entity/notification.entity';
 import { FriendRequest } from '../contacts/entity/friend-request.entity';
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
-import { S3Service } from '../s3/s3.service';
+import { S3Service } from '../s3/service/s3.service';
 import { ConfigService } from '@nestjs/config';
 
 export const seedInitialData = async (dataSource: DataSource) => {
