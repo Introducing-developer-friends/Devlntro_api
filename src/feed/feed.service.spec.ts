@@ -34,6 +34,22 @@ describe('FeedService', () => {
     user: {
       user_id: 1,
       name: 'User1',
+      login_id: 'user1',
+      password: 'password',
+      confirm_password: 'password',
+      deletedAt: null,
+      currentTokenVersion: 1,
+
+      contacts: [],
+      contactOf: [],
+      posts: [],
+      comments: [],
+      postLikes: [],
+      sentFriendRequests: [],
+      receivedFriendRequests: [],
+      notifications: [],
+      refreshTokens: [],
+      profile: null,
     },
     content: 'Test content',
     created_at: mockDate,
@@ -42,7 +58,7 @@ describe('FeedService', () => {
     comments_count: 5,
     comments: [],
     postLikes: [],
-  } as Post;
+  };
 
   const mockPostBasicInfo: PostBasicInfo = {
     postId: 1,
@@ -136,7 +152,7 @@ describe('FeedService', () => {
       const mockPosts = [
         { ...mockPostEntity, post_id: 1, post_like_count: 20 },
         { ...mockPostEntity, post_id: 2, post_like_count: 10 },
-      ] as Post[];
+      ];
 
       const expectedPosts = [
         { ...mockPostBasicInfo, postId: 1, likesCount: 20 },
@@ -162,7 +178,7 @@ describe('FeedService', () => {
       const mockPosts = [
         { ...mockPostEntity, post_id: 1, comments_count: 15 },
         { ...mockPostEntity, post_id: 2, comments_count: 5 },
-      ] as Post[];
+      ];
 
       const expectedPosts = [
         { ...mockPostBasicInfo, postId: 1, commentsCount: 15 },
@@ -417,7 +433,6 @@ describe('FeedService', () => {
 
       const result = await feedService.getPostDetail(1, 1);
 
-      // Verify all mapped fields
       expect(result.postId).toBe(mockDetailPost.post_id);
       expect(result.createrId).toBe(mockDetailPost.user.user_id);
       expect(result.createrName).toBe(mockDetailPost.user.name);

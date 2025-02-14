@@ -140,11 +140,11 @@ describe('AuthService', () => {
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
 
       mockQueryRunner.manager.create
-        .mockImplementationOnce((entity, data) => ({
+        .mockImplementationOnce((data) => ({
           user_id: 1,
           ...data,
         }))
-        .mockImplementationOnce((entity, data) => ({ ...data }));
+        .mockImplementationOnce((data) => ({ ...data }));
       mockQueryRunner.manager.save
         .mockResolvedValueOnce({ user_id: 1 })
         .mockResolvedValueOnce({});
@@ -181,7 +181,10 @@ describe('AuthService', () => {
 
     it('should handle database error during registration', async () => {
       mockQueryBuilder.getOne.mockResolvedValue(null);
-      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed_password');
+      const mockHash = jest
+        .fn()
+        .mockImplementation(async () => 'hashed_password');
+      jest.spyOn(bcrypt, 'hash').mockImplementation(mockHash);
       mockQueryRunner.manager.save.mockRejectedValueOnce(new Error('DB Error'));
 
       const registerDto = {
@@ -218,7 +221,7 @@ describe('AuthService', () => {
       const mockUser = { user_id: 1, ...invalidEmailDto };
       mockQueryRunner.manager.create
         .mockImplementationOnce(() => mockUser)
-        .mockImplementationOnce((entity, data) => ({ ...data }));
+        .mockImplementationOnce((data) => ({ ...data }));
 
       mockQueryRunner.manager.save.mockRejectedValueOnce(
         new Error('Invalid email format'),
@@ -239,7 +242,8 @@ describe('AuthService', () => {
         password: 'hashed_password',
       };
       mockQueryBuilder.getOne.mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      const mockCompare = jest.fn().mockImplementation(async () => true);
+      jest.spyOn(bcrypt, 'compare').mockImplementation(mockCompare);
 
       const result = await service.login(loginDto);
 
@@ -265,7 +269,8 @@ describe('AuthService', () => {
         password: 'hashed_password',
       };
       mockQueryBuilder.getOne.mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+      const mockCompare = jest.fn().mockImplementation(async () => false);
+      jest.spyOn(bcrypt, 'compare').mockImplementation(mockCompare);
 
       const result = await service.login(loginDto);
 
