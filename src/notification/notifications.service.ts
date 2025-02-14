@@ -6,10 +6,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Notification } from '../entities/notification.entity';
-import { UserAccount } from '../entities/user-account.entity';
-import { Post } from '../entities/post.entity';
-import { Comment } from '../entities/comment.entity';
+import { Notification } from './entity/notification.entity';
+import { UserAccount } from '../user/entity/user-account.entity';
+import { Post } from '../post/entity/post.entity';
+import { Comment } from '../comment/entity/comment.entity';
 import {
   NotificationType,
   NotificationInfo,

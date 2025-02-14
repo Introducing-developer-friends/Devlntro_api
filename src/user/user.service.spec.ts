@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserService } from './user.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { UserAccount } from '../entities/user-account.entity';
-import { BusinessProfile } from '../entities/business-profile.entity';
+import { UserAccount } from './entity/user-account.entity';
+import { BusinessProfile } from './entity/business-profile.entity';
 import { Repository, DataSource, EntityManager } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import {

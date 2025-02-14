@@ -5,9 +5,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Comment } from '../entities/comment.entity';
-import { CommentLike } from '../entities/comment-like.entity';
-import { Post } from '../entities/post.entity';
+import { Comment } from './entity/comment.entity';
+import { CommentLike } from './entity/comment-like.entity';
+import { Post } from '../post/entity/post.entity';
 import { CreateCommentDto } from './dto/create.comment.dto';
 import {
   CommentCreateResult,

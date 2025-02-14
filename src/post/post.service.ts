@@ -5,8 +5,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Post } from '../entities/post.entity';
-import { PostLike } from '../entities/post-like.entity';
+import { Post } from './entity/post.entity';
+import { PostLike } from './entity/post-like.entity';
 import { S3Service } from '../s3/s3.service';
 import {
   PostCreateData,

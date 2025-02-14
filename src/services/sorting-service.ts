@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PostBasicInfo } from '../types/feed.types';
-import { Post } from 'src/entities/post.entity';
+import { Post } from 'src/post/entity/post.entity';
 import { SortOption } from '../enums/sort.enum';
 
 @Injectable()

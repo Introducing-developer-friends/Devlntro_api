@@ -7,13 +7,13 @@ import {
   DeleteDateColumn,
 } from 'typeorm';
 import { BusinessProfile } from './business-profile.entity';
-import { BusinessContact } from './business-contact.entity';
-import { Post } from './post.entity';
-import { Comment } from './comment.entity';
-import { PostLike } from './post-like.entity';
-import { FriendRequest } from './friend-request.entity';
-import { Notification } from './notification.entity';
-import { RefreshToken } from './refresh-token.entity';
+import { BusinessContact } from '../../contacts/entity/business-contact.entity';
+import { Post } from '../../post/entity/post.entity';
+import { Comment } from '../../comment/entity/comment.entity';
+import { PostLike } from '../../post/entity/post-like.entity';
+import { FriendRequest } from '../../contacts/entity/friend-request.entity';
+import { Notification } from '../../notification/entity/notification.entity';
+import { RefreshToken } from '../../auth/entity/refresh-token.entity';
 
 @Entity()
 export class UserAccount {

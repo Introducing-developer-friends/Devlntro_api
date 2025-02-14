@@ -3,9 +3,9 @@ import { AuthService } from './auth.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { UserAccount } from '../entities/user-account.entity';
-import { BusinessProfile } from '../entities/business-profile.entity';
-import { RefreshToken } from '../entities/refresh-token.entity';
+import { UserAccount } from '../user/entity/user-account.entity';
+import { BusinessProfile } from '../user/entity/business-profile.entity';
+import { RefreshToken } from './entity/refresh-token.entity';
 import { BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 

@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CommentService } from './comment.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Comment } from '../entities/comment.entity';
-import { CommentLike } from '../entities/comment-like.entity';
-import { Post } from '../entities/post.entity';
+import { Comment } from './entity/comment.entity';
+import { CommentLike } from './entity/comment-like.entity';
+import { Post } from '../post/entity/post.entity';
 import { DataSource } from 'typeorm';
 import {
   NotFoundException,

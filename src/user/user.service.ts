@@ -8,8 +8,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { UserAccount } from '../entities/user-account.entity';
-import { BusinessProfile } from '../entities/business-profile.entity';
+import { UserAccount } from './entity/user-account.entity';
+import { BusinessProfile } from './entity/business-profile.entity';
 import { UpdateBusinessProfileDto } from './dto/update-business-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';

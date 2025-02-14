@@ -7,9 +7,9 @@ import {
   DeleteDateColumn,
   JoinColumn,
 } from 'typeorm';
-import { UserAccount } from './user-account.entity';
-import { Post } from './post.entity';
-import { Comment } from './comment.entity';
+import { UserAccount } from '../../user/entity/user-account.entity';
+import { Post } from '../../post/entity/post.entity';
+import { Comment } from '../../comment/entity/comment.entity';
 
 @Entity()
 export class Notification {

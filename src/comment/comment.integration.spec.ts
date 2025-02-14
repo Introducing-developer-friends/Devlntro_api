@@ -6,10 +6,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from '../auth/auth.module';
 import { CommentModule } from './comment.module';
 import { PostModule } from '../post/post.module';
-import { Comment } from '../entities/comment.entity';
-import { CommentLike } from '../entities/comment-like.entity';
-import { Post } from '../entities/post.entity';
-import { UserAccount } from '../entities/user-account.entity';
+import { Comment } from './entity/comment.entity';
+import { CommentLike } from './entity/comment-like.entity';
+import { Post } from '../post/entity/post.entity';
+import { UserAccount } from '../user/entity/user-account.entity';
 
 describe('Comments Integration Tests', () => {
   let app: INestApplication;

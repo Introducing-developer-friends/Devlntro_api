@@ -7,7 +7,7 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
 } from 'typeorm';
-import { UserAccount } from './user-account.entity';
+import { UserAccount } from '../../user/entity/user-account.entity';
 
 @Entity()
 export class RefreshToken {

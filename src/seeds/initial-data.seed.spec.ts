@@ -1,15 +1,15 @@
 import { DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { S3Service } from '../s3/s3.service';
-import { UserAccount } from '../entities/user-account.entity';
-import { Post } from '../entities/post.entity';
-import { Comment } from '../entities/comment.entity';
-import { PostLike } from '../entities/post-like.entity';
-import { CommentLike } from '../entities/comment-like.entity';
-import { BusinessContact } from '../entities/business-contact.entity';
-import { BusinessProfile } from '../entities/business-profile.entity';
-import { Notification } from '../entities/notification.entity';
-import { FriendRequest } from '../entities/friend-request.entity';
+import { UserAccount } from '../user/entity/user-account.entity';
+import { Post } from '../post/entity/post.entity';
+import { Comment } from '../comment/entity/comment.entity';
+import { PostLike } from '../post/entity/post-like.entity';
+import { CommentLike } from '../comment/entity/comment-like.entity';
+import { BusinessContact } from '../contacts/entity/business-contact.entity';
+import { BusinessProfile } from '../user/entity/business-profile.entity';
+import { Notification } from '../notification/entity/notification.entity';
+import { FriendRequest } from '../contacts/entity/friend-request.entity';
 import { seedInitialData } from './initial-data.seed';
 
 jest.mock('@nestjs/config');

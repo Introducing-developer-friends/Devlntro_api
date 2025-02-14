@@ -1,8 +1,8 @@
 import { Repository, SelectQueryBuilder } from 'typeorm';
 
-import { Post } from '../entities/post.entity';
-import { Comment } from '../entities/comment.entity';
-import { UserAccount } from '../entities/user-account.entity';
+import { Post } from '../post/entity/post.entity';
+import { Comment } from '../comment/entity/comment.entity';
+import { UserAccount } from '../user/entity/user-account.entity';
 
 export const createMockQueryBuilder = () => {
   const queryBuilder = Object.create(SelectQueryBuilder.prototype);

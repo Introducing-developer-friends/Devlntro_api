@@ -8,8 +8,8 @@ import {
   CreateDateColumn,
   DeleteDateColumn,
 } from 'typeorm';
-import { UserAccount } from './user-account.entity';
-import { Comment } from './comment.entity';
+import { UserAccount } from '../../user/entity/user-account.entity';
+import { Comment } from '../../comment/entity/comment.entity';
 import { PostLike } from './post-like.entity';
 
 @Entity()

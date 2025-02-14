@@ -2,8 +2,8 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, QueryRunner, MoreThan } from 'typeorm';
-import { UserAccount } from '../entities/user-account.entity';
-import { BusinessProfile } from '../entities/business-profile.entity';
+import { UserAccount } from '../user/entity/user-account.entity';
+import { BusinessProfile } from '../user/entity/business-profile.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
@@ -13,7 +13,7 @@ import {
   TokenPayload,
   RegisterResult,
 } from '../types/auth.type';
-import { RefreshToken } from '../entities/refresh-token.entity';
+import { RefreshToken } from './entity/refresh-token.entity';
 import { ConfigService } from '@nestjs/config';
 import { ErrorMessageType } from '../enums/error.message.enum';
 

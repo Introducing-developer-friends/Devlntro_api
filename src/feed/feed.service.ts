@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Post } from '../entities/post.entity';
-import { Comment } from '../entities/comment.entity';
-import { PostLike } from '../entities/post-like.entity';
+import { Post } from '../post/entity/post.entity';
+import { Comment } from '../comment/entity/comment.entity';
+import { PostLike } from '../post/entity/post-like.entity';
 import { FeedFilterService } from '../services/feed-filter.service';
 import { SortingService } from '../services/sorting-service';
 import {
