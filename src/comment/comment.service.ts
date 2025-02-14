@@ -15,6 +15,7 @@ import {
   CommentDeleteResult,
   CommentLikeResult,
 } from '../types/comment.types';
+import { ErrorMessageType } from '../enums/error.message.enum';
 @Injectable()
 export class CommentService {
   constructor(
@@ -42,7 +43,7 @@ export class CommentService {
     ]);
 
     if (!post) {
-      throw new NotFoundException('게시물을 찾을 수 없습니다.');
+      throw new NotFoundException(ErrorMessageType.NOT_FOUND_POST);
     }
 
     const result = await this.commentRepository
@@ -87,7 +88,7 @@ export class CommentService {
       .execute();
 
     if (result.affected === 0) {
-      throw new NotFoundException('댓글을 찾을 수 없습니다.');
+      throw new NotFoundException(ErrorMessageType.NOT_FOUND_COMMENT);
     }
 
     return {
@@ -101,7 +102,6 @@ export class CommentService {
     postId: number,
     commentId: number,
   ): Promise<CommentDeleteResult> {
-    // 현재 댓글 수 확인
     const currentCount = await this.commentRepository.count({
       where: {
         post: { post_id: postId },
@@ -109,7 +109,6 @@ export class CommentService {
       },
     });
 
-    // 댓글 소프트 삭제
     const deleteResult = await this.commentRepository
       .createQueryBuilder()
       .softDelete()
@@ -120,12 +119,9 @@ export class CommentService {
       .execute();
 
     if (deleteResult.affected === 0) {
-      throw new NotFoundException(
-        '댓글을 찾을 수 없거나 삭제 권한이 없습니다.',
-      );
+      throw new NotFoundException(ErrorMessageType.NOT_FOUND_COMMENT);
     }
 
-    // 3. 정확한 카운트 업데이트
     await this.postRepository
       .createQueryBuilder()
       .update(Post)
@@ -139,13 +135,11 @@ export class CommentService {
     };
   }
 
-  // 댓글 좋아요/취소 메서드
   async likeComment(
     userId: number,
     postId: number,
     commentId: number,
   ): Promise<CommentLikeResult> {
-    // 댓글 존재 확인 및 좋아요 수 한번에 조회
     try {
       const [comment, currentLikeCount] = await Promise.all([
         this.commentRepository.findOne({
@@ -161,10 +155,9 @@ export class CommentService {
       ]);
 
       if (!comment) {
-        throw new NotFoundException('댓글을 찾을 수 없습니다.');
+        throw new NotFoundException(ErrorMessageType.NOT_FOUND_COMMENT);
       }
 
-      // 좋아요 추가/제거 시도
       try {
         await this.commentLikeRepository
           .createQueryBuilder()
@@ -176,7 +169,6 @@ export class CommentService {
           })
           .execute();
 
-        // 정확한 카운트 반영
         await this.commentRepository
           .createQueryBuilder()
           .update(Comment)
@@ -190,7 +182,6 @@ export class CommentService {
         };
       } catch (error) {
         if (error.code === 'ER_DUP_ENTRY') {
-          // 좋아요 제거 시도 정확한 카운트 반영
           await this.commentLikeRepository.delete({
             comment: { comment_id: commentId },
             user: { user_id: userId },

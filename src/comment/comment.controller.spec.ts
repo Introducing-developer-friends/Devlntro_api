@@ -7,7 +7,11 @@ import {
   BadRequestException,
   HttpStatus,
 } from '@nestjs/common';
-import { CommentResponse } from '../types/comment.types';
+import {
+  CommentCreateResponse,
+  CommentLikeResponse,
+} from 'src/types/comment.types';
+import { BaseResponse } from 'src/types/response.type';
 
 describe('CommentController', () => {
   let controller: CommentController;
@@ -48,9 +52,9 @@ describe('CommentController', () => {
   describe('createComment', () => {
     it('should create a comment successfully', async () => {
       const createCommentDto: CreateCommentDto = { content: 'Test comment' };
-      const req = { user: { userId: 1 } } as any;
+      const req = { user: { userId: 1 } };
 
-      const expectedResponse: CommentResponse = {
+      const expectedResponse: CommentCreateResponse = {
         statusCode: HttpStatus.CREATED,
         message: '댓글이 성공적으로 작성되었습니다.',
         commentId: 1,
@@ -68,7 +72,7 @@ describe('CommentController', () => {
 
     it('should throw BadRequestException when content is empty', async () => {
       const createCommentDto: CreateCommentDto = { content: '' };
-      const req = { user: { userId: 1 } } as any;
+      const req = { user: { userId: 1 } };
 
       jest.spyOn(mockCommentService, 'createComment').mockImplementation(() => {
         throw new BadRequestException(
@@ -85,9 +89,9 @@ describe('CommentController', () => {
   describe('updateComment', () => {
     it('should update a comment successfully', async () => {
       const updateCommentDto: UpdateCommentDto = { content: 'Updated comment' };
-      const req = { user: { userId: 1 } } as any;
+      const req = { user: { userId: 1 } };
 
-      const expectedResponse: CommentResponse = {
+      const expectedResponse: BaseResponse = {
         statusCode: HttpStatus.OK,
         message: '댓글이 성공적으로 수정되었습니다.',
       };
@@ -110,7 +114,7 @@ describe('CommentController', () => {
 
     it('should throw NotFoundException when comment is not found', async () => {
       const updateCommentDto: UpdateCommentDto = { content: 'Updated comment' };
-      const req = { user: { userId: 1 } } as any;
+      const req = { user: { userId: 1 } };
 
       jest.spyOn(mockCommentService, 'updateComment').mockImplementation(() => {
         throw new NotFoundException('댓글을 찾을 수 없습니다.');
@@ -124,9 +128,9 @@ describe('CommentController', () => {
 
   describe('deleteComment', () => {
     it('should delete a comment successfully', async () => {
-      const req = { user: { userId: 1 } } as any;
+      const req = { user: { userId: 1 } };
 
-      const expectedResponse: CommentResponse = {
+      const expectedResponse: BaseResponse = {
         statusCode: HttpStatus.OK,
         message: '댓글이 성공적으로 삭제되었습니다.',
       };
@@ -142,7 +146,7 @@ describe('CommentController', () => {
     });
 
     it('should throw NotFoundException when comment is not found', async () => {
-      const req = { user: { userId: 1 } } as any;
+      const req = { user: { userId: 1 } };
 
       jest.spyOn(mockCommentService, 'deleteComment').mockImplementation(() => {
         throw new NotFoundException('댓글을 찾을 수 없습니다.');
@@ -156,14 +160,14 @@ describe('CommentController', () => {
 
   describe('likeComment', () => {
     it('should like a comment successfully', async () => {
-      const req = { user: { userId: 1 } } as any;
+      const req = { user: { userId: 1 } };
 
       jest.spyOn(mockCommentService, 'likeComment').mockResolvedValue({
         isLiked: true,
         likeCount: 1,
       });
 
-      const expectedResponse: CommentResponse = {
+      const expectedResponse: CommentLikeResponse = {
         statusCode: HttpStatus.OK,
         message: '댓글에 좋아요를 눌렀습니다.',
         likeCount: 1,
@@ -181,14 +185,14 @@ describe('CommentController', () => {
     });
 
     it('should unlike a comment successfully', async () => {
-      const req = { user: { userId: 1 } } as any;
+      const req = { user: { userId: 1 } };
 
       jest.spyOn(mockCommentService, 'likeComment').mockResolvedValue({
         isLiked: false,
         likeCount: 0,
       });
 
-      const expectedResponse: CommentResponse = {
+      const expectedResponse: CommentLikeResponse = {
         statusCode: HttpStatus.OK,
         message: '댓글 좋아요를 취소했습니다.',
         likeCount: 0,
@@ -200,7 +204,7 @@ describe('CommentController', () => {
     });
 
     it('should throw NotFoundException when comment is not found', async () => {
-      const req = { user: { userId: 1 } } as any;
+      const req = { user: { userId: 1 } };
 
       jest.spyOn(mockCommentService, 'likeComment').mockImplementation(() => {
         throw new NotFoundException('댓글을 찾을 수 없습니다.');

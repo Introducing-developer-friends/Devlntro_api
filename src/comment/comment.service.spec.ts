@@ -4,51 +4,32 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Comment } from '../entities/comment.entity';
 import { CommentLike } from '../entities/comment-like.entity';
 import { Post } from '../entities/post.entity';
-import { Repository, DataSource, SelectQueryBuilder } from 'typeorm';
+import { DataSource } from 'typeorm';
 import {
   NotFoundException,
   InternalServerErrorException,
 } from '@nestjs/common';
+import {
+  createMockComment,
+  createMockPost,
+  createMockQueryBuilder,
+  createMockRepository,
+} from '../utils/test.utils';
+import { ErrorMessageType } from '../enums/error.message.enum';
 
 describe('CommentService', () => {
   let service: CommentService;
-  let mockCommentRepository: jest.Mocked<Repository<Comment>>;
-  let mockCommentLikeRepository: jest.Mocked<Repository<CommentLike>>;
-  let mockPostRepository: jest.Mocked<Repository<Post>>;
-  let queryBuilder: jest.Mocked<SelectQueryBuilder<Comment>>;
+  let mockCommentRepository;
+  let mockCommentLikeRepository;
+  let mockPostRepository;
+  let queryBuilder;
 
   beforeEach(async () => {
-    queryBuilder = {
-      insert: jest.fn().mockReturnThis(),
-      into: jest.fn().mockReturnThis(),
-      values: jest.fn().mockReturnThis(),
-      update: jest.fn().mockReturnThis(),
-      set: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      execute: jest.fn(),
-      softDelete: jest.fn().mockReturnThis(),
-      select: jest.fn().mockReturnThis(),
-    } as unknown as jest.Mocked<SelectQueryBuilder<Comment>>;
+    queryBuilder = createMockQueryBuilder();
+    mockCommentRepository = createMockRepository<Comment>(queryBuilder);
+    mockCommentLikeRepository = createMockRepository<CommentLike>(queryBuilder);
+    mockPostRepository = createMockRepository<Post>(queryBuilder);
 
-    mockCommentRepository = {
-      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
-      findOne: jest.fn(),
-      count: jest.fn(),
-    } as unknown as jest.Mocked<Repository<Comment>>;
-
-    mockCommentLikeRepository = {
-      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
-      count: jest.fn(),
-      delete: jest.fn(),
-    } as unknown as jest.Mocked<Repository<CommentLike>>;
-
-    mockPostRepository = {
-      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
-      findOne: jest.fn(),
-    } as unknown as jest.Mocked<Repository<Post>>;
-
-    // 테스트 모듈 생성
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CommentService,
@@ -76,7 +57,8 @@ describe('CommentService', () => {
 
   describe('createComment', () => {
     it('should create comment successfully', async () => {
-      mockPostRepository.findOne.mockResolvedValue({ post_id: 1 } as Post);
+      const mockPost = createMockPost();
+      mockPostRepository.findOne.mockResolvedValue(mockPost);
 
       mockCommentRepository.count.mockResolvedValue(5);
 
@@ -107,7 +89,8 @@ describe('CommentService', () => {
     });
 
     it('should handle count query failure', async () => {
-      mockPostRepository.findOne.mockResolvedValue({ post_id: 1 } as Post);
+      const mockPost = createMockPost();
+      mockPostRepository.findOne.mockResolvedValue(mockPost);
       const error = new Error('Count failed');
       mockCommentRepository.count.mockRejectedValue(error);
 
@@ -204,7 +187,7 @@ describe('CommentService', () => {
 
   describe('likeComment', () => {
     it('should like comment successfully', async () => {
-      const mockComment = { comment_id: 1 } as Comment;
+      const mockComment = createMockComment();
       mockCommentRepository.findOne.mockResolvedValue(mockComment);
       mockCommentLikeRepository.count.mockResolvedValue(5);
 
@@ -226,7 +209,7 @@ describe('CommentService', () => {
     });
 
     it('should unlike comment when already liked', async () => {
-      const mockComment = { comment_id: 1 } as Comment;
+      const mockComment = createMockComment();
       mockCommentRepository.findOne.mockResolvedValue(mockComment);
       mockCommentLikeRepository.count.mockResolvedValue(5);
 
@@ -256,14 +239,13 @@ describe('CommentService', () => {
       mockCommentLikeRepository.count.mockResolvedValue(0);
 
       await expect(service.likeComment(1, 1, 1)).rejects.toThrow(
-        new NotFoundException('댓글을 찾을 수 없습니다.'),
+        new NotFoundException(ErrorMessageType.NOT_FOUND_COMMENT),
       );
     });
 
     it('should handle database errors properly', async () => {
-      mockCommentRepository.findOne.mockResolvedValue({
-        comment_id: 1,
-      } as Comment);
+      const mockComment = createMockComment();
+      mockCommentRepository.findOne.mockResolvedValue(mockComment);
       mockCommentLikeRepository.count.mockResolvedValue(5);
       queryBuilder.execute.mockRejectedValue(new Error('DB Error'));
 
@@ -273,9 +255,8 @@ describe('CommentService', () => {
     });
 
     it('should handle delete operation failure', async () => {
-      mockCommentRepository.findOne.mockResolvedValue({
-        comment_id: 1,
-      } as Comment);
+      const mockComment = createMockComment();
+      mockCommentRepository.findOne.mockResolvedValue(mockComment);
       mockCommentLikeRepository.count.mockResolvedValue(5);
       queryBuilder.execute.mockRejectedValueOnce({ code: 'ER_DUP_ENTRY' });
       mockCommentLikeRepository.delete.mockRejectedValue(
