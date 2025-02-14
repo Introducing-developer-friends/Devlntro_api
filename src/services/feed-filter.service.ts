@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Post } from '../entities/post.entity';
-import { FilterType } from '../types/feed.types';
+import { FilterType } from '../enums/sort.enum';
 
 @Injectable()
 export class FeedFilterService {

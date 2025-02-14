@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { BaseResponse } from './response.type';
+import { FilterType, SortOption } from '../enums/sort.enum';
 
 export class PostBasicInfo {
   @ApiProperty({ example: 123 })
@@ -59,18 +60,6 @@ export class PostDetailInfo extends PostBasicInfo {
   content: string;
   comments: CommentInfo[];
   likes: LikeInfo[];
-}
-
-export enum SortOption {
-  LATEST = 'latest',
-  LIKES = 'likes',
-  COMMENTS = 'comments',
-}
-
-export enum FilterType {
-  ALL = 'all',
-  OWN = 'own',
-  SPECIFIC = 'specific',
 }
 
 export interface FeedQuery {

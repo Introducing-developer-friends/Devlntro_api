@@ -9,8 +9,9 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { FeedFilterService } from '../services/feed-filter.service';
 import { SortingService } from '../services/sorting-service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { SortOption, FilterType, PostBasicInfo } from '../types/feed.types';
+import { PostBasicInfo } from '../types/feed.types';
 import { ErrorMessageType } from '../enums/error.message.enum';
+import { FilterType, SortOption } from '../enums/sort.enum';
 
 const createMockQueryBuilder = (returnValue) => ({
   leftJoin: jest.fn().mockReturnThis(),

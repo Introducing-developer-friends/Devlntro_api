@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { PostBasicInfo, SortOption } from '../types/feed.types';
+import { PostBasicInfo } from '../types/feed.types';
 import { Post } from 'src/entities/post.entity';
+import { SortOption } from '../enums/sort.enum';
 
 @Injectable()
 export class SortingService {

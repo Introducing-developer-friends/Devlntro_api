@@ -3,7 +3,7 @@ import { FeedFilterService } from './feed-filter.service';
 import { Post } from '../entities/post.entity';
 import { BusinessContact } from '../entities/business-contact.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { FilterType } from '../types/feed.types';
+import { FilterType } from '../enums/sort.enum';
 
 const mockDate = new Date('2024-01-01');
 

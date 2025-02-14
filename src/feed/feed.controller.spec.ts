@@ -8,12 +8,8 @@ import {
   NotFoundException,
   HttpStatus,
 } from '@nestjs/common';
-import {
-  SortOption,
-  FilterType,
-  PostBasicInfo,
-  PostDetailInfo,
-} from '../types/feed.types';
+import { PostBasicInfo, PostDetailInfo } from '../types/feed.types';
+import { FilterType, SortOption } from '../enums/sort.enum';
 
 describe('FeedController', () => {
   let controller: FeedController;

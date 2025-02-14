@@ -16,10 +16,9 @@ import {
   PostDetailInfo,
   CommentInfo,
   LikeInfo,
-  SortOption,
-  FilterType,
 } from '../types/feed.types';
 import { ErrorMessageType } from '../enums/error.message.enum';
+import { FilterType, SortOption } from '../enums/sort.enum';
 @Injectable()
 export class FeedService {
   private readonly logger = new Logger(FeedService.name);

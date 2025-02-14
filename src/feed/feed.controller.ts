@@ -21,12 +21,7 @@ import {
   ApiBadRequestResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import {
-  FeedResponse,
-  SortOption,
-  FilterType,
-  PostDetailResponse,
-} from '../types/feed.types';
+import { FeedResponse, PostDetailResponse } from '../types/feed.types';
 import {
   BadRequestResponse,
   NotFoundResponse,
@@ -34,6 +29,7 @@ import {
 } from '../types/response.type';
 import { ErrorMessageType } from '../enums/error.message.enum';
 import { CustomRequest } from 'src/types/request.type';
+import { FilterType, SortOption } from '../enums/sort.enum';
 
 @ApiTags('Feed')
 @ApiBearerAuth()
