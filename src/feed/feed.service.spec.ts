@@ -10,6 +10,7 @@ import { FeedFilterService } from '../services/feed-filter.service';
 import { SortingService } from '../services/sorting-service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { SortOption, FilterType, PostBasicInfo } from '../types/feed.types';
+import { ErrorMessageType } from '../enums/error.message.enum';
 
 const createMockQueryBuilder = (returnValue) => ({
   leftJoin: jest.fn().mockReturnThis(),
@@ -288,7 +289,7 @@ describe('FeedService', () => {
         .mockReturnValue(queryBuilder as any);
 
       await expect(feedService.getPostDetail(1, 999)).rejects.toThrow(
-        new NotFoundException('해당 게시물을 찾을 수 없습니다.'),
+        new NotFoundException(ErrorMessageType.NOT_FOUND_FEED),
       );
     });
 

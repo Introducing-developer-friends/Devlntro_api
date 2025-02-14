@@ -19,6 +19,7 @@ import {
   SortOption,
   FilterType,
 } from '../types/feed.types';
+import { ErrorMessageType } from '../enums/error.message.enum';
 @Injectable()
 export class FeedService {
   private readonly logger = new Logger(FeedService.name);
@@ -94,7 +95,7 @@ export class FeedService {
         .getOne();
 
       if (!post) {
-        throw new NotFoundException('해당 게시물을 찾을 수 없습니다.');
+        throw new NotFoundException(ErrorMessageType.NOT_FOUND_FEED);
       }
 
       return this.mapToPostDetailInfo(post, userId);

@@ -10,14 +10,16 @@ import {
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { FeedService } from './feed.service';
 import { FeedQueryDto } from '../dto/feed-query.dto';
-import { Request } from 'express';
+
 import {
   ApiTags,
   ApiOperation,
-  ApiResponse,
   ApiBearerAuth,
   ApiQuery,
-  ApiParam,
+  ApiOkResponse,
+  ApiNotFoundResponse,
+  ApiBadRequestResponse,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import {
   FeedResponse,
@@ -25,12 +27,13 @@ import {
   FilterType,
   PostDetailResponse,
 } from '../types/feed.types';
-
-interface CustomRequest extends Request {
-  user: {
-    userId: number;
-  };
-}
+import {
+  BadRequestResponse,
+  NotFoundResponse,
+  UnauthorizedResponse,
+} from '../types/response.type';
+import { ErrorMessageType } from '../enums/error.message.enum';
+import { CustomRequest } from 'src/types/request.type';
 
 @ApiTags('Feed')
 @ApiBearerAuth()
@@ -41,18 +44,20 @@ export class FeedController {
 
   @ApiOperation({
     summary: '피드 조회',
-    description: '메인 페이지 피드, 내 게시물, 특정 유저 게시물 조회',
   })
   @ApiQuery({
     name: 'sort',
-    enum: ['latest', 'likes', 'comments'],
+    enum: Object.values(SortOption),
     description: '정렬 기준 선택',
     required: false,
+    example: SortOption.LATEST,
   })
   @ApiQuery({
     name: 'filter',
-    enum: ['all', 'own', 'specific'],
+    enum: Object.values(FilterType),
     description: '게시물 필터링 옵션',
+    required: false,
+    example: FilterType.ALL,
   })
   @ApiQuery({
     name: 'specificUserId',
@@ -60,55 +65,21 @@ export class FeedController {
     description: '특정 유저 게시물 조회 시 필요한 유저 ID',
     required: false,
   })
-  @ApiResponse({
-    status: HttpStatus.OK,
+  @ApiOkResponse({
+    type: FeedResponse,
     description: '피드를 성공적으로 조회했습니다.',
-    schema: {
-      example: {
-        statusCode: HttpStatus.OK,
-        message: '피드를 성공적으로 조회했습니다.',
-        posts: [
-          {
-            postId: 123,
-            createrId: 456,
-            createrName: '홍길동',
-            createdAt: '2024-09-18T12:34:56.000Z',
-            imageUrl: 'https://example.com/image.jpg',
-            isOwnPost: true,
-          },
-          {
-            postId: 124,
-            createrId: 789,
-            createrName: '김철수',
-            createdAt: '2024-09-18T13:00:00.000Z',
-            imageUrl: 'https://example.com/image2.jpg',
-            isOwnPost: false,
-          },
-        ],
-      },
-    },
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '잘못된 요청입니다. specificUserId가 필요합니다.',
-    schema: {
-      example: {
-        statusCode: HttpStatus.BAD_REQUEST,
-        message: '잘못된 요청입니다. specificUserId가 필요합니다.',
-        error: 'Bad Request',
-      },
-    },
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: '해당 게시물을 찾을 수 없습니다.',
-    schema: {
-      example: {
-        statusCode: HttpStatus.NOT_FOUND,
-        message: '해당 게시물을 찾을 수 없습니다.',
-        error: 'Not Found',
-      },
-    },
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: ErrorMessageType.NOT_FOUND_FEED,
   })
   @Get()
   async getFeed(
@@ -136,77 +107,25 @@ export class FeedController {
     };
   }
 
+  @Get(':postId')
   @ApiOperation({
     summary: '게시물 상세 조회',
-    description: '게시물 ID를 통해 게시물의 상세 정보를 조회',
   })
-  @ApiParam({ name: 'postId', type: Number, description: '조회할 게시물의 ID' })
-  @ApiResponse({
-    status: HttpStatus.OK,
+  @ApiOkResponse({
+    type: PostDetailResponse,
     description: '게시물을 성공적으로 조회했습니다.',
-    schema: {
-      example: {
-        statusCode: HttpStatus.OK,
-        message: '게시물을 성공적으로 조회했습니다.',
-        postId: 123,
-        createrId: 456,
-        createrName: '홍길동',
-        createdAt: '2024-09-18T12:34:56.000Z',
-        imageUrl: 'https://example.com/image.jpg',
-        content: '이 게시물의 내용입니다.',
-        likesCount: 42,
-        commentsCount: 10,
-        isOwnPost: true,
-        comments: [
-          {
-            commentId: 1,
-            authorName: '김철수',
-            content: '멋진 게시물이네요!',
-            createdAt: '2024-09-18T12:45:00.000Z',
-            likeCount: 5,
-          },
-          {
-            commentId: 2,
-            authorName: '이영희',
-            content: '좋은 글 감사합니다.',
-            createdAt: '2024-09-18T13:00:00.000Z',
-            likeCount: 2,
-          },
-        ],
-        likes: [
-          {
-            userId: 789,
-            userName: '김철수',
-          },
-          {
-            userId: 890,
-            userName: '이영희',
-          },
-        ],
-      },
-    },
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '유효하지 않은 게시물 ID입니다.',
-    schema: {
-      example: {
-        statusCode: HttpStatus.BAD_REQUEST,
-        message: '유효하지 않은 게시물 ID입니다.',
-        error: 'Bad Request',
-      },
-    },
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: '해당 게시물을 찾을 수 없습니다.',
-    schema: {
-      example: {
-        statusCode: HttpStatus.NOT_FOUND,
-        message: '해당 게시물을 찾을 수 없습니다.',
-        error: 'Not Found',
-      },
-    },
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: ErrorMessageType.NOT_FOUND_FEED,
   })
   @Get(':postId')
   async getPostDetail(

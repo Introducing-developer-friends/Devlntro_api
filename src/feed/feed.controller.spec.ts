@@ -108,7 +108,7 @@ describe('FeedController', () => {
       };
       jest.spyOn(feedService, 'getFeed').mockResolvedValue(mockPosts);
 
-      const result = await controller.getFeed(mockRequest as any, query);
+      const result = await controller.getFeed(mockRequest, query);
 
       expect(result).toEqual({
         statusCode: HttpStatus.OK,
@@ -134,7 +134,7 @@ describe('FeedController', () => {
       );
       jest.spyOn(feedService, 'getFeed').mockResolvedValue(sortedPosts);
 
-      const result = await controller.getFeed(mockRequest as any, query);
+      const result = await controller.getFeed(mockRequest, query);
 
       expect(result.statusCode).toBe(HttpStatus.OK);
       expect(result.posts).toEqual(sortedPosts);
@@ -156,7 +156,7 @@ describe('FeedController', () => {
       );
       jest.spyOn(feedService, 'getFeed').mockResolvedValue(sortedPosts);
 
-      const result = await controller.getFeed(mockRequest as any, query);
+      const result = await controller.getFeed(mockRequest, query);
 
       expect(result.statusCode).toBe(HttpStatus.OK);
       expect(result.posts).toEqual(sortedPosts);
@@ -176,7 +176,7 @@ describe('FeedController', () => {
       const ownPosts = mockPosts.filter((post) => post.isOwnPost);
       jest.spyOn(feedService, 'getFeed').mockResolvedValue(ownPosts);
 
-      const result = await controller.getFeed(mockRequest as any, query);
+      const result = await controller.getFeed(mockRequest, query);
 
       expect(result.statusCode).toBe(HttpStatus.OK);
       expect(result.posts).toEqual(ownPosts);
@@ -196,7 +196,7 @@ describe('FeedController', () => {
       };
       jest.spyOn(feedService, 'getFeed').mockResolvedValue(mockPosts);
 
-      const result = await controller.getFeed(mockRequest as any, query);
+      const result = await controller.getFeed(mockRequest, query);
 
       expect(result.statusCode).toBe(HttpStatus.OK);
       expect(result.posts).toEqual(mockPosts);
@@ -219,9 +219,9 @@ describe('FeedController', () => {
           new BadRequestException('specificUserId가 필요합니다.'),
         );
 
-      await expect(
-        controller.getFeed(mockRequest as any, query),
-      ).rejects.toThrow(BadRequestException);
+      await expect(controller.getFeed(mockRequest, query)).rejects.toThrow(
+        BadRequestException,
+      );
       expect(feedService.getFeed).toHaveBeenCalledWith(
         1,
         SortOption.LATEST,
@@ -254,9 +254,9 @@ describe('FeedController', () => {
           new BadRequestException('유효하지 않은 게시물 ID입니다.'),
         );
 
-      await expect(
-        controller.getPostDetail(mockRequest as any, null),
-      ).rejects.toThrow(BadRequestException);
+      await expect(controller.getPostDetail(mockRequest, null)).rejects.toThrow(
+        BadRequestException,
+      );
       expect(feedService.getPostDetail).toHaveBeenCalledWith(1, null);
     });
 
@@ -267,9 +267,9 @@ describe('FeedController', () => {
           new NotFoundException('해당 게시물을 찾을 수 없습니다.'),
         );
 
-      await expect(
-        controller.getPostDetail(mockRequest as any, 999),
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.getPostDetail(mockRequest, 999)).rejects.toThrow(
+        NotFoundException,
+      );
       expect(feedService.getPostDetail).toHaveBeenCalledWith(1, 999);
     });
 
@@ -278,9 +278,9 @@ describe('FeedController', () => {
         .spyOn(feedService, 'getPostDetail')
         .mockRejectedValue(new Error('Unknown error'));
 
-      await expect(
-        controller.getPostDetail(mockRequest as any, 123),
-      ).rejects.toThrow(Error);
+      await expect(controller.getPostDetail(mockRequest, 123)).rejects.toThrow(
+        Error,
+      );
       expect(feedService.getPostDetail).toHaveBeenCalledWith(1, 123);
     });
   });
