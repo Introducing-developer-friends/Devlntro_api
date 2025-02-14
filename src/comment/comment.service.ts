@@ -8,7 +8,7 @@ import { Repository } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
 import { CommentLike } from '../entities/comment-like.entity';
 import { Post } from '../entities/post.entity';
-import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
+import { CreateCommentDto } from './dto/create.comment.dto';
 import {
   CommentCreateResult,
   CommentUpdateResult,
@@ -16,6 +16,7 @@ import {
   CommentLikeResult,
 } from '../types/comment.types';
 import { ErrorMessageType } from '../enums/error.message.enum';
+import { UpdateCommentDto } from './dto/update.comment.dto';
 @Injectable()
 export class CommentService {
   constructor(
@@ -207,7 +208,7 @@ export class CommentService {
         throw error;
       }
       throw new InternalServerErrorException(
-        '좋아요 처리 중 오류가 발생했습니다.',
+        ErrorMessageType.LIKE_PROCESSING_ERROR,
       );
     }
   }

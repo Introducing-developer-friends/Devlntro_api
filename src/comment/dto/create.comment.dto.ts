@@ -10,13 +10,3 @@ export class CreateCommentDto {
   @IsString()
   content: string;
 }
-
-export class UpdateCommentDto {
-  @ApiProperty({
-    description: '수정할 댓글 내용',
-    example: '이것은 수정된 댓글 내용입니다.',
-  })
-  @IsNotEmpty()
-  @IsString()
-  content: string;
-}

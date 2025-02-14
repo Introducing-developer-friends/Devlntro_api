@@ -250,7 +250,9 @@ describe('CommentService', () => {
       queryBuilder.execute.mockRejectedValue(new Error('DB Error'));
 
       await expect(service.likeComment(1, 1, 1)).rejects.toThrow(
-        new InternalServerErrorException('좋아요 처리 중 오류가 발생했습니다.'),
+        new InternalServerErrorException(
+          ErrorMessageType.LIKE_PROCESSING_ERROR,
+        ),
       );
     });
 
@@ -264,7 +266,9 @@ describe('CommentService', () => {
       );
 
       await expect(service.likeComment(1, 1, 1)).rejects.toThrow(
-        new InternalServerErrorException('좋아요 처리 중 오류가 발생했습니다.'),
+        new InternalServerErrorException(
+          ErrorMessageType.LIKE_PROCESSING_ERROR,
+        ),
       );
     });
   });

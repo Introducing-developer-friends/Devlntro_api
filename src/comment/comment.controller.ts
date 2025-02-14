@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CommentService } from './comment.service';
-import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
+import { CreateCommentDto } from './dto/create.comment.dto';
 import {
   ApiTags,
   ApiOperation,
@@ -35,6 +35,7 @@ import {
 } from '../types/response.type';
 import { ErrorMessageType } from '../enums/error.message.enum';
 import { CustomRequest } from '../types/request.type';
+import { UpdateCommentDto } from './dto/update.comment.dto';
 
 @ApiTags('Comments')
 @ApiBearerAuth()

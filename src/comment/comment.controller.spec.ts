@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CommentController } from './comment.controller';
 import { CommentService } from './comment.service';
-import { CreateCommentDto, UpdateCommentDto } from './dto/comment.dto';
+import { CreateCommentDto } from './dto/create.comment.dto';
 import {
   NotFoundException,
   BadRequestException,
@@ -12,6 +12,7 @@ import {
   CommentLikeResponse,
 } from 'src/types/comment.types';
 import { BaseResponse } from 'src/types/response.type';
+import { UpdateCommentDto } from './dto/update.comment.dto';
 
 describe('CommentController', () => {
   let controller: CommentController;
