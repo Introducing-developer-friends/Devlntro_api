@@ -15,6 +15,7 @@ import {
 } from '../types/auth.type';
 import { RefreshToken } from '../entities/refresh-token.entity';
 import { ConfigService } from '@nestjs/config';
+import { ErrorMessageType } from '../enums/error.message.enum';
 
 @Injectable()
 export class AuthService {
@@ -43,9 +44,7 @@ export class AuthService {
     const { login_id, password, confirm_password } = createUserDto;
 
     if (password !== confirm_password) {
-      throw new BadRequestException(
-        '비밀번호와 확인 비밀번호가 일치하지 않습니다.',
-      );
+      throw new BadRequestException(ErrorMessageType.PASSWORD_MISMATCH);
     }
 
     const existingUser = await queryRunner.manager
@@ -54,7 +53,7 @@ export class AuthService {
       .getOne();
 
     if (existingUser) {
-      throw new BadRequestException('이미 존재하는 아이디입니다.');
+      throw new BadRequestException(ErrorMessageType.EXISTING_USER_ID);
     }
   }
 
@@ -209,7 +208,7 @@ export class AuthService {
         .getCount();
 
       if (hasActiveTokens === 0) {
-        throw new BadRequestException('이미 로그아웃된 상태입니다.');
+        throw new BadRequestException(ErrorMessageType.ALREADY_LOGGED_OUT);
       }
 
       const result = await this.refreshTokenRepository
@@ -221,7 +220,7 @@ export class AuthService {
         .execute();
 
       if (!result.affected) {
-        throw new BadRequestException('로그아웃 처리에 실패했습니다.');
+        throw new BadRequestException(ErrorMessageType.FAILED_LOGOUT);
       }
     } catch (error) {
       if (error instanceof BadRequestException) {

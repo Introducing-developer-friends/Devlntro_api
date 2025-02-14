@@ -12,22 +12,22 @@ import { RefreshToken } from '../entities/refresh-token.entity';
 
 @Module({
   imports: [
-    ConfigModule.forRoot(), // .env 파일을 로드하기 위한 설정
-    PassportModule, // Passport 모듈을 사용해 인증 처리
+    ConfigModule.forRoot(),
+    PassportModule,
     JwtModule.registerAsync({
-      imports: [ConfigModule], // ConfigModule을 가져옴
-      inject: [ConfigService], // ConfigService를 주입
+      imports: [ConfigModule],
+      inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'), // .env 파일에서 JWT_SECRET을 가져옴
+        secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
           expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1h',
-        }, // 토큰 만료 시간 설정
+        },
       }),
     }),
     TypeOrmModule.forFeature([UserAccount, BusinessProfile, RefreshToken]),
   ],
-  providers: [AuthService, JwtStrategy], // AuthService와 JwtStrategy를 주입
-  controllers: [AuthController], // AuthController를 모듈에 연결
-  exports: [AuthService], // AuthService를 다른 모듈에서도 사용할 수 있게 설정
+  providers: [AuthService, JwtStrategy],
+  controllers: [AuthController],
+  exports: [AuthService],
 })
 export class AuthModule {}

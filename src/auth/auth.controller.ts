@@ -16,36 +16,47 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import {
   ApiOperation,
-  ApiResponse,
   ApiTags,
   ApiBearerAuth,
+  ApiOkResponse,
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiUnauthorizedResponse,
+  ApiCreatedResponse,
 } from '@nestjs/swagger';
 import {
-  CheckIdResponse,
   RegisterResponse,
   LoginResponse,
   RefreshTokenResponse,
   LogoutResponse,
 } from '../types/auth.type';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { ErrorMessageType } from '../enums/error.message.enum';
+import {
+  BadRequestResponse,
+  BaseResponse,
+  UnauthorizedResponse,
+} from '../types/response.type';
+import { CustomRequest } from '../types/request.type';
 @ApiTags('auth')
 @ApiBearerAuth()
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @ApiOperation({ summary: '중복체크' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description:
-      '사용 가능한 아이디 또는 이미 사용 중인 아이디 메시지를 반환합니다.',
+  @Get('check-id/:login_id')
+  @ApiOperation({ summary: '아이디 중복 체크' })
+  @ApiOkResponse({
+    type: BaseResponse,
+    description: '아이디 중복 체크 결과',
   })
-  @ApiResponse({
-    status: HttpStatus.INTERNAL_SERVER_ERROR,
-    description: '서버 오류가 발생한 경우 메시지를 반환합니다.',
+  @ApiBadRequestResponse({
+    status: HttpStatus.BAD_REQUEST,
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
   })
   @Get('check-id/:login_id')
-  async checkId(@Param('login_id') login_id: string): Promise<CheckIdResponse> {
+  async checkId(@Param('login_id') login_id: string): Promise<BaseResponse> {
     const result = await this.authService.checkIdAvailability(login_id);
     return {
       statusCode: HttpStatus.OK,
@@ -55,20 +66,20 @@ export class AuthController {
     };
   }
 
-  @ApiOperation({ summary: '회원가입' })
-  @ApiResponse({
-    status: HttpStatus.CREATED,
-    description: '회원가입이 성공적으로 완료되면 메시지와 userId를 반환합니다.',
-  })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '회원가입 실패 시 오류 메시지를 반환합니다.',
-  })
-  @ApiResponse({
-    status: HttpStatus.INTERNAL_SERVER_ERROR,
-    description: '서버 오류가 발생한 경우 메시지를 반환합니다.',
-  })
   @Post('register')
+  @ApiOperation({ summary: '회원가입' })
+  @ApiBody({
+    type: CreateUserDto,
+    description: '회원가입 정보',
+  })
+  @ApiCreatedResponse({
+    type: RegisterResponse,
+    description: '회원가입 성공적으로 완료되었습니다.',
+  })
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
+  })
   async register(
     @Body() createUserDto: CreateUserDto,
   ): Promise<RegisterResponse> {
@@ -84,26 +95,28 @@ export class AuthController {
     }
   }
 
-  @ApiOperation({ summary: '로그인' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description:
-      '로그인 성공시 액세스 토큰, 리프레시 토큰과 사용자 ID를 반환합니다.',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description:
-      '아이디 또는 비밀번호가 잘못되었을 때 401 상태 코드를 반환합니다.',
-  })
-  @ApiResponse({
-    status: HttpStatus.INTERNAL_SERVER_ERROR,
-    description: '서버 오류가 발생한 경우 메시지를 반환합니다.',
-  })
   @Post('login')
+  @ApiOperation({ summary: '로그인' })
+  @ApiBody({
+    type: LoginDto,
+    description: '로그인 정보',
+  })
+  @ApiOkResponse({
+    type: LoginResponse,
+    description: '로그인 성공',
+  })
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
+  })
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
   async login(@Body() loginDto: LoginDto): Promise<LoginResponse> {
     const result = await this.authService.login(loginDto);
     if (!result) {
-      throw new UnauthorizedException('아이디 또는 비밀번호가 잘못되었습니다.');
+      throw new UnauthorizedException(ErrorMessageType.INVALID_AUTH);
     }
     return {
       statusCode: HttpStatus.OK,
@@ -115,14 +128,22 @@ export class AuthController {
   }
 
   @Post('refresh')
-  @ApiOperation({ summary: '엑세스 토큰 갱신' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: '토큰 갱신 성공시 새로운 엑세스 토큰을 반환합니다.',
+  @ApiOperation({ summary: '토큰 갱신' })
+  @ApiBody({
+    type: RefreshTokenDto,
+    description: '리프레시 토큰',
   })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: '리프레시 토큰이 유효하지 않을 때 401 상태 코드를 반환합니다.',
+  @ApiOkResponse({
+    type: RefreshTokenResponse,
+    description: '토큰 갱신 성공',
+  })
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
+  })
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_TOKEN,
   })
   async refreshToken(
     @Body() refreshTokenDto: RefreshTokenDto,
@@ -138,17 +159,22 @@ export class AuthController {
   }
 
   @Post('logout')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '로그아웃' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: '로그아웃 성공시 메시지를 반환합니다.',
+  @ApiOkResponse({
+    type: LogoutResponse,
+    description: '로그아웃 성공',
   })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: '인증되지 않은 사용자의 경우 401 상태 코드를 반환합니다.',
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
   })
-  async logout(@Req() req: any): Promise<LogoutResponse> {
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  async logout(@Req() req: CustomRequest): Promise<LogoutResponse> {
     await this.authService.logout(req.user.userId);
 
     return {

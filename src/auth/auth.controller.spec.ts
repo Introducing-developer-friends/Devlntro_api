@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { ErrorMessageType } from '../enums/error.message.enum';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -74,7 +75,7 @@ describe('AuthController', () => {
 
     it('should throw BadRequestException on error', async () => {
       authService.register.mockRejectedValue(
-        new BadRequestException('회원가입 실패'),
+        new BadRequestException(ErrorMessageType.BAD_REQUEST),
       );
 
       const dto = {
