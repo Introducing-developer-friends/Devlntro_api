@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserAccount } from '../entities/user-account.entity';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
+import { ErrorMessageType } from '../enums/error.message.enum';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -24,7 +25,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: TokenPayload) {
     try {
       if (payload.type !== 'access') {
-        throw new UnauthorizedException('Invalid token type');
+        throw new UnauthorizedException(ErrorMessageType.INVALID_TOKEN);
       }
 
       const user = await this.userRepository.findOne({
@@ -32,11 +33,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       });
 
       if (!user) {
-        throw new UnauthorizedException('Invalid token');
+        throw new UnauthorizedException(ErrorMessageType.NO_USER);
       }
 
       if (user.currentTokenVersion > payload.version) {
-        throw new UnauthorizedException('Token expired');
+        throw new UnauthorizedException(ErrorMessageType.EXPIRED_TOKEN);
       }
 
       return {
@@ -47,7 +48,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      throw new UnauthorizedException('Authentication failed');
+      throw new UnauthorizedException(ErrorMessageType.INVALID_AUTH);
     }
   }
 }

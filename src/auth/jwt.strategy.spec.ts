@@ -5,6 +5,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { UserAccount } from '../entities/user-account.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { TokenPayload } from '../types/auth.type';
+import { ErrorMessageType } from '../enums/error.message.enum';
 
 describe('JwtStrategy', () => {
   let strategy: JwtStrategy;
@@ -79,7 +80,7 @@ describe('JwtStrategy', () => {
       };
 
       await expect(strategy.validate(refreshTokenPayload)).rejects.toThrow(
-        new UnauthorizedException('Invalid token type'),
+        new UnauthorizedException(ErrorMessageType.INVALID_TOKEN),
       );
 
       expect(mockUserRepository.findOne).not.toHaveBeenCalled();
@@ -95,7 +96,7 @@ describe('JwtStrategy', () => {
       mockUserRepository.findOne.mockResolvedValueOnce(mockUser);
 
       await expect(strategy.validate(validPayload)).rejects.toThrow(
-        new UnauthorizedException('Token expired'),
+        new UnauthorizedException(ErrorMessageType.EXPIRED_TOKEN),
       );
     });
 
@@ -103,7 +104,7 @@ describe('JwtStrategy', () => {
       mockUserRepository.findOne.mockResolvedValueOnce(null);
 
       await expect(strategy.validate(validPayload)).rejects.toThrow(
-        new UnauthorizedException('Invalid token'),
+        new UnauthorizedException(ErrorMessageType.NO_USER),
       );
     });
 
@@ -111,7 +112,7 @@ describe('JwtStrategy', () => {
       mockUserRepository.findOne.mockRejectedValueOnce(new Error('DB Error'));
 
       await expect(strategy.validate(validPayload)).rejects.toThrow(
-        new UnauthorizedException('Authentication failed'),
+        new UnauthorizedException(ErrorMessageType.INVALID_AUTH),
       );
     });
   });

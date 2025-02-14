@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { UnauthorizedException } from '@nestjs/common';
+import { ErrorMessageType } from '../enums/error.message.enum';
 
 describe('JwtAuthGuard', () => {
   let guard: JwtAuthGuard;
@@ -26,7 +27,7 @@ describe('JwtAuthGuard', () => {
 
     it('should throw UnauthorizedException when no user is provided', () => {
       expect(() => guard.handleRequest(null, null)).toThrow(
-        new UnauthorizedException('인증 토큰이 누락되었습니다.'),
+        new UnauthorizedException(ErrorMessageType.INVALID_AUTH),
       );
     });
 
@@ -37,7 +38,7 @@ describe('JwtAuthGuard', () => {
 
     it('should throw UnauthorizedException when both error and user are null', () => {
       expect(() => guard.handleRequest(null, null)).toThrow(
-        new UnauthorizedException('인증 토큰이 누락되었습니다.'),
+        new UnauthorizedException(ErrorMessageType.INVALID_AUTH),
       );
     });
   });
