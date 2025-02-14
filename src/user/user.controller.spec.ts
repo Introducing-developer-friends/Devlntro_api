@@ -43,9 +43,10 @@ describe('UserController', () => {
     expect(controller).toBeDefined();
   });
 
+  const mockRequest = { user: { userId: 1 } };
+
   describe('updateBusinessProfile', () => {
     it('should properly pass data to service and return formatted response', async () => {
-      const mockRequest = { user: { userId: 1 } };
       const updateProfileDto: UpdateBusinessProfileDto = {
         name: 'Test User',
         company: 'Test Company',
@@ -56,7 +57,7 @@ describe('UserController', () => {
       };
 
       const result = await controller.updateBusinessProfile(
-        mockRequest as any,
+        mockRequest,
         updateProfileDto,
       );
 
@@ -75,7 +76,6 @@ describe('UserController', () => {
 
   describe('changePassword', () => {
     it('should properly pass data to service and return formatted response', async () => {
-      const mockRequest = { user: { userId: 1 } };
       const changePasswordDto: ChangePasswordDto = {
         currentPassword: 'oldPassword',
         newPassword: 'newPassword123',
@@ -83,7 +83,7 @@ describe('UserController', () => {
       };
 
       const result = await controller.changePassword(
-        mockRequest as any,
+        mockRequest,
         changePasswordDto,
       );
 
@@ -101,13 +101,12 @@ describe('UserController', () => {
 
   describe('deleteAccount', () => {
     it('should properly pass data to service and return formatted response', async () => {
-      const mockRequest = { user: { userId: 1 } };
       const deleteAccountDto: DeleteAccountDto = {
         password: 'password123',
       };
 
       const result = await controller.deleteAccount(
-        mockRequest as any,
+        mockRequest,
         deleteAccountDto,
       );
 

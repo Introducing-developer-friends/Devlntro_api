@@ -18,7 +18,6 @@ import {
   UserDeleteInfo,
 } from '../types/user.types';
 
-// Mock 타입 정의 수정
 type MockRepository<T = any> = Partial<Record<keyof Repository<T>, jest.Mock>>;
 
 interface MockQueryBuilder {
@@ -514,9 +513,7 @@ describe('UserService', () => {
       jest
         .spyOn(bcrypt, 'compare')
         .mockImplementation(() => Promise.resolve(true));
-      (mockAuthService.logout as jest.Mock).mockRejectedValueOnce(
-        new Error('Logout failed'),
-      );
+      mockAuthService.logout.mockRejectedValueOnce(new Error('Logout failed'));
 
       await expect(service.deleteAccount(1, mockDeleteInfo)).rejects.toThrow(
         InternalServerErrorException,

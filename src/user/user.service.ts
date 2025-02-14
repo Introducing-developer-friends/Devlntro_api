@@ -1,4 +1,3 @@
-// user.service.ts
 import {
   Injectable,
   NotFoundException,
@@ -17,6 +16,7 @@ import { DeleteAccountDto } from './dto/delete-account.dto';
 import { BusinessProfileInfo } from '../types/user.types';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from '../auth/auth.service';
+import { ErrorMessageType } from '../enums/error.message.enum';
 
 @Injectable()
 export class UserService {
@@ -42,7 +42,7 @@ export class UserService {
       .getOne();
 
     if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+      throw new NotFoundException(ErrorMessageType.NO_USER);
     }
 
     const isValid = await bcrypt.compare(password, user.password);
@@ -77,7 +77,7 @@ export class UserService {
             .getOne();
 
           if (!user) {
-            throw new NotFoundException('사용자를 찾을 수 없습니다.');
+            throw new NotFoundException(ErrorMessageType.NO_USER);
           }
 
           const { name, ...profileData } = updateProfileDto;

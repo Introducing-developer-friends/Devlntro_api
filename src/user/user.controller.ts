@@ -15,20 +15,26 @@ import { DeleteAccountDto } from './dto/delete-account.dto';
 import {
   ApiTags,
   ApiOperation,
-  ApiResponse,
   ApiBearerAuth,
+  ApiBadRequestResponse,
+  ApiUnauthorizedResponse,
+  ApiOkResponse,
+  ApiNotFoundResponse,
 } from '@nestjs/swagger';
-import { Request as ExpressRequest } from 'express';
+
 import {
   BusinessProfileResponse,
   PasswordChangeResponse,
   AccountDeleteResponse,
 } from '../types/user.types';
-interface CustomRequest extends ExpressRequest {
-  user: {
-    userId: number;
-  };
-}
+import {
+  BadRequestResponse,
+  NotFoundResponse,
+  UnauthorizedResponse,
+} from '../types/response.type';
+import { ErrorMessageType } from '../enums/error.message.enum';
+import { CustomRequest } from 'src/types/request.type';
+
 @ApiTags('users')
 @ApiBearerAuth()
 @Controller('users')
@@ -38,13 +44,21 @@ export class UserController {
 
   @Put('businessprofile')
   @ApiOperation({ summary: '나의 명함 정보 수정' })
-  @ApiResponse({
-    status: HttpStatus.OK,
+  @ApiOkResponse({
+    type: BusinessProfileResponse,
     description: '프로필 정보가 성공적으로 수정되었습니다.',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '잘못된 요청입니다. 유효한 정보를 입력해주세요.',
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
+  })
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: ErrorMessageType.NOT_FOUND_PROFILE,
   })
   async updateBusinessProfile(
     @Request() req: CustomRequest,
@@ -64,17 +78,21 @@ export class UserController {
 
   @Put('password')
   @ApiOperation({ summary: '비밀번호 변경' })
-  @ApiResponse({
-    status: HttpStatus.OK,
+  @ApiOkResponse({
+    type: PasswordChangeResponse,
     description: '비밀번호가 성공적으로 변경되었습니다.',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '새 비밀번호와 확인 비밀번호가 일치하지 않습니다.',
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
   })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: '현재 비밀번호가 올바르지 않습니다.',
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: ErrorMessageType.NOT_FOUND_PASSWORD,
   })
   async changePassword(
     @Request() req: CustomRequest,
@@ -90,17 +108,17 @@ export class UserController {
 
   @Delete()
   @ApiOperation({ summary: '회원 탈퇴' })
-  @ApiResponse({
-    status: HttpStatus.OK,
+  @ApiOkResponse({
+    type: AccountDeleteResponse,
     description: '회원 탈퇴가 성공적으로 처리되었습니다.',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '회원 탈퇴 처리 중 오류가 발생했습니다.',
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
   })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: '비밀번호가 올바르지 않습니다.',
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
   })
   async deleteAccount(
     @Request() req: CustomRequest,
