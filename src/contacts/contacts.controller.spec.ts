@@ -160,9 +160,12 @@ describe('ContactsController', () => {
       );
 
       await expect(
-        controller.addContactRequest({ user: { userId: 1 } } as any, {
-          login_id: 'invalid_user',
-        }),
+        controller.addContactRequest(
+          { user: { userId: 1 } },
+          {
+            login_id: 'invalid_user',
+          },
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -172,9 +175,12 @@ describe('ContactsController', () => {
       );
 
       await expect(
-        controller.addContactRequest({ user: { userId: 1 } } as any, {
-          login_id: 'existing_user',
-        }),
+        controller.addContactRequest(
+          { user: { userId: 1 } },
+          {
+            login_id: 'existing_user',
+          },
+        ),
       ).rejects.toThrow(ConflictException);
     });
   });
@@ -204,7 +210,7 @@ describe('ContactsController', () => {
         new NotFoundException(),
       );
       await expect(
-        controller.acceptContactRequest({ user: { userId: 1 } } as any, 999),
+        controller.acceptContactRequest({ user: { userId: 1 } }, 999),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -304,7 +310,7 @@ describe('ContactsController', () => {
       );
 
       await expect(
-        controller.deleteContact({ user: { userId: 1 } } as any, 999),
+        controller.deleteContact({ user: { userId: 1 } }, 999),
       ).rejects.toThrow(NotFoundException);
     });
   });

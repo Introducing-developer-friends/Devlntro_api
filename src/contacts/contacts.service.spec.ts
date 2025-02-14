@@ -21,43 +21,69 @@ describe('ContactsService', () => {
   let dataSource: DataSource;
   let queryBuilder: jest.Mocked<SelectQueryBuilder<any>>;
 
-  const mockProfiles = [
+  const mockBusinessProfiles = [
     {
       profile_id: 1,
       company: 'Company1',
-      department: 'Dept1',
+      department: 'Department1',
       position: 'Position1',
-      email: 'user1@test.com',
-      phone: '1111111111',
+      email: 'user1@example.com',
+      phone: '010-1111-1111',
       deletedAt: null,
+      userAccount: null,
     },
     {
       profile_id: 2,
       company: 'Company2',
-      department: 'Dept2',
+      department: 'Department2',
       position: 'Position2',
-      email: 'user2@test.com',
-      phone: '2222222222',
+      email: 'user2@example.com',
+      phone: '010-2222-2222',
       deletedAt: null,
+      userAccount: null,
     },
   ];
 
-  const mockUsers = [
+  const mockUsers: UserAccount[] = [
     {
       user_id: 1,
       name: 'User1',
       login_id: 'user1',
       deletedAt: null,
-      profile: mockProfiles[0],
+      password: 'password',
+      confirm_password: 'password',
+      currentTokenVersion: 1,
+      contacts: [],
+      contactOf: [],
+      posts: [],
+      comments: [],
+      postLikes: [],
+      sentFriendRequests: [],
+      receivedFriendRequests: [],
+      notifications: [],
+      refreshTokens: [],
+      profile: mockBusinessProfiles[0],
     },
     {
       user_id: 2,
       name: 'User2',
       login_id: 'user2',
       deletedAt: null,
-      profile: mockProfiles[1],
+      password: 'password',
+      confirm_password: 'password',
+      currentTokenVersion: 1,
+      contacts: [],
+      contactOf: [],
+      posts: [],
+      comments: [],
+      postLikes: [],
+      sentFriendRequests: [],
+      receivedFriendRequests: [],
+      notifications: [],
+      refreshTokens: [],
+      profile: mockBusinessProfiles[1],
     },
-  ] as UserAccount[];
+  ];
 
   const FriendRequestStatus = {
     PENDING: 'pending',
@@ -199,7 +225,7 @@ describe('ContactsService', () => {
         userId: 2,
         name: 'User2',
         company: 'Company2',
-        department: 'Dept2',
+        department: 'Department2',
       });
     });
 
@@ -256,7 +282,11 @@ describe('ContactsService', () => {
       mockFriendRequestRepository.findOne.mockResolvedValue(null);
       mockFriendRequestRepository.save.mockResolvedValue({
         request_id: 1,
-      } as FriendRequest);
+        status: 'pending',
+        sender: mockUsers[0],
+        receiver: mockUsers[1],
+        created_at: new Date(),
+      });
 
       const result = await service.addContactRequest(1, 'user2');
       expect(result.requestId).toBe(1);
@@ -279,7 +309,10 @@ describe('ContactsService', () => {
       mockFriendRequestRepository.findOne.mockResolvedValue({
         request_id: 1,
         status: 'pending',
-      } as FriendRequest);
+        receiver: mockUsers[1],
+        sender: mockUsers[0],
+        created_at: new Date(),
+      });
 
       await expect(service.addContactRequest(1, 'user2')).rejects.toThrow(
         ConflictException,
@@ -293,7 +326,11 @@ describe('ContactsService', () => {
       mockFriendRequestRepository.findOne.mockResolvedValue(null);
       mockContactRepository.findOne.mockResolvedValue({
         contact_id: 1,
-      } as BusinessContact);
+        userAccount: mockUsers[0],
+        contact_user: mockUsers[1],
+        created_at: new Date(),
+        deleted_at: null,
+      });
 
       await expect(service.addContactRequest(1, 'user2')).rejects.toThrow(
         ConflictException,
@@ -328,7 +365,7 @@ describe('ContactsService', () => {
         sender: mockUsers[0],
         receiver: mockUsers[1],
         status: FriendRequestStatus.PENDING,
-      } as FriendRequest;
+      };
 
       const mockEntityManager = {
         findOne: jest.fn().mockResolvedValue(mockRequest),
@@ -338,18 +375,18 @@ describe('ContactsService', () => {
         create: jest.fn().mockReturnValue({ contact_id: 1 }),
       };
 
-      (dataSource.transaction as jest.Mock).mockImplementation(
+      const mockTransaction = jest.fn(
         async (cb) => await cb(mockEntityManager),
       );
+      dataSource.transaction = mockTransaction;
 
       await service.acceptContactRequest(2, 1);
       expect(mockEntityManager.save).toHaveBeenCalled();
     });
 
     it('should handle non-pending request', async () => {
-      (dataSource.transaction as jest.Mock).mockRejectedValue(
-        new NotFoundException(),
-      );
+      const mockedTransaction = jest.mocked(dataSource.transaction);
+      mockedTransaction.mockRejectedValue(new NotFoundException());
 
       await expect(service.acceptContactRequest(2, 1)).rejects.toThrow(
         NotFoundException,
@@ -378,7 +415,7 @@ describe('ContactsService', () => {
         sender: mockUsers[0],
         receiver: mockUsers[1],
         status: FriendRequestStatus.PENDING,
-      } as FriendRequest;
+      };
 
       const mockEntityManager = {
         findOne: jest.fn().mockImplementation((entity) => {
@@ -394,9 +431,10 @@ describe('ContactsService', () => {
         create: jest.fn(),
       };
 
-      (dataSource.transaction as jest.Mock).mockImplementation(
+      const mockTransaction = jest.fn(
         async (cb) => await cb(mockEntityManager),
       );
+      dataSource.transaction = mockTransaction;
 
       await service.acceptContactRequest(2, 1);
       expect(mockEntityManager.save).toHaveBeenCalledWith(
@@ -410,7 +448,7 @@ describe('ContactsService', () => {
         sender: mockUsers[0],
         receiver: mockUsers[1],
         status: FriendRequestStatus.PENDING,
-      } as FriendRequest;
+      };
 
       const mockEntityManager = {
         findOne: jest
@@ -421,9 +459,10 @@ describe('ContactsService', () => {
         create: jest.fn(),
       };
 
-      (dataSource.transaction as jest.Mock).mockImplementation(
+      const mockTransaction = jest.fn(
         async (cb) => await cb(mockEntityManager),
       );
+      dataSource.transaction = mockTransaction;
 
       await service.acceptContactRequest(2, 1);
       expect(mockEntityManager.save).toHaveBeenCalledTimes(2);
@@ -432,11 +471,13 @@ describe('ContactsService', () => {
 
   describe('rejectContactRequest', () => {
     it('should reject request successfully', async () => {
-      const mockRequest = {
+      const mockRequest: FriendRequest = {
         request_id: 1,
-        status: FriendRequestStatus.PENDING,
+        status: 'pending',
         receiver: mockUsers[1],
-      } as FriendRequest;
+        sender: mockUsers[0],
+        created_at: new Date(),
+      };
 
       mockFriendRequestRepository.findOne.mockResolvedValue(mockRequest);
       await service.rejectContactRequest(2, 1);
@@ -535,8 +576,9 @@ describe('ContactsService', () => {
         contact_id: 1,
         userAccount: mockUsers[0],
         contact_user: mockUsers[1],
-        deleted_at: null,
-      } as BusinessContact;
+        deleted_at: new Date(),
+        created_at: new Date(),
+      };
 
       mockContactRepository.findOne.mockResolvedValue(mockContact);
       await service.deleteContact(1, 2);
@@ -563,8 +605,9 @@ describe('ContactsService', () => {
         contact_id: 1,
         userAccount: mockUsers[1],
         contact_user: mockUsers[0],
-        deleted_at: null,
-      } as BusinessContact;
+        deleted_at: new Date(),
+        created_at: new Date(),
+      };
 
       mockContactRepository.findOne.mockResolvedValue(contact);
 
@@ -577,7 +620,9 @@ describe('ContactsService', () => {
         contact_id: 1,
         userAccount: mockUsers[0],
         contact_user: mockUsers[1],
-      } as BusinessContact;
+        deleted_at: null,
+        created_at: new Date(),
+      };
 
       mockContactRepository.findOne.mockResolvedValue(mockContact);
       mockContactRepository.softRemove.mockRejectedValue(

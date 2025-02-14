@@ -122,11 +122,11 @@ export class ContactsService {
     ]);
 
     if (!user || !contactUser) {
-      throw new BadRequestException('대상 사용자를 찾을 수 없습니다.');
+      throw new BadRequestException(ErrorMessageType.TARGET_USER_NOT_FOUND);
     }
 
     if (user.user_id === contactUser.user_id) {
-      throw new BadRequestException('자기 자신에게 요청을 보낼 수 없습니다.');
+      throw new BadRequestException(ErrorMessageType.SELF_REQUEST_NOT_ALLOWED);
     }
 
     const [existingRequest, existingContact] = await Promise.all([
