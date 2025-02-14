@@ -40,7 +40,7 @@ describe('ContactsService', () => {
       phone: '2222222222',
       deletedAt: null,
     },
-  ] as BusinessProfile[];
+  ];
 
   const mockUsers = [
     {
@@ -240,7 +240,7 @@ describe('ContactsService', () => {
     it('should handle deleted user access attempt', async () => {
       queryBuilder.where.mockReturnThis();
       queryBuilder.andWhere.mockReturnThis();
-      queryBuilder.getOne.mockResolvedValue(null); // null 반환하도록 수정
+      queryBuilder.getOne.mockResolvedValue(null);
 
       await expect(service.getContactDetail(1, 2)).rejects.toThrow(
         NotFoundException,

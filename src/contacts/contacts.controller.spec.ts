@@ -8,7 +8,14 @@ import {
   ConflictException,
   HttpStatus,
 } from '@nestjs/common';
-import { ContactResponse } from '../types/contacts.types';
+import {
+  ContactDetailResponse,
+  ContactListResponse,
+  ContactRequestCreateResponse,
+  ContactRequestUpdateResponse,
+  ReceivedRequestListResponse,
+  SentRequestListResponse,
+} from 'src/types/contacts.types';
 
 describe('ContactsController', () => {
   let controller: ContactsController;
@@ -57,7 +64,7 @@ describe('ContactsController', () => {
     it('should return contact list when contacts exist', async () => {
       mockContactsService.getContactList.mockResolvedValue(mockContacts);
 
-      const expectedResponse: ContactResponse = {
+      const expectedResponse: ContactListResponse = {
         statusCode: HttpStatus.OK,
         message: '명함 리스트를 성공적으로 조회했습니다.',
         contacts: mockContacts,
@@ -65,7 +72,7 @@ describe('ContactsController', () => {
 
       const result = await controller.getContactList({
         user: { userId: 1 },
-      } as any);
+      });
       expect(result).toEqual(expectedResponse);
       expect(mockContactsService.getContactList).toHaveBeenCalledWith(1);
     });
@@ -73,7 +80,7 @@ describe('ContactsController', () => {
     it('should return empty message when no contacts exist', async () => {
       mockContactsService.getContactList.mockResolvedValue([]);
 
-      const expectedResponse: ContactResponse = {
+      const expectedResponse: ContactListResponse = {
         statusCode: HttpStatus.OK,
         message: '등록된 명함이 없습니다.',
         contacts: [],
@@ -81,7 +88,7 @@ describe('ContactsController', () => {
 
       const result = await controller.getContactList({
         user: { userId: 1 },
-      } as any);
+      });
       expect(result).toEqual(expectedResponse);
     });
   });
@@ -100,14 +107,14 @@ describe('ContactsController', () => {
     it('should return contact details', async () => {
       mockContactsService.getContactDetail.mockResolvedValue(mockContact);
 
-      const expectedResponse: ContactResponse = {
+      const expectedResponse: ContactDetailResponse = {
         statusCode: HttpStatus.OK,
         message: '명함 상세 정보를 성공적으로 조회했습니다.',
         contact: mockContact,
       };
 
       const result = await controller.getContactDetail(
-        { user: { userId: 1 } } as any,
+        { user: { userId: 1 } },
         2,
       );
       expect(result).toEqual(expectedResponse);
@@ -119,7 +126,7 @@ describe('ContactsController', () => {
         new NotFoundException(),
       );
       await expect(
-        controller.getContactDetail({ user: { userId: 1 } } as any, 999),
+        controller.getContactDetail({ user: { userId: 1 } }, 999),
       ).rejects.toThrow(NotFoundException);
     });
   });
@@ -129,14 +136,14 @@ describe('ContactsController', () => {
       const mockResult = { requestId: 1 };
       mockContactsService.addContactRequest.mockResolvedValue(mockResult);
 
-      const expectedResponse: ContactResponse = {
+      const expectedResponse: ContactRequestCreateResponse = {
         statusCode: HttpStatus.CREATED,
         message: '인맥 요청이 성공적으로 추가되었습니다.',
         requestId: 1,
       };
 
       const result = await controller.addContactRequest(
-        { user: { userId: 1 } } as any,
+        { user: { userId: 1 } },
         { login_id: 'john_doe' },
       );
 
@@ -176,13 +183,13 @@ describe('ContactsController', () => {
     it('should accept a contact request', async () => {
       mockContactsService.acceptContactRequest.mockResolvedValue(undefined);
 
-      const expectedResponse: ContactResponse = {
+      const expectedResponse: ContactRequestUpdateResponse = {
         statusCode: HttpStatus.OK,
         message: '인맥 요청이 수락되었습니다.',
       };
 
       const result = await controller.acceptContactRequest(
-        { user: { userId: 1 } } as any,
+        { user: { userId: 1 } },
         1,
       );
       expect(result).toEqual(expectedResponse);
@@ -206,13 +213,13 @@ describe('ContactsController', () => {
     it('should reject a contact request', async () => {
       mockContactsService.rejectContactRequest.mockResolvedValue(undefined);
 
-      const expectedResponse: ContactResponse = {
+      const expectedResponse: ContactRequestUpdateResponse = {
         statusCode: HttpStatus.OK,
         message: '인맥 요청이 거절되었습니다.',
       };
 
       const result = await controller.rejectContactRequest(
-        { user: { userId: 1 } } as any,
+        { user: { userId: 1 } },
         1,
       );
       expect(result).toEqual(expectedResponse);
@@ -236,7 +243,7 @@ describe('ContactsController', () => {
     it('should return received requests', async () => {
       mockContactsService.getReceivedRequests.mockResolvedValue(mockRequests);
 
-      const expectedResponse: ContactResponse = {
+      const expectedResponse: ReceivedRequestListResponse = {
         statusCode: HttpStatus.OK,
         message: '받은 인맥 요청 목록을 성공적으로 조회했습니다.',
         requests: mockRequests,
@@ -244,7 +251,7 @@ describe('ContactsController', () => {
 
       const result = await controller.getReceivedRequests({
         user: { userId: 1 },
-      } as any);
+      });
       expect(result).toEqual(expectedResponse);
       expect(mockContactsService.getReceivedRequests).toHaveBeenCalledWith(1);
     });
@@ -263,7 +270,7 @@ describe('ContactsController', () => {
     it('should return sent requests', async () => {
       mockContactsService.getSentRequests.mockResolvedValue(mockRequests);
 
-      const expectedResponse: ContactResponse = {
+      const expectedResponse: SentRequestListResponse = {
         statusCode: HttpStatus.OK,
         message: '보낸 인맥 요청 목록을 성공적으로 조회했습니다.',
         requests: mockRequests,
@@ -271,7 +278,7 @@ describe('ContactsController', () => {
 
       const result = await controller.getSentRequests({
         user: { userId: 1 },
-      } as any);
+      });
       expect(result).toEqual(expectedResponse);
       expect(mockContactsService.getSentRequests).toHaveBeenCalledWith(1);
     });
@@ -281,15 +288,12 @@ describe('ContactsController', () => {
     it('should delete a contact', async () => {
       mockContactsService.deleteContact.mockResolvedValue(undefined);
 
-      const expectedResponse: ContactResponse = {
+      const expectedResponse: ContactRequestUpdateResponse = {
         statusCode: HttpStatus.OK,
         message: '인맥이 성공적으로 삭제되었습니다.',
       };
 
-      const result = await controller.deleteContact(
-        { user: { userId: 1 } } as any,
-        2,
-      );
+      const result = await controller.deleteContact({ user: { userId: 1 } }, 2);
       expect(result).toEqual(expectedResponse);
       expect(mockContactsService.deleteContact).toHaveBeenCalledWith(1, 2);
     });

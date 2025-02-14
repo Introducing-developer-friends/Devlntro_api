@@ -16,6 +16,7 @@ import {
   ReceivedRequestResult,
   SentRequestResult,
 } from '../types/contacts.types';
+import { ErrorMessageType } from '../enums/error.message.enum';
 
 @Injectable()
 export class ContactsService {
@@ -93,7 +94,7 @@ export class ContactsService {
       .getOne();
 
     if (!result) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+      throw new NotFoundException(ErrorMessageType.NOT_FOUND_CONTACT);
     }
 
     return {
@@ -154,7 +155,7 @@ export class ContactsService {
     if (existingRequest)
       throw new ConflictException('이미 인맥 요청을 보냈거나 받았습니다.');
     if (existingContact)
-      throw new ConflictException('이미 인맥 관계가 존재합니다.');
+      throw new ConflictException(ErrorMessageType.CONTACT_ALREADY_EXISTS);
 
     const newRequest = await this.friendRequestRepository.save({
       sender: user,
@@ -177,7 +178,7 @@ export class ContactsService {
       });
 
       if (!request) {
-        throw new NotFoundException('해당 인맥 요청을 찾을 수 없습니다.');
+        throw new NotFoundException(ErrorMessageType.NOT_FOUND_REQUEST);
       }
 
       const existingContact = await transactionalEntityManager.findOne(
@@ -219,7 +220,7 @@ export class ContactsService {
     });
 
     if (!request) {
-      throw new NotFoundException('해당 인맥 요청을 찾을 수 없습니다.');
+      throw new NotFoundException(ErrorMessageType.NOT_FOUND_REQUEST);
     }
 
     await this.friendRequestRepository.save({
@@ -294,7 +295,7 @@ export class ContactsService {
     });
 
     if (!contact) {
-      throw new NotFoundException('해당 인맥을 찾을 수 없습니다.');
+      throw new NotFoundException(ErrorMessageType.NOT_FOUND_CONTACT);
     }
 
     await this.contactRepository.softRemove(contact);

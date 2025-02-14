@@ -15,17 +15,31 @@ import { CreateContactDto } from './dto/create-contact.dto';
 import {
   ApiTags,
   ApiOperation,
-  ApiResponse,
   ApiBearerAuth,
+  ApiBadRequestResponse,
+  ApiNotFoundResponse,
+  ApiCreatedResponse,
+  ApiConflictResponse,
+  ApiOkResponse,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { Request as ExpressRequest } from 'express';
-import { ContactResponse } from '../types/contacts.types';
 
-interface CustomRequest extends ExpressRequest {
-  user: {
-    userId: number;
-  };
-}
+import {
+  ContactDetailResponse,
+  ContactListResponse,
+  ContactRequestCreateResponse,
+  ContactRequestUpdateResponse,
+  ReceivedRequestListResponse,
+  SentRequestListResponse,
+} from '../types/contacts.types';
+import {
+  BadRequestResponse,
+  ConflictResponse,
+  NotFoundResponse,
+  UnauthorizedResponse,
+} from '../types/response.type';
+import { ErrorMessageType } from '../enums/error.message.enum';
+import { CustomRequest } from '../types/request.type';
 
 @ApiTags('contacts')
 @ApiBearerAuth()
@@ -36,22 +50,26 @@ export class ContactsController {
 
   @Get()
   @ApiOperation({ summary: '명함 리스트 조회' })
-  @ApiResponse({
-    status: HttpStatus.OK,
+  @ApiOkResponse({
+    type: ContactListResponse,
     description: '명함 리스트를 성공적으로 조회했습니다.',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '잘못된 요청입니다.',
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: '명함 리스트를 찾을 수 없습니다.',
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: ErrorMessageType.NOT_FOUND_CONTACT,
   })
   @Get()
   async getContactList(
     @Request() req: CustomRequest,
-  ): Promise<ContactResponse> {
+  ): Promise<ContactListResponse> {
     const contacts = await this.contactsService.getContactList(req.user.userId);
 
     return {
@@ -66,22 +84,26 @@ export class ContactsController {
 
   @Get(':userId?')
   @ApiOperation({ summary: '명함 상세 정보 조회' })
-  @ApiResponse({
-    status: HttpStatus.OK,
+  @ApiOkResponse({
+    type: ContactDetailResponse,
     description: '명함 상세 정보를 성공적으로 조회했습니다.',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '유효하지 않은 사용자 ID입니다.',
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: '해당 사용자의 명함을 찾을 수 없습니다.',
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: ErrorMessageType.NOT_FOUND_CONTACT,
   })
   async getContactDetail(
     @Request() req: CustomRequest,
     @Param('userId') userId?: number,
-  ): Promise<ContactResponse> {
+  ): Promise<ContactDetailResponse> {
     const targetUserId = userId || req.user.userId;
     const contact = await this.contactsService.getContactDetail(
       req.user.userId,
@@ -97,22 +119,26 @@ export class ContactsController {
 
   @Post()
   @ApiOperation({ summary: '인맥 추가 요청' })
-  @ApiResponse({
-    status: HttpStatus.CREATED,
-    description: '인맥이 성공적으로 추가되었습니다.',
+  @ApiCreatedResponse({
+    type: ContactRequestCreateResponse,
+    description: '인맥 요청이 성공적으로 추가되었습니다.',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '유효하지 않은 사용자 ID입니다.',
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
   })
-  @ApiResponse({
-    status: HttpStatus.CONFLICT,
-    description: '이미 인맥으로 등록된 사용자입니다.',
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  @ApiConflictResponse({
+    type: ConflictResponse,
+    description: ErrorMessageType.CONTACT_ALREADY_EXISTS,
   })
   async addContactRequest(
     @Request() req: CustomRequest,
     @Body() createContactDto: CreateContactDto,
-  ): Promise<ContactResponse> {
+  ): Promise<ContactRequestCreateResponse> {
     const result = await this.contactsService.addContactRequest(
       req.user.userId,
       createContactDto.login_id,
@@ -127,22 +153,26 @@ export class ContactsController {
 
   @Post('accept/:requestId')
   @ApiOperation({ summary: '인맥 요청 수락' })
-  @ApiResponse({
-    status: HttpStatus.OK,
+  @ApiOkResponse({
+    type: ContactRequestUpdateResponse,
     description: '인맥 요청이 수락되었습니다.',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '유효하지 않은 요청입니다.',
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: '해당 인맥 요청을 찾을 수 없습니다.',
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: ErrorMessageType.NOT_FOUND_REQUEST,
   })
   async acceptContactRequest(
     @Request() req: CustomRequest,
     @Param('requestId') requestId: number,
-  ): Promise<ContactResponse> {
+  ): Promise<ContactRequestUpdateResponse> {
     await this.contactsService.acceptContactRequest(req.user.userId, requestId);
 
     return {
@@ -153,22 +183,26 @@ export class ContactsController {
 
   @Post('reject/:requestId')
   @ApiOperation({ summary: '인맥 요청 거절' })
-  @ApiResponse({
-    status: HttpStatus.OK,
+  @ApiOkResponse({
+    type: ContactRequestUpdateResponse,
     description: '인맥 요청이 거절되었습니다.',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '유효하지 않은 요청입니다.',
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: '해당 인맥 요청을 찾을 수 없습니다.',
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: ErrorMessageType.NOT_FOUND_REQUEST,
   })
   async rejectContactRequest(
     @Request() req: CustomRequest,
     @Param('requestId') requestId: number,
-  ): Promise<ContactResponse> {
+  ): Promise<ContactRequestUpdateResponse> {
     await this.contactsService.rejectContactRequest(req.user.userId, requestId);
 
     return {
@@ -179,17 +213,25 @@ export class ContactsController {
 
   @Get('requests/received')
   @ApiOperation({ summary: '받은 인맥 요청 목록 조회' })
-  @ApiResponse({
-    status: HttpStatus.OK,
+  @ApiOkResponse({
+    type: ReceivedRequestListResponse,
     description: '받은 인맥 요청 목록을 성공적으로 조회했습니다.',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '요청 처리 중 오류가 발생했습니다.',
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
+  })
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: ErrorMessageType.NOT_FOUND_REQUESTS,
   })
   async getReceivedRequests(
     @Request() req: CustomRequest,
-  ): Promise<ContactResponse> {
+  ): Promise<ReceivedRequestListResponse> {
     const requests = await this.contactsService.getReceivedRequests(
       req.user.userId,
     );
@@ -203,17 +245,25 @@ export class ContactsController {
 
   @Get('requests/sent')
   @ApiOperation({ summary: '보낸 인맥 요청 목록 조회' })
-  @ApiResponse({
-    status: HttpStatus.OK,
+  @ApiOkResponse({
+    type: SentRequestListResponse,
     description: '보낸 인맥 요청 목록을 성공적으로 조회했습니다.',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '요청 처리 중 오류가 발생했습니다.',
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
+  })
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: ErrorMessageType.NOT_FOUND_REQUESTS,
   })
   async getSentRequests(
     @Request() req: CustomRequest,
-  ): Promise<ContactResponse> {
+  ): Promise<SentRequestListResponse> {
     const requests = await this.contactsService.getSentRequests(
       req.user.userId,
     );
@@ -227,22 +277,26 @@ export class ContactsController {
 
   @Delete(':contactId')
   @ApiOperation({ summary: '인맥 삭제 (명함 삭제)' })
-  @ApiResponse({
-    status: HttpStatus.OK,
+  @ApiOkResponse({
+    type: ContactRequestUpdateResponse,
     description: '인맥이 성공적으로 삭제되었습니다.',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '유효하지 않은 인맥 ID입니다.',
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: '해당 인맥을 찾을 수 없습니다.',
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: ErrorMessageType.NOT_FOUND_CONTACT,
   })
   async deleteContact(
     @Request() req: CustomRequest,
     @Param('contactId') contactUserId: number,
-  ): Promise<ContactResponse> {
+  ): Promise<ContactRequestUpdateResponse> {
     await this.contactsService.deleteContact(req.user.userId, contactUserId);
 
     return {
