@@ -5,11 +5,8 @@ import { UserService } from './user.service';
 import { UpdateBusinessProfileDto } from './dto/update-business-profile.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { DeleteAccountDto } from './dto/delete-account.dto';
-import {
-  BusinessProfileResponse,
-  PasswordChangeResponse,
-  AccountDeleteResponse,
-} from '../types/user.types';
+import { BusinessProfileResponse } from '../types/user.types';
+import { BaseResponse } from 'src/types/response.type';
 
 describe('UserController', () => {
   let controller: UserController;
@@ -92,7 +89,7 @@ describe('UserController', () => {
         changePasswordDto,
       );
 
-      expect(result).toEqual<PasswordChangeResponse>({
+      expect(result).toEqual<BaseResponse>({
         statusCode: HttpStatus.OK,
         message: '비밀번호가 성공적으로 변경되었습니다.',
       });
@@ -115,7 +112,7 @@ describe('UserController', () => {
         deleteAccountDto,
       );
 
-      expect(result).toEqual<AccountDeleteResponse>({
+      expect(result).toEqual<BaseResponse>({
         statusCode: HttpStatus.OK,
         message: '회원 탈퇴가 성공적으로 처리되었습니다.',
       });

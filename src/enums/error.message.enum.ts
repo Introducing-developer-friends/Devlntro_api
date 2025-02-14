@@ -26,6 +26,9 @@ export const ErrorMessageType = {
   FAILED_LOGOUT: '로그아웃 처리에 실패했습니다.',
   ALREADY_LOGGED_OUT: '이미 로그아웃된 상태입니다.',
   PASSWORD_MISMATCH: '비밀번호와 확인 비밀번호가 일치하지 않습니다.',
+  LIKE_PROCESSING_ERROR: '좋아요 처리 중 오류가 발생했습니다.',
+  TARGET_USER_NOT_FOUND: '대상 사용자를 찾을 수 없습니다.',
+  SELF_REQUEST_NOT_ALLOWED: '자기 자신에게 요청을 보낼 수 없습니다.',
 } as const;
 
 export type ErrorMessageEnumType =

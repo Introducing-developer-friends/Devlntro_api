@@ -22,13 +22,10 @@ import {
   ApiNotFoundResponse,
 } from '@nestjs/swagger';
 
-import {
-  BusinessProfileResponse,
-  PasswordChangeResponse,
-  AccountDeleteResponse,
-} from '../types/user.types';
+import { BusinessProfileResponse } from '../types/user.types';
 import {
   BadRequestResponse,
+  BaseResponse,
   NotFoundResponse,
   UnauthorizedResponse,
 } from '../types/response.type';
@@ -79,7 +76,7 @@ export class UserController {
   @Put('password')
   @ApiOperation({ summary: '비밀번호 변경' })
   @ApiOkResponse({
-    type: PasswordChangeResponse,
+    type: BaseResponse,
     description: '비밀번호가 성공적으로 변경되었습니다.',
   })
   @ApiBadRequestResponse({
@@ -97,7 +94,7 @@ export class UserController {
   async changePassword(
     @Request() req: CustomRequest,
     @Body() changePasswordDto: ChangePasswordDto,
-  ): Promise<PasswordChangeResponse> {
+  ): Promise<BaseResponse> {
     await this.userService.changePassword(req.user.userId, changePasswordDto);
 
     return {
@@ -109,7 +106,7 @@ export class UserController {
   @Delete()
   @ApiOperation({ summary: '회원 탈퇴' })
   @ApiOkResponse({
-    type: AccountDeleteResponse,
+    type: BaseResponse,
     description: '회원 탈퇴가 성공적으로 처리되었습니다.',
   })
   @ApiBadRequestResponse({
@@ -123,7 +120,7 @@ export class UserController {
   async deleteAccount(
     @Request() req: CustomRequest,
     @Body() deleteAccountDto: DeleteAccountDto,
-  ): Promise<AccountDeleteResponse> {
+  ): Promise<BaseResponse> {
     await this.userService.deleteAccount(req.user.userId, deleteAccountDto);
 
     return {

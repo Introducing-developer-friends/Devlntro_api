@@ -35,7 +35,3 @@ export class BusinessProfileResponse extends BaseResponse {
   @ApiProperty({ required: false, type: BusinessProfileInfo })
   profile?: BusinessProfileInfo;
 }
-
-export class PasswordChangeResponse extends BaseResponse {}
-
-export class AccountDeleteResponse extends BaseResponse {}

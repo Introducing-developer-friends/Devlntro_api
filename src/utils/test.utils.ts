@@ -1,5 +1,3 @@
-// utils/test.utils.ts
-
 import { Repository, SelectQueryBuilder } from 'typeorm';
 
 import { Post } from '../entities/post.entity';
