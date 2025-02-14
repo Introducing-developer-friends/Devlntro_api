@@ -2,22 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotificationsController } from './notifications.controller';
 import { NotificationsService } from './notifications.service';
 import { HttpStatus } from '@nestjs/common';
-import {
-  CreateFriendRequestNotificationDto,
-  CreateLikePostNotificationDto,
-  CreateCommentNotificationDto,
-  CreateLikeCommentNotificationDto,
-  DeleteMultipleNotificationsDto,
-} from './dto/notification.dto';
+import { CreateFriendRequestNotificationDto } from './dto/create.friend.request.notification.dto';
 import {
   NotificationListResponse,
   NotificationCreateResponse,
-  NotificationUpdateResponse,
-  NotificationDeleteResponse,
   NotificationType,
   UserIdResponse,
   NotificationInfo,
 } from '../types/notification.types';
+import { BaseResponse } from '../types/response.type';
+import { DeleteMultipleNotificationsDto } from './dto/delete.multiple.notification.dto';
+import { CreateCommentNotificationDto } from './dto/create.comment.notification.dto';
+import { CreateLikePostNotificationDto } from './dto/create.like.post.notification.dto';
+import { CreateLikeCommentNotificationDto } from './dto/create.like.comment.notification.dto';
 
 describe('NotificationsController', () => {
   let controller: NotificationsController;
@@ -41,7 +38,6 @@ describe('NotificationsController', () => {
       controllers: [NotificationsController],
       providers: [
         {
-          // 서비스에 대한 모의 객체(mock)를 제공
           provide: NotificationsService,
           useValue: {
             getNotifications: jest.fn(),
@@ -83,7 +79,7 @@ describe('NotificationsController', () => {
   });
 
   describe('markAsRead', () => {
-    const mockResponse: NotificationUpdateResponse = {
+    const mockResponse: BaseResponse = {
       statusCode: HttpStatus.OK,
       message: '알림이 성공적으로 읽음 처리되었습니다.',
     };
@@ -92,7 +88,7 @@ describe('NotificationsController', () => {
       const req = { user: { userId: 1 } };
       jest.spyOn(service, 'markAsRead').mockResolvedValue();
 
-      const result = await controller.markAsRead(1, req as any);
+      const result = await controller.markAsRead(1, req);
       expect(result).toEqual(mockResponse);
       expect(service.markAsRead).toHaveBeenCalledWith(1, 1);
     });
@@ -117,10 +113,7 @@ describe('NotificationsController', () => {
         .spyOn(service, 'createNotification')
         .mockResolvedValue({ notificationId: 1 });
 
-      const result = await controller.createFriendRequestNotification(
-        req as any,
-        dto,
-      );
+      const result = await controller.createFriendRequestNotification(req, dto);
       expect(result).toEqual(mockResponse);
     });
   });
@@ -145,10 +138,7 @@ describe('NotificationsController', () => {
         .spyOn(service, 'createNotification')
         .mockResolvedValue({ notificationId: 1 });
 
-      const result = await controller.createLikePostNotification(
-        dto,
-        req as any,
-      );
+      const result = await controller.createLikePostNotification(dto, req);
       expect(result).toEqual(mockResponse);
     });
   });
@@ -173,10 +163,7 @@ describe('NotificationsController', () => {
         .spyOn(service, 'createNotification')
         .mockResolvedValue({ notificationId: 1 });
 
-      const result = await controller.createCommentNotification(
-        dto,
-        req as any,
-      );
+      const result = await controller.createCommentNotification(dto, req);
       expect(result).toEqual(mockResponse);
     });
   });
@@ -201,16 +188,13 @@ describe('NotificationsController', () => {
         .spyOn(service, 'createNotification')
         .mockResolvedValue({ notificationId: 1 });
 
-      const result = await controller.createLikeCommentNotification(
-        dto,
-        req as any,
-      );
+      const result = await controller.createLikeCommentNotification(dto, req);
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe('deleteNotification', () => {
-    const mockResponse: NotificationDeleteResponse = {
+    const mockResponse: BaseResponse = {
       statusCode: HttpStatus.OK,
       message: '알림이 성공적으로 삭제되었습니다.',
     };
@@ -219,7 +203,7 @@ describe('NotificationsController', () => {
       const req = { user: { userId: 1 } };
       jest.spyOn(service, 'deleteNotification').mockResolvedValue();
 
-      const result = await controller.deleteNotification(1, req as any);
+      const result = await controller.deleteNotification(1, req);
       expect(result).toEqual(mockResponse);
       expect(service.deleteNotification).toHaveBeenCalledWith(1, 1);
     });
@@ -232,17 +216,14 @@ describe('NotificationsController', () => {
         notificationIds: [1, 2, 3],
       };
 
-      const mockResponse: NotificationDeleteResponse = {
+      const mockResponse: BaseResponse = {
         statusCode: HttpStatus.OK,
         message: '3개의 알림이 성공적으로 삭제되었습니다.',
       };
 
       jest.spyOn(service, 'deleteMultipleNotifications').mockResolvedValue(3);
 
-      const result = await controller.deleteMultipleNotifications(
-        dto,
-        req as any,
-      );
+      const result = await controller.deleteMultipleNotifications(dto, req);
       expect(result).toEqual(mockResponse);
       expect(service.deleteMultipleNotifications).toHaveBeenCalledWith(
         [1, 2, 3],

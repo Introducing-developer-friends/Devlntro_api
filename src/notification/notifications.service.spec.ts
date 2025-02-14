@@ -232,7 +232,7 @@ describe('NotificationsService', () => {
         .mockReturnValue(mockNotification as Notification);
       jest
         .spyOn(notificationRepository, 'save')
-        .mockResolvedValue(mockNotification as Notification); // save 모킹 추가
+        .mockResolvedValue(mockNotification as Notification);
 
       const result = await service.createNotification(createData);
       expect(result).toEqual({ notificationId: 1 });

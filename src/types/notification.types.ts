@@ -1,3 +1,6 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { BaseResponse } from './response.type';
+
 export enum NotificationType {
   FRIEND_REQUEST = 'friend_request',
   LIKE_POST = 'like_post',
@@ -5,14 +8,29 @@ export enum NotificationType {
   LIKE_COMMENT = 'like_comment',
 }
 
-export interface NotificationInfo {
+export class NotificationInfo {
+  @ApiProperty({ example: 1 })
   notificationId: number;
+
+  @ApiProperty({ enum: NotificationType })
   type: NotificationType;
+
+  @ApiProperty({ example: '새로운 알림이 있습니다.' })
   message: string;
+
+  @ApiProperty({ required: false, example: 1 })
   postId?: number;
+
+  @ApiProperty({ required: false, example: 1 })
   commentId?: number;
+
+  @ApiProperty({ example: false })
   isRead: boolean;
+
+  @ApiProperty({ example: new Date() })
   createdAt: Date;
+
+  @ApiProperty({ example: 1 })
   senderId: number;
 }
 
@@ -30,24 +48,18 @@ export interface NotificationDeleteData {
   userId: number;
 }
 
-export interface BaseResponse {
-  statusCode: number;
-  message: string;
-}
-
-export interface NotificationListResponse extends BaseResponse {
+export class NotificationListResponse extends BaseResponse {
+  @ApiProperty({ type: [NotificationInfo] })
   notifications: NotificationInfo[];
 }
 
-export interface NotificationCreateResponse extends BaseResponse {
+export class NotificationCreateResponse extends BaseResponse {
+  @ApiProperty({ example: 1 })
   notificationId: number;
 }
 
-export type NotificationUpdateResponse = BaseResponse;
-
-export type NotificationDeleteResponse = BaseResponse;
-
-export interface UserIdResponse extends BaseResponse {
+export class UserIdResponse extends BaseResponse {
+  @ApiProperty({ example: 1 })
   userId: number;
 }
 
@@ -62,27 +74,4 @@ export interface UserIdSearchData {
 export interface NotificationBase {
   receiverId: number;
   message: string;
-}
-
-export interface FriendRequestNotificationDto extends NotificationBase {
-  type: NotificationType.FRIEND_REQUEST;
-}
-
-export interface LikePostNotificationDto extends NotificationBase {
-  type: NotificationType.LIKE_POST;
-  postId: number;
-}
-
-export interface CommentNotificationDto extends NotificationBase {
-  type: NotificationType.COMMENT;
-  postId: number;
-}
-
-export interface LikeCommentNotificationDto extends NotificationBase {
-  type: NotificationType.LIKE_COMMENT;
-  commentId: number;
-}
-
-export interface DeleteNotificationsDto {
-  notificationIds: number[];
 }

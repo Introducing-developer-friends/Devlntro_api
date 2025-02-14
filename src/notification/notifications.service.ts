@@ -15,6 +15,7 @@ import {
   NotificationInfo,
   NotificationCreateData,
 } from '../types/notification.types';
+import { ErrorMessageType } from '../enums/error.message.enum';
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -89,7 +90,7 @@ export class NotificationsService {
       );
     } catch (error) {
       this.logger.error(`Failed to get notifications: ${error.message}`);
-      throw new BadRequestException('알림 조회 중 오류가 발생했습니다.');
+      throw new BadRequestException(ErrorMessageType.BAD_REQUEST);
     }
   }
 
@@ -103,7 +104,7 @@ export class NotificationsService {
       .execute();
 
     if (result.affected === 0) {
-      throw new NotFoundException('해당 알림을 찾을 수 없습니다.');
+      throw new NotFoundException(ErrorMessageType.NOT_FOUND_NOTIFICATION);
     }
   }
 
@@ -128,7 +129,7 @@ export class NotificationsService {
     const sender = users.find((u) => u.user_id === data.senderId);
 
     if (!receiver || !sender) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+      throw new NotFoundException(ErrorMessageType.NOT_FOUND_USER);
     }
 
     let post = null;
@@ -140,7 +141,7 @@ export class NotificationsService {
         select: ['post_id'],
       });
       if (!post) {
-        throw new NotFoundException('해당 게시물을 찾을 수 없습니다.');
+        throw new NotFoundException(ErrorMessageType.NOT_FOUND_POST);
       }
     }
 
@@ -150,7 +151,7 @@ export class NotificationsService {
         select: ['comment_id'],
       });
       if (!comment) {
-        throw new NotFoundException('해당 댓글을 찾을 수 없습니다.');
+        throw new NotFoundException(ErrorMessageType.NOT_FOUND_COMMENT);
       }
     }
 
@@ -178,7 +179,7 @@ export class NotificationsService {
     });
 
     if (result.affected === 0) {
-      throw new NotFoundException('해당 알림을 찾을 수 없습니다.');
+      throw new NotFoundException(ErrorMessageType.NOT_FOUND_NOTIFICATION);
     }
   }
 
@@ -197,7 +198,7 @@ export class NotificationsService {
       .getMany();
 
     if (notifications.length === 0) {
-      throw new NotFoundException('삭제할 알림을 찾을 수 없습니다.');
+      throw new NotFoundException(ErrorMessageType.NOT_FOUND_NOTIFICATION);
     }
 
     const validNotificationIds = notifications.map((n) => n.notification_id);
@@ -220,9 +221,7 @@ export class NotificationsService {
       .getOne();
 
     if (!user) {
-      throw new NotFoundException(
-        '해당 로그인 ID에 해당하는 사용자를 찾을 수 없습니다.',
-      );
+      throw new NotFoundException(ErrorMessageType.NOT_FOUND_USER);
     }
 
     return user.user_id;
