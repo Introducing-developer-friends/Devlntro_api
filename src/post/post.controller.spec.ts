@@ -2,14 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PostController } from './post.controller';
 import { PostService } from './post.service';
 import { S3Service } from '../s3/s3.service';
-import { CreatePostDto, UpdatePostDto } from './dto/post.dto';
+
 import { HttpStatus } from '@nestjs/common';
-import {
-  PostCreateResponse,
-  PostUpdateResponse,
-  PostDeleteResponse,
-  PostLikeResponse,
-} from '../types/post.types';
+import { PostCreateResponse, PostLikeResponse } from '../types/post.types';
+import { BaseResponse } from 'src/types/response.type';
 
 describe('PostController', () => {
   let controller: PostController;
@@ -63,8 +59,8 @@ describe('PostController', () => {
       );
 
       const result = await controller.createPost(
-        { user: { userId: 1 } } as any,
-        { content: 'Test content' } as CreatePostDto,
+        { user: { userId: 1 } },
+        { content: 'Test content' },
         null,
       );
 
@@ -92,8 +88,8 @@ describe('PostController', () => {
       });
 
       const result = await controller.createPost(
-        { user: { userId: 1 } } as any,
-        { content: 'Test content' } as CreatePostDto,
+        { user: { userId: 1 } },
+        { content: 'Test content' },
         mockFile,
       );
 
@@ -109,8 +105,8 @@ describe('PostController', () => {
 
       await expect(
         controller.createPost(
-          { user: { userId: 1 } } as any,
-          { content: 'Test content' } as CreatePostDto,
+          { user: { userId: 1 } },
+          { content: 'Test content' },
           null,
         ),
       ).rejects.toThrow('Service error');
@@ -119,7 +115,7 @@ describe('PostController', () => {
 
   describe('updatePost', () => {
     it('should update a post successfully', async () => {
-      const expectedResponse: PostUpdateResponse = {
+      const expectedResponse: BaseResponse = {
         statusCode: HttpStatus.OK,
         message: '게시물이 성공적으로 수정되었습니다.',
       };
@@ -127,9 +123,9 @@ describe('PostController', () => {
       (mockPostService.updatePost as jest.Mock).mockResolvedValue(undefined);
 
       const result = await controller.updatePost(
-        { user: { userId: 1 } } as any,
+        { user: { userId: 1 } },
         1,
-        { content: 'Updated content' } as UpdatePostDto,
+        { content: 'Updated content' },
         null,
       );
 
@@ -149,7 +145,7 @@ describe('PostController', () => {
       (mockPostService.updatePost as jest.Mock).mockResolvedValue(undefined);
 
       await controller.updatePost(
-        { user: { userId: 1 } } as any,
+        { user: { userId: 1 } },
         1,
         { content: 'Updated content' },
         mockFile,
@@ -164,17 +160,14 @@ describe('PostController', () => {
 
   describe('deletePost', () => {
     it('should delete a post successfully', async () => {
-      const expectedResponse: PostDeleteResponse = {
+      const expectedResponse: BaseResponse = {
         statusCode: HttpStatus.OK,
         message: '게시물이 성공적으로 삭제되었습니다.',
       };
 
       (mockPostService.deletePost as jest.Mock).mockResolvedValue(undefined);
 
-      const result = await controller.deletePost(
-        { user: { userId: 1 } } as any,
-        1,
-      );
+      const result = await controller.deletePost({ user: { userId: 1 } }, 1);
       expect(result).toEqual(expectedResponse);
       expect(mockPostService.deletePost).toHaveBeenCalledWith(1, 1);
     });
@@ -197,10 +190,7 @@ describe('PostController', () => {
         mockServiceResponse,
       );
 
-      const result = await controller.likePost(
-        { user: { userId: 1 } } as any,
-        1,
-      );
+      const result = await controller.likePost({ user: { userId: 1 } }, 1);
       expect(result).toEqual(expectedResponse);
     });
 
@@ -220,10 +210,7 @@ describe('PostController', () => {
         mockServiceResponse,
       );
 
-      const result = await controller.likePost(
-        { user: { userId: 1 } } as any,
-        1,
-      );
+      const result = await controller.likePost({ user: { userId: 1 } }, 1);
       expect(result).toEqual(expectedResponse);
     });
   });

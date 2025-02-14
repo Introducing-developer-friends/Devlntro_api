@@ -14,28 +14,29 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PostService } from './post.service';
-import { CreatePostDto, UpdatePostDto } from './dto/post.dto';
+import { CreatePostDto } from './dto/create.post.dto';
 import {
   ApiBearerAuth,
   ApiOperation,
-  ApiResponse,
   ApiTags,
   ApiConsumes,
+  ApiBadRequestResponse,
+  ApiUnauthorizedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
 } from '@nestjs/swagger';
-import { Request } from 'express';
-import { S3Service } from '../s3/s3.service';
-import {
-  PostCreateResponse,
-  PostUpdateResponse,
-  PostDeleteResponse,
-  PostLikeResponse,
-} from '../types/post.types';
 
-interface CustomRequest extends Request {
-  user: {
-    userId: number;
-  };
-}
+import { S3Service } from '../s3/s3.service';
+import { PostCreateResponse, PostLikeResponse } from '../types/post.types';
+import {
+  BadRequestResponse,
+  BaseResponse,
+  NotFoundResponse,
+  UnauthorizedResponse,
+} from '../types/response.type';
+import { ErrorMessageType } from '../enums/error.message.enum';
+import { UpdatePostDto } from './dto/update.post.dto';
+import { CustomRequest } from '../types/request.type';
 
 @ApiTags('posts')
 @ApiBearerAuth() //
@@ -51,13 +52,13 @@ export class PostController {
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: '게시물 작성' })
-  @ApiResponse({
-    status: HttpStatus.CREATED,
+  @ApiOkResponse({
+    type: PostCreateResponse,
     description: '게시물이 성공적으로 작성되었습니다.',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '게시물 작성에 실패했습니다. 필수 필드를 확인해주세요.',
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
   })
   async createPost(
     @Req() req: CustomRequest,
@@ -91,24 +92,28 @@ export class PostController {
   @UseInterceptors(FileInterceptor('image'))
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: '게시물 수정' })
-  @ApiResponse({
-    status: HttpStatus.OK,
+  @ApiOkResponse({
+    type: BaseResponse,
     description: '게시물이 성공적으로 수정되었습니다.',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_REQUEST,
-    description: '게시물 수정에 실패했습니다. 유효한 데이터를 입력해주세요.',
+  @ApiBadRequestResponse({
+    type: BaseResponse,
+    description: ErrorMessageType.BAD_REQUEST,
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: '게시물을 찾을 수 없습니다.',
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: ErrorMessageType.NOT_FOUND_POST,
   })
   async updatePost(
     @Req() req: CustomRequest,
     @Param('postId') postId: number,
     @Body() updatePostDto: UpdatePostDto,
     @UploadedFile() file: Express.Multer.File,
-  ): Promise<PostUpdateResponse> {
+  ): Promise<BaseResponse> {
     let imageUrl = null;
 
     if (file) {
@@ -132,18 +137,26 @@ export class PostController {
 
   @Delete(':postId')
   @ApiOperation({ summary: '게시물 삭제' })
-  @ApiResponse({
-    status: HttpStatus.OK,
+  @ApiOkResponse({
+    type: BaseResponse,
     description: '게시물이 성공적으로 삭제되었습니다.',
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: '게시물을 찾을 수 없습니다.',
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
+  })
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: ErrorMessageType.NOT_FOUND_COMMENT,
   })
   async deletePost(
     @Req() req: CustomRequest,
     @Param('postId') postId: number,
-  ): Promise<PostDeleteResponse> {
+  ): Promise<BaseResponse> {
     await this.postService.deletePost(req.user.userId, postId);
 
     return {
@@ -154,17 +167,21 @@ export class PostController {
 
   @Post(':postId/like')
   @ApiOperation({ summary: '게시물 좋아요/취소' })
-  @ApiResponse({
-    status: HttpStatus.OK,
+  @ApiOkResponse({
+    type: PostLikeResponse,
     description: '게시물에 좋아요를 눌렀습니다.',
   })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: '게시물 좋아요를 취소했습니다.',
+  @ApiBadRequestResponse({
+    type: BadRequestResponse,
+    description: ErrorMessageType.BAD_REQUEST,
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: '게시물을 찾을 수 없습니다.',
+  @ApiUnauthorizedResponse({
+    type: UnauthorizedResponse,
+    description: ErrorMessageType.INVALID_AUTH,
+  })
+  @ApiNotFoundResponse({
+    type: NotFoundResponse,
+    description: ErrorMessageType.NOT_FOUND_POST,
   })
   async likePost(
     @Req() req: CustomRequest,

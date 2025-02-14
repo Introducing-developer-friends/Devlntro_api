@@ -1,3 +1,6 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { BaseResponse } from './response.type';
+
 export interface PostCreateData {
   content: string;
   imageUrl: string | null;
@@ -20,19 +23,15 @@ export interface PostLikeInfo {
   likeCount: number;
 }
 
-export interface BaseResponse {
-  statusCode: number;
-  message: string;
-}
-
-export interface PostCreateResponse extends BaseResponse {
+export class PostCreateResponse extends BaseResponse {
+  @ApiProperty({ example: 1 })
   postId: number;
+
+  @ApiProperty({ example: 'https://example.com/image.jpg', required: false })
   imageUrl: string | null;
 }
 
-export type PostUpdateResponse = BaseResponse;
-export type PostDeleteResponse = BaseResponse;
-
-export interface PostLikeResponse extends BaseResponse {
+export class PostLikeResponse extends BaseResponse {
+  @ApiProperty({ example: 5 })
   likeCount: number;
 }

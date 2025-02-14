@@ -14,6 +14,7 @@ import {
   PostBasicInfo,
   PostLikeInfo,
 } from '../types/post.types';
+import { ErrorMessageType } from '../enums/error.message.enum';
 
 @Injectable()
 export class PostService {
@@ -68,7 +69,7 @@ export class PostService {
         .getOne();
 
       if (!post) {
-        throw new NotFoundException('게시물을 찾을 수 없습니다.');
+        throw new NotFoundException(ErrorMessageType.NOT_FOUND_POST);
       }
       oldImageUrl = post.image_url;
     }
@@ -89,7 +90,7 @@ export class PostService {
       .execute();
 
     if (updateResult.affected === 0) {
-      throw new NotFoundException('게시물을 찾을 수 없습니다.');
+      throw new NotFoundException(ErrorMessageType.NOT_FOUND_POST);
     }
 
     if (
@@ -117,7 +118,7 @@ export class PostService {
       .getOne();
 
     if (!post) {
-      throw new NotFoundException('게시물을 찾을 수 없습니다.');
+      throw new NotFoundException(ErrorMessageType.NOT_FOUND_POST);
     }
 
     await this.postRepository
@@ -198,7 +199,7 @@ export class PostService {
         }
 
         if (error.code === 'ER_NO_REFERENCED_ROW_2') {
-          throw new NotFoundException('게시물을 찾을 수 없습니다.');
+          throw new NotFoundException(ErrorMessageType.NOT_FOUND_POST);
         }
 
         throw error;
