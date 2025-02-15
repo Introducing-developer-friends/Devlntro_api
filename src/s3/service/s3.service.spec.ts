@@ -21,7 +21,7 @@ class MockConfigService extends ConfigService {
     super();
   }
 
-  get(key: string): any {
+  get(key: string) {
     return this.mockValues[key];
   }
 

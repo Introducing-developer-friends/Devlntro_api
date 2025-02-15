@@ -300,9 +300,17 @@ describe('NotificationsService', () => {
       jest
         .spyOn(userRepository, 'createQueryBuilder')
         .mockReturnValue(queryBuilder as any);
-      jest
-        .spyOn(postRepository, 'findOne')
-        .mockResolvedValue({ post_id: 1 } as Post);
+      jest.spyOn(postRepository, 'findOne').mockResolvedValue({
+        post_id: 1,
+        user: null,
+        comments: [],
+        image_url: '',
+        content: '',
+        created_at: new Date(),
+        post_like_count: 0,
+        postLikes: [],
+        comments_count: 0,
+      });
       jest
         .spyOn(notificationRepository, 'save')
         .mockRejectedValue(new Error('Database error'));

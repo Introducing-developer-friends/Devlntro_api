@@ -58,7 +58,14 @@ export const seedInitialData = async (dataSource: DataSource) => {
       buffer: Buffer.from(buffer),
       originalname: `image-${Date.now()}.jpg`,
       mimetype: 'image/jpeg',
-    } as Express.Multer.File;
+      fieldname: 'image',
+      encoding: '7bit',
+      size: null,
+      stream: null,
+      destination: null,
+      filename: null,
+      path: null,
+    };
 
     const sanitizedFileName = file.originalname
       .replace(/\s+/g, '-')

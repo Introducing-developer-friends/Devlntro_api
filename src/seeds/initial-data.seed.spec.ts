@@ -92,9 +92,12 @@ describe('SeedInitialData', () => {
       .mockImplementation(() => mockConfigService as any);
 
     global.fetch = jest.fn(() =>
-      Promise.resolve({
-        arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
-      } as Response),
+      Promise.resolve(
+        new Response(new ArrayBuffer(8), {
+          status: 200,
+          headers: new Headers(),
+        }),
+      ),
     );
 
     const mockUsers = [createMockUser(1), createMockUser(2), createMockUser(3)];
@@ -105,19 +108,24 @@ describe('SeedInitialData', () => {
     });
 
     mockedCommentRepo.create.mockImplementation(
-      (comment: Partial<Comment>) =>
-        ({
-          ...comment,
-          comment_id: 1,
-          like_count: 0,
-        }) as Comment,
+      (comment: Partial<Comment>) => ({
+        ...comment,
+        comment_id: 1,
+        like_count: 0,
+        post: null,
+        userAccount: mockUsers[0],
+        commentLike: [],
+        content: 'Test comment',
+        created_at: new Date(),
+        deleted_at: null,
+      }),
     );
     mockedCommentRepo.save.mockImplementation((comment: Comment) =>
       Promise.resolve({
         ...comment,
         comment_id: comment.comment_id || 1,
         like_count: comment.like_count ?? 0,
-      } as Comment),
+      }),
     );
 
     mockedPostLikeRepo.create.mockImplementation(
@@ -130,13 +138,25 @@ describe('SeedInitialData', () => {
       }),
     );
 
+    const mockComment: Comment = {
+      comment_id: 1,
+      content: 'Test comment',
+      created_at: new Date(),
+      like_count: 0,
+      userAccount: mockUsers[0],
+      post: null,
+      commentLike: [],
+      deleted_at: null,
+    };
+
     mockedCommentLikeRepo.create.mockImplementation(
-      (commentLike: Partial<CommentLike>) =>
-        ({
-          ...commentLike,
-          comment_like_id: 1,
-          created_at: new Date(),
-        }) as CommentLike,
+      (commentLike: Partial<CommentLike>) => ({
+        ...commentLike,
+        comment_like_id: 1,
+        created_at: new Date(),
+        comment: commentLike.comment || mockComment,
+        user: commentLike.user || mockUsers[0],
+      }),
     );
     mockedCommentLikeRepo.save.mockImplementation((commentLike: CommentLike) =>
       Promise.resolve({

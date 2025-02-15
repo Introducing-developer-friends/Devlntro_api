@@ -13,6 +13,7 @@ import {
 } from 'src/types/comment.types';
 import { BaseResponse } from 'src/types/response.type';
 import { UpdateCommentDto } from '../dto/update.comment.dto';
+import { ErrorMessageType } from '../../enums/error.message.enum';
 
 describe('CommentController', () => {
   let controller: CommentController;
@@ -118,7 +119,7 @@ describe('CommentController', () => {
       const req = { user: { userId: 1 } };
 
       jest.spyOn(mockCommentService, 'updateComment').mockImplementation(() => {
-        throw new NotFoundException('댓글을 찾을 수 없습니다.');
+        throw new NotFoundException(ErrorMessageType.NOT_FOUND_COMMENT);
       });
 
       await expect(
@@ -150,7 +151,7 @@ describe('CommentController', () => {
       const req = { user: { userId: 1 } };
 
       jest.spyOn(mockCommentService, 'deleteComment').mockImplementation(() => {
-        throw new NotFoundException('댓글을 찾을 수 없습니다.');
+        throw new NotFoundException(ErrorMessageType.NOT_FOUND_COMMENT);
       });
 
       await expect(controller.deleteComment(req, 1, 999)).rejects.toThrow(
@@ -208,7 +209,7 @@ describe('CommentController', () => {
       const req = { user: { userId: 1 } };
 
       jest.spyOn(mockCommentService, 'likeComment').mockImplementation(() => {
-        throw new NotFoundException('댓글을 찾을 수 없습니다.');
+        throw new NotFoundException(ErrorMessageType.NOT_FOUND_COMMENT);
       });
 
       await expect(controller.likeComment(req, 1, 999)).rejects.toThrow(
