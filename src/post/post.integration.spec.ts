@@ -1,4 +1,3 @@
-// src/user/__tests__/user.integration.spec.ts
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
@@ -6,9 +5,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from '../auth/auth.module';
 import { PostModule } from './post.module';
-import { S3Service } from '../s3/s3.service';
-import { Post } from '../entities/post.entity';
-import { PostLike } from '../entities/post-like.entity';
+import { S3Service } from '../s3/service/s3.service';
+import { Post } from './entity/post.entity';
+import { PostLike } from './entity/post-like.entity';
 
 describe('User Integration Tests', () => {
   let app: INestApplication;

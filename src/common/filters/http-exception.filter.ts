@@ -12,20 +12,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(HttpExceptionFilter.name);
 
   private readonly ignorePaths = [
-    '/favicon.ico', // 브라우저 자동 요청
-    '/robots.txt', // 검색엔진 봇 요청
-    '/.env', // 환경설정 파일 스캔
-    '/.git', // git 저장소 스캔
-    '.php', // PHP 취약점 스캔
-    '.asp', // ASP 취약점 스캔
-    '.aspx', // ASPX 취약점 스캔
-    '/static/', // 정적 파일 자동 요청
-    '/assets/', // 정적 파일 자동 요청
-    '/public/', // 정적 파일 자동 요청
-    '/css/', // CSS 파일 자동 요청
-    '/images/', // 이미지 파일 자동 요청
-    '/Core/Skin/', // CMS 스캐닝
-    '/console', // 콘솔 접근 시도
+    '/favicon.ico',
+    '/robots.txt',
+    '/.env',
+    '/.git',
+    '.php',
+    '.asp',
+    '.aspx',
+    '/static/',
+    '/assets/',
+    '/public/',
+    '/css/',
+    '/images/',
+    '/Core/Skin/',
+    '/console',
   ];
 
   private shouldLogError(status: number, url: string): boolean {

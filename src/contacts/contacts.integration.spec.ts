@@ -5,9 +5,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from '../auth/auth.module';
 import { ContactsModule } from './contacts.module';
-import { BusinessContact } from '../entities/business-contact.entity';
-import { UserAccount } from '../entities/user-account.entity';
-import { FriendRequest } from '../entities/friend-request.entity';
+import { BusinessContact } from './entity/business-contact.entity';
+import { UserAccount } from '../user/entity/user-account.entity';
+import { FriendRequest } from './entity/friend-request.entity';
 
 describe('Contacts Integration Tests', () => {
   let app: INestApplication;

@@ -1,7 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SortingService } from './sorting-service';
-import { SortOption } from '../types/feed.types';
-import { Post } from '../entities/post.entity';
+
+import { Post } from '../post/entity/post.entity';
+import { SortOption } from '../enums/sort.enum';
 
 describe('SortingService', () => {
   let service: SortingService;

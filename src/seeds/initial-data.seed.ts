@@ -1,16 +1,16 @@
 import { DataSource } from 'typeorm';
-import { UserAccount } from '../entities/user-account.entity';
-import { Post } from '../entities/post.entity';
-import { Comment } from '../entities/comment.entity';
-import { PostLike } from '../entities/post-like.entity';
-import { CommentLike } from '../entities/comment-like.entity';
-import { BusinessContact } from '../entities/business-contact.entity';
-import { BusinessProfile } from '../entities/business-profile.entity';
-import { Notification } from '../entities/notification.entity';
-import { FriendRequest } from '../entities/friend-request.entity';
+import { UserAccount } from '../user/entity/user-account.entity';
+import { Post } from '../post/entity/post.entity';
+import { Comment } from '../comment/entity/comment.entity';
+import { PostLike } from '../post/entity/post-like.entity';
+import { CommentLike } from '../comment/entity/comment-like.entity';
+import { BusinessContact } from '../contacts/entity/business-contact.entity';
+import { BusinessProfile } from '../user/entity/business-profile.entity';
+import { Notification } from '../notification/entity/notification.entity';
+import { FriendRequest } from '../contacts/entity/friend-request.entity';
 import { faker } from '@faker-js/faker';
 import * as bcrypt from 'bcrypt';
-import { S3Service } from '../s3/s3.service';
+import { S3Service } from '../s3/service/s3.service';
 import { ConfigService } from '@nestjs/config';
 
 export const seedInitialData = async (dataSource: DataSource) => {
@@ -58,7 +58,14 @@ export const seedInitialData = async (dataSource: DataSource) => {
       buffer: Buffer.from(buffer),
       originalname: `image-${Date.now()}.jpg`,
       mimetype: 'image/jpeg',
-    } as Express.Multer.File;
+      fieldname: 'image',
+      encoding: '7bit',
+      size: null,
+      stream: null,
+      destination: null,
+      filename: null,
+      path: null,
+    };
 
     const sanitizedFileName = file.originalname
       .replace(/\s+/g, '-')

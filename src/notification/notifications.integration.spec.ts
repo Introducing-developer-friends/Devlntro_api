@@ -7,7 +7,7 @@ import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from './notifications.module';
 import { DataSource } from 'typeorm';
 import { PostModule } from '../post/post.module';
-import { S3Service } from '../s3/s3.service';
+import { S3Service } from '../s3/service/s3.service';
 
 describe('NotificationsService (Integration)', () => {
   let app: INestApplication;

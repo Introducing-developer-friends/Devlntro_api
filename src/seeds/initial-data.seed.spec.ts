@@ -1,19 +1,19 @@
 import { DataSource, Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { S3Service } from '../s3/s3.service';
-import { UserAccount } from '../entities/user-account.entity';
-import { Post } from '../entities/post.entity';
-import { Comment } from '../entities/comment.entity';
-import { PostLike } from '../entities/post-like.entity';
-import { CommentLike } from '../entities/comment-like.entity';
-import { BusinessContact } from '../entities/business-contact.entity';
-import { BusinessProfile } from '../entities/business-profile.entity';
-import { Notification } from '../entities/notification.entity';
-import { FriendRequest } from '../entities/friend-request.entity';
+import { S3Service } from '../s3/service/s3.service';
+import { UserAccount } from '../user/entity/user-account.entity';
+import { Post } from '../post/entity/post.entity';
+import { Comment } from '../comment/entity/comment.entity';
+import { PostLike } from '../post/entity/post-like.entity';
+import { CommentLike } from '../comment/entity/comment-like.entity';
+import { BusinessContact } from '../contacts/entity/business-contact.entity';
+import { BusinessProfile } from '../user/entity/business-profile.entity';
+import { Notification } from '../notification/entity/notification.entity';
+import { FriendRequest } from '../contacts/entity/friend-request.entity';
 import { seedInitialData } from './initial-data.seed';
 
 jest.mock('@nestjs/config');
-jest.mock('../s3/s3.service');
+jest.mock('../s3/service/s3.service');
 jest.mock('bcrypt', () => ({
   hash: jest.fn().mockResolvedValue('hashedPassword123'),
 }));
@@ -92,9 +92,12 @@ describe('SeedInitialData', () => {
       .mockImplementation(() => mockConfigService as any);
 
     global.fetch = jest.fn(() =>
-      Promise.resolve({
-        arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
-      } as Response),
+      Promise.resolve(
+        new Response(new ArrayBuffer(8), {
+          status: 200,
+          headers: new Headers(),
+        }),
+      ),
     );
 
     const mockUsers = [createMockUser(1), createMockUser(2), createMockUser(3)];
@@ -105,19 +108,24 @@ describe('SeedInitialData', () => {
     });
 
     mockedCommentRepo.create.mockImplementation(
-      (comment: Partial<Comment>) =>
-        ({
-          ...comment,
-          comment_id: 1,
-          like_count: 0,
-        }) as Comment,
+      (comment: Partial<Comment>) => ({
+        ...comment,
+        comment_id: 1,
+        like_count: 0,
+        post: null,
+        userAccount: mockUsers[0],
+        commentLike: [],
+        content: 'Test comment',
+        created_at: new Date(),
+        deleted_at: null,
+      }),
     );
     mockedCommentRepo.save.mockImplementation((comment: Comment) =>
       Promise.resolve({
         ...comment,
         comment_id: comment.comment_id || 1,
         like_count: comment.like_count ?? 0,
-      } as Comment),
+      }),
     );
 
     mockedPostLikeRepo.create.mockImplementation(
@@ -130,13 +138,25 @@ describe('SeedInitialData', () => {
       }),
     );
 
+    const mockComment: Comment = {
+      comment_id: 1,
+      content: 'Test comment',
+      created_at: new Date(),
+      like_count: 0,
+      userAccount: mockUsers[0],
+      post: null,
+      commentLike: [],
+      deleted_at: null,
+    };
+
     mockedCommentLikeRepo.create.mockImplementation(
-      (commentLike: Partial<CommentLike>) =>
-        ({
-          ...commentLike,
-          comment_like_id: 1,
-          created_at: new Date(),
-        }) as CommentLike,
+      (commentLike: Partial<CommentLike>) => ({
+        ...commentLike,
+        comment_like_id: 1,
+        created_at: new Date(),
+        comment: commentLike.comment || mockComment,
+        user: commentLike.user || mockUsers[0],
+      }),
     );
     mockedCommentLikeRepo.save.mockImplementation((commentLike: CommentLike) =>
       Promise.resolve({
