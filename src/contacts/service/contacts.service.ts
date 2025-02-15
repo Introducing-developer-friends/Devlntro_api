@@ -153,7 +153,9 @@ export class ContactsService {
     ]);
 
     if (existingRequest)
-      throw new ConflictException('이미 인맥 요청을 보냈거나 받았습니다.');
+      throw new ConflictException(
+        ErrorMessageType.CONTACT_REQUEST_ALREADY_EXISTS,
+      );
     if (existingContact)
       throw new ConflictException(ErrorMessageType.CONTACT_ALREADY_EXISTS);
 

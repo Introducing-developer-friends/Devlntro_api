@@ -13,6 +13,7 @@ export const ErrorMessageType = {
   NOT_FOUND_REQUEST: '해당 인맥 요청을 찾을 수 없습니다.',
   NOT_FOUND_REQUESTS: '인맥 요청 목록이 존재하지 않습니다.',
   CONTACT_ALREADY_EXISTS: '이미 인맥으로 등록된 사용자입니다.',
+  CONTACT_REQUEST_ALREADY_EXISTS: '이미 인맥 요청을 보냈거나 받았습니다.',
 
   NOT_FOUND_FEED: '해당 피드를 찾을 수 없습니다.',
   NOT_FOUND_POST: '해당 게시물을 찾을 수 없습니다.',
