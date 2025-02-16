@@ -3,10 +3,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { MulterModule } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { S3Module } from '../s3/s3.module';
-import { PostController } from './post.controller';
-import { PostService } from './post.service';
-import { Post } from '../entities/post.entity';
-import { PostLike } from '../entities/post-like.entity';
+import { PostController } from './controller/post.controller';
+import { PostService } from './service/post.service';
+import { Post } from './entity/post.entity';
+import { PostLike } from './entity/post-like.entity';
 
 @Module({
   imports: [

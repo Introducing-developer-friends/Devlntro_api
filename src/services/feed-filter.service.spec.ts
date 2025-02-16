@@ -1,11 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { FeedFilterService } from './feed-filter.service';
-import { Post } from '../entities/post.entity';
-import { BusinessContact } from '../entities/business-contact.entity';
+import { Post } from '../post/entity/post.entity';
+import { BusinessContact } from '../contacts/entity/business-contact.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { FilterType } from '../types/feed.types';
+import { FilterType } from '../enums/sort.enum';
 
-// 테스트에 사용할 mock 데이터
 const mockDate = new Date('2024-01-01');
 
 const mockPost = {
@@ -21,7 +20,6 @@ const mockPost = {
   },
 };
 
-// QueryBuilder 메서드의 mock 구현
 const mockQueryBuilder = {
   leftJoin: jest.fn().mockReturnThis(),
   innerJoin: jest.fn().mockReturnThis(),
@@ -31,7 +29,6 @@ const mockQueryBuilder = {
   getMany: jest.fn().mockResolvedValue([mockPost]),
 };
 
-// Post 리포지토리의 mock 구현
 const mockPostRepository = {
   createQueryBuilder: jest.fn(() => mockQueryBuilder),
 };
@@ -39,7 +36,6 @@ const mockPostRepository = {
 describe('FeedFilterService', () => {
   let service: FeedFilterService;
 
-  // 테스트 실행 전에 TestingModule 초기화
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -53,14 +49,11 @@ describe('FeedFilterService', () => {
     jest.clearAllMocks();
   });
 
-  // Service 정의 확인
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  // filterPostsByUser 메서드의 기본 필터링 테스트
   describe('filterPostsByUser - 기본 필터링 테스트', () => {
-    // "ALL" 필터 타입 테스트
     it('should filter posts by ALL filter type', async () => {
       const result = await service.filterPostsByUser(1, FilterType.ALL);
 
@@ -83,7 +76,6 @@ describe('FeedFilterService', () => {
       );
     });
 
-    // "OWN" 필터 타입 테스트
     it('should filter posts by OWN filter type', async () => {
       const result = await service.filterPostsByUser(1, FilterType.OWN);
 
@@ -97,7 +89,6 @@ describe('FeedFilterService', () => {
       );
     });
 
-    // "SPECIFIC" 필터 타입 테스트
     it('should filter posts by SPECIFIC filter type', async () => {
       const result = await service.filterPostsByUser(1, FilterType.SPECIFIC, 2);
 
@@ -112,12 +103,10 @@ describe('FeedFilterService', () => {
     });
   });
 
-  // 필드 검증 테스트
   describe('filterPostsByUser - 필드 검증', () => {
     it('should select all required fields', async () => {
       await service.filterPostsByUser(1, FilterType.ALL);
 
-      // select 메서드 호출 확인
       expect(mockQueryBuilder.select).toHaveBeenCalledWith([
         'post.post_id',
         'post.created_at',
@@ -129,7 +118,6 @@ describe('FeedFilterService', () => {
       ]);
     });
 
-    // 반환 데이터 구조 검증
     it('should return posts with correct data structure', async () => {
       const result = await service.filterPostsByUser(1, FilterType.ALL);
 
@@ -143,7 +131,6 @@ describe('FeedFilterService', () => {
     });
   });
 
-  // 에러 처리 테스트
   describe('filterPostsByUser - 에러 처리', () => {
     it('should throw BadRequestException when specificUserId is missing for SPECIFIC filter', async () => {
       await expect(
@@ -151,7 +138,6 @@ describe('FeedFilterService', () => {
       ).rejects.toThrow('특정 사용자 ID가 필요합니다.');
     });
 
-    // 데이터베이스 쿼리 에러 처리
     it('should handle database query error', async () => {
       mockQueryBuilder.getMany.mockRejectedValueOnce(
         new Error('Database error'),
@@ -162,7 +148,6 @@ describe('FeedFilterService', () => {
       ).rejects.toThrow('Database error');
     });
 
-    // 조인 실패 에러 처리
     it('should handle business contact join error', async () => {
       mockQueryBuilder.innerJoin.mockImplementationOnce(() => {
         throw new Error('Join operation failed');
@@ -183,7 +168,6 @@ describe('FeedFilterService', () => {
     });
   });
 
-  // 엣지 케이스 테스트
   describe('filterPostsByUser - 엣지 케이스', () => {
     it('should handle empty result', async () => {
       mockQueryBuilder.getMany.mockResolvedValueOnce([]);
@@ -200,7 +184,6 @@ describe('FeedFilterService', () => {
       );
     });
 
-    // 대량의 게시물 처리 확인
     it('should handle large number of posts', async () => {
       const manyPosts = Array(100).fill(mockPost);
       mockQueryBuilder.getMany.mockResolvedValueOnce(manyPosts);

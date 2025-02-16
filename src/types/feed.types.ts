@@ -1,73 +1,109 @@
-// 게시물 기본 정보 인터페이스
-export interface PostBasicInfo {
+import { ApiProperty } from '@nestjs/swagger';
+import { BaseResponse } from './response.type';
+import { FilterType, SortOption } from '../enums/sort.enum';
+
+export class PostBasicInfo {
+  @ApiProperty({ example: 123 })
   postId: number;
+
+  @ApiProperty({ example: 456 })
   createrId: number;
+
+  @ApiProperty({ example: '홍길동' })
   createrName: string;
+
+  @ApiProperty({ example: '2024-09-18T12:34:56.000Z' })
   createdAt: Date;
+
+  @ApiProperty({ example: 'https://example.com/image.jpg' })
   imageUrl: string;
+
+  @ApiProperty({ example: true })
   isOwnPost: boolean;
+
+  @ApiProperty({ example: 10 })
   likesCount: number;
+
+  @ApiProperty({ example: 5 })
   commentsCount: number;
 }
 
-// 댓글 정보 인터페이스
-export interface CommentInfo {
+export class CommentInfo {
+  @ApiProperty({ example: 1 })
   commentId: number;
+
+  @ApiProperty({ example: 789 })
   authorId: number;
+
+  @ApiProperty({ example: '김철수' })
   authorName: string;
+
+  @ApiProperty({ example: '멋진 게시물이네요!' })
   content: string;
+
+  @ApiProperty({ example: '2024-09-18T12:45:00.000Z' })
   createdAt: Date;
+
+  @ApiProperty({ example: 5 })
   likeCount: number;
 }
 
-// 좋아요 정보 인터페이스
-export interface LikeInfo {
+export class LikeInfo {
+  @ApiProperty({ example: 789 })
   userId: number;
+
+  @ApiProperty({ example: '김철수' })
   userName: string;
 }
 
-// 게시물 상세 정보 인터페이스
-export interface PostDetailInfo extends PostBasicInfo {
+export class PostDetailInfo extends PostBasicInfo {
   content: string;
   comments: CommentInfo[];
   likes: LikeInfo[];
 }
 
-// API 요청/응답 관련 타입들
-
-// 정렬 옵션 열거형
-export enum SortOption {
-  LATEST = 'latest',
-  LIKES = 'likes',
-  COMMENTS = 'comments',
-}
-
-// 필터 타입 열거형
-export enum FilterType {
-  ALL = 'all',
-  OWN = 'own',
-  SPECIFIC = 'specific',
-}
-
-// 피드 조회 시 사용되는 쿼리 파라미터 인터페이스
 export interface FeedQuery {
   sort: SortOption;
   filter: FilterType;
   specificUserId?: number;
 }
 
-// API 응답 타입들
-
-// 기본 응답 구조 인터페이스
-export interface BaseResponse {
-  statusCode: number;
-  message: string;
-}
-
-// 피드 조회 응답 인터페이스
-export interface FeedResponse extends BaseResponse {
+export class FeedResponse extends BaseResponse {
+  @ApiProperty({ type: [PostBasicInfo] })
   posts: PostBasicInfo[];
 }
 
-// 게시물 상세 조회 응답 인터페이스
-export interface PostDetailResponse extends BaseResponse, PostDetailInfo {}
+export class PostDetailResponse extends BaseResponse {
+  @ApiProperty({ example: 123 })
+  postId: number;
+
+  @ApiProperty({ example: 456 })
+  createrId: number;
+
+  @ApiProperty({ example: '홍길동' })
+  createrName: string;
+
+  @ApiProperty({ example: '2024-09-18T12:34:56.000Z' })
+  createdAt: Date;
+
+  @ApiProperty({ example: 'https://example.com/image.jpg' })
+  imageUrl: string;
+
+  @ApiProperty({ example: true })
+  isOwnPost: boolean;
+
+  @ApiProperty({ example: 10 })
+  likesCount: number;
+
+  @ApiProperty({ example: 5 })
+  commentsCount: number;
+
+  @ApiProperty({ example: '게시물 내용입니다.' })
+  content: string;
+
+  @ApiProperty({ type: [CommentInfo] })
+  comments: CommentInfo[];
+
+  @ApiProperty({ type: [LikeInfo] })
+  likes: LikeInfo[];
+}

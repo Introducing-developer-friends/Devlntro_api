@@ -16,7 +16,10 @@ jobs:
           node-version: '20.15.0'
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          npm install mysql2@2.3.3
+          npm install
+
       - name: Setup MySQL for tests
         uses: mirromutth/mysql-action@v1.1
         with:
@@ -24,6 +27,33 @@ jobs:
           mysql database: 'devintro_test'
           mysql user: 'test_user'
           mysql password: 'test_password'
+          mysql root password: 'root'
+          character set server: 'utf8mb4'
+          collation server: 'utf8mb4_unicode_ci'
+
+      - name: Wait for MySQL
+        run: |
+          while ! mysqladmin ping -h"127.0.0.1" --silent; do
+            sleep 1
+            echo "Waiting for MySQL..."
+          done
+      - name: Grant MySQL privileges
+        run: |
+          mysql -h127.0.0.1 -uroot -proot -e "
+            CREATE USER IF NOT EXISTS 'test_user'@'%' IDENTIFIED WITH mysql_native_password BY 'test_password';
+            GRANT ALL PRIVILEGES ON devintro_test.* TO 'test_user'@'%';
+            FLUSH PRIVILEGES;
+          "
+
+      - name: Setup Test Database
+        run: |
+          npm run migration:run
+        env:
+          DB_HOST: localhost
+          DB_PORT: 3306
+          DB_USERNAME: test_user
+          DB_PASSWORD: test_password
+          DB_DATABASE: devintro_test
 
       - name: Run all tests
         run: npm run test
@@ -33,6 +63,19 @@ jobs:
           DB_USERNAME: test_user
           DB_PASSWORD: 'test_password'
           DB_DATABASE: devintro_test
+
+          JWT_SECRET: test-secret-key
+          JWT_EXPIRES_IN: 3600
+
+          AWS_REGION: ap-northeast-2
+          AWS_ACCESS_KEY_ID: test
+          AWS_SECRET_ACCESS_KEY: test
+          AWS_S3_BUCKET_NAME: test-bucket
+          AWS_ENDPOINT: s3.ap-northeast-2.amazonaws.com
+          AWS_DEFAULT_REGION: ap-northeast-2
+          AWS_SDK_LOAD_CONFIG: 1
+          AWS_S3_FORCE_PATH_STYLE: true
+          CLOUDFRONT_DOMAIN: test.cloudfront.net
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1

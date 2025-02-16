@@ -1,11 +1,38 @@
-// auth.types.ts
+import { ApiProperty } from '@nestjs/swagger';
+import { BaseResponse } from './response.type';
+
+export class LoginResponse extends BaseResponse {
+  @ApiProperty({ description: '액세스 토큰', example: 'eyJhbGciOiJ...' })
+  accessToken: string;
+
+  @ApiProperty({ description: '리프레시 토큰', example: 'eyJhbGciOiJ...' })
+  refreshToken: string;
+
+  @ApiProperty({ description: '사용자 ID', example: 1 })
+  userId: number;
+}
+
+export class RefreshTokenResponse extends BaseResponse {
+  @ApiProperty({
+    description: '새로 발급된 액세스 토큰',
+    example: 'eyJhbGciOiJ...',
+  })
+  accessToken: string;
+}
+
+export class RegisterResponse extends BaseResponse {
+  @ApiProperty({ description: '생성된 사용자 ID', example: 1 })
+  userId: number;
+}
+
+export class LogoutResponse extends BaseResponse {}
+
 export interface AuthResult {
   accessToken: string;
   refreshToken: string;
   userId: number;
 }
 
-// 회원가입용 결과 타입
 export interface RegisterResult {
   userId: number;
 }
@@ -23,25 +50,3 @@ export interface TokenPayload extends BasePayload {
 export interface IdCheckResult {
   available: boolean;
 }
-
-// 공통 응답 타입
-export interface BaseResponse {
-  statusCode: number;
-  message: string;
-}
-
-// AuthResult를 재활용한 로그인 응답
-export interface LoginResponse extends BaseResponse, AuthResult {}
-
-// 토큰 갱신 응답
-export interface RefreshTokenResponse extends BaseResponse {
-  accessToken: string;
-}
-
-export type CheckIdResponse = BaseResponse;
-
-export interface RegisterResponse extends BaseResponse {
-  userId: number;
-}
-
-export type LogoutResponse = BaseResponse;

@@ -1,9 +1,7 @@
 import { IsString, IsEmail, IsNotEmpty, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-// 사용자 생성 시 필요한 데이터 전송 객체 (DTO)
 export class CreateUserDto {
-  // 사용자의 로그인 ID (문자열, 필수)
   @ApiProperty({
     description: '사용자의 로그인 ID',
     example: 'testuser1',
@@ -12,7 +10,6 @@ export class CreateUserDto {
   @IsNotEmpty()
   login_id: string;
 
-  // 사용자의 비밀번호 (문자열, 필수)
   @ApiProperty({
     description: '사용자의 비밀번호',
     example: 'password123',
@@ -31,7 +28,6 @@ export class CreateUserDto {
   @IsNotEmpty()
   confirm_password: string;
 
-  // 사용자의 이름 (문자열, 필수)
   @ApiProperty({
     description: '사용자의 이름',
     example: 'John Doe',

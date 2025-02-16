@@ -4,7 +4,6 @@ import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
-import { SampleController } from './controllers/sample.controller'; // SampleController 임포트
 import { AuthModule } from './auth/auth.module';
 import { FeedModule } from './feed/feed.module';
 import { PostModule } from './post/post.module';
@@ -50,7 +49,7 @@ import { CacheModule } from '@nestjs/cache-manager';
     NotificationsModule,
   ],
 
-  controllers: [AppController, SampleController],
+  controllers: [AppController],
 
   providers: [AppService],
 })

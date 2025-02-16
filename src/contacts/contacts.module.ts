@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ContactsController } from './contacts.controller';
-import { ContactsService } from './contacts.service';
-import { BusinessContact } from '../entities/business-contact.entity';
-import { UserAccount } from '../entities/user-account.entity';
-import { BusinessProfile } from '../entities/business-profile.entity';
-import { FriendRequest } from '../entities/friend-request.entity';
+import { ContactsController } from './controller/contacts.controller';
+import { ContactsService } from './service/contacts.service';
+import { BusinessContact } from './entity/business-contact.entity';
+import { UserAccount } from '../user/entity/user-account.entity';
+import { BusinessProfile } from '../user/entity/business-profile.entity';
+import { FriendRequest } from './entity/friend-request.entity';
 
 @Module({
   imports: [

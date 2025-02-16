@@ -6,7 +6,6 @@ export class ChangePasswordDto implements UserPasswordInfo {
   @IsString()
   currentPassword: string;
 
-  // 새 비밀번호를 나타내며, 문자열이어야 하고 최소 길이가 8자 이상이어야 함
   @ApiProperty({ description: '새 비밀번호' })
   @IsString()
   @MinLength(8)
