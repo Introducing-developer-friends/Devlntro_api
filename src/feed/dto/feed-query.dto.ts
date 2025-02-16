@@ -1,8 +1,8 @@
 import { IsEnum, IsOptional, IsNumber } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { FeedQuery } from '../types/feed.types';
-import { FilterType, SortOption } from '../enums/sort.enum';
+import { FeedQuery } from '../../types/feed.types';
+import { FilterType, SortOption } from '../../enums/sort.enum';
 
 export class FeedQueryDto implements Partial<FeedQuery> {
   @ApiProperty({
