@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { FeedController } from './feed.controller';
 import { FeedService } from '../service/feed.service';
 import { JwtAuthGuard } from '../../jwt/jwt-auth.guard';
-import { FeedQueryDto } from '../../dto/feed-query.dto';
+import { FeedQueryDto } from '../dto/feed-query.dto';
 import {
   BadRequestException,
   NotFoundException,

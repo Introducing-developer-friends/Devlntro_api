@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../jwt/jwt-auth.guard';
 import { FeedService } from '../service/feed.service';
-import { FeedQueryDto } from '../../dto/feed-query.dto';
+import { FeedQueryDto } from '../dto/feed-query.dto';
 
 import {
   ApiTags,
